@@ -1,0 +1,98 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Limpar repositório",
+            "type": "shell",
+            "command": "rm -rfv .venv .pytest_cache *.eggs *.egg-info && find . -type d -name '__pycache__' -exec rm -rfv {} + && rm -rfv tests/test_controller",
+            "detail": "Remove o venv e arquivos cache/temporários do repositório.",
+        },
+        {
+            "label": "Formatar código com Black",
+            "type": "shell",
+            "command": "black ${workspaceFolder}",
+            "group": "build",
+            "detail": "Formata o repositório com o Black."
+        },
+        {
+            "label": "Criar venv",
+            "type": "shell",
+            "command": "python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip setuptools",
+            "group": "build",
+            "detail": "Cria um ambiente virtual e atualiza o pip e setuptools."
+        },
+        {
+            "label": "Executar linter",
+            "type": "shell",
+            "command": "source .venv/bin/activate && flake8 --count --statistics --exit-zero --max-line-length=120 --max-doc-length=140 --ignore=E501 source tests",
+            "group": "build",
+            "detail": "Executa o Flake8 para verificar o código fonte e os testes."
+        },
+        {
+            "label": "Instalar dependências do projeto (dev)",
+            "type": "shell",
+            "command": "source .venv/bin/activate && pip install -e .['dev']",
+            "group": {
+                "kind": "build"
+            },
+            "dependsOn": [
+                "Criar venv",
+                "Formatar código com Black",
+                "Executar linter"
+            ],
+            "detail": "Instala as dependências do projeto no ambiente virtual (desenvolvedor)."
+        },
+        {
+            "label": "Instalar dependências do projeto",
+            "type": "shell",
+            "command": "source .venv/bin/activate && pip install -e .",
+            "group": {
+                "kind": "build"
+            },
+            "dependsOn": [
+                "Criar venv",
+                "Formatar código com Black",
+                "Executar linter"
+            ],
+            "detail": "Instala as dependências do projeto no ambiente virtual."
+        },
+        {
+            "label": "Construir o pacote (dev)",
+            "type": "shell",
+            "command": "source .venv/bin/activate && pip install -e .['dev'] && python setup.py build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": [
+                "Criar venv",
+                "Instalar dependências do projeto (dev)",
+                "Formatar código com Black",
+                "Executar linter"
+            ],
+            "detail": "Construir o pacote do projéto. Isso ativa o venv e instala o pacote no modo de desenvolvimento."
+        },
+        {
+            "label": "Construir o pacote",
+            "type": "shell",
+            "command": "source .venv/bin/activate && pip install -e . && python setup.py build",
+            "group": {
+                "kind": "build"
+            },
+            "dependsOn": [
+                "Criar venv",
+                "Instalar dependências do projeto",
+                "Formatar código com Black",
+                "Executar linter"
+            ],
+            "detail": "Construir o pacote do projéto. Isso ativa o venv e instala o pacote."
+        },
+        {
+            "label": "Reconfigurar o repositório",
+            "dependsOn": [
+                "Limpar repositório",
+                "Instalar dependências do projeto (dev)"
+            ],
+        }
+    ]
+}

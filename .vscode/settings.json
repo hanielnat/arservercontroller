@@ -1,0 +1,84 @@
+{
+    "editor.formatOnSave": true,
+    "gruvboxConcoctis.useBoldFont": true,
+    "gruvboxConcoctis.useItalicFont": false,
+    "gruvboxConcoctis.usePalette": "mix",
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.analysis.generateWithTypeAnnotation": true,
+    "python.analysis.useLibraryCodeForTypes": true,
+    "python.analysis.typeCheckingMode": "standard",
+    "python.analysis.languageServerMode": "full",
+    "python.analysis.autoImportCompletions": true,
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "python.createEnvironment.contentButton": "show",
+    "python.analysis.autoFormatStrings": true,
+    "python.analysis.addHoverSummaries": true,
+    "python.analysis.supportDocstringTemplate": true,
+    "python.analysis.aiCodeActions": {
+        "generateDocstring": true,
+        "generateSymbol": true,
+        "implementAbstractClasses": true
+    },
+    "python-envs.pythonProjects": [
+        {
+            "name": "arservercontroller",
+            "path": "${workspaceFolder}",
+            "venvPath": "${workspaceFolder}/.venv",
+            "pythonPath": "${workspaceFolder}/.venv/bin/python"
+        }
+    ],
+    "python.analysis.typeshedPaths": [
+        "./venv/lib/python3.*/typeshed/stdlib",
+        "./venv/lib/python3.*/typeshed/third_party",
+        "/usr/lib/python3.*/typeshed/stdlib",
+        "/usr/lib/python3.*/typeshed/third_party",
+        ".venv/lib/python3.*/typeshed/stdlib",
+        ".venv/lib/python3.*/typeshed/third_party"
+    ],
+    "python.analysis.ignore": [
+        "**/env",
+        "**/venv",
+        "**/.venv",
+        "**/build",
+        "**/__pycache__",
+        "**/__mypy_cache__",
+        "**/.mypy_cache",
+        "**/.pytest_cache",
+        "/usr/lib/python3.*",
+        "/usr/lib/python3.*/site-packages",
+        "/usr/lib/python3.*/**",
+        "/usr/lib/python3.*/site-packages/**",
+        "/usr/local/lib/python3.*",
+        "/usr/local/lib/python3.*/site-packages",
+        "/usr/local/lib/python3.*/site-packages/**",
+    ],
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./tests",
+        "-p",
+        "test_*.py"
+    ],
+    "flake8.args": [
+        "--count",
+        "--statistics",
+        "--max-line-length=120",
+        "--max-doc-length=140",
+        "--ignore=E501"
+    ],
+    "flake8.ignorePatterns": [
+        "venv",
+        ".venv"
+    ],
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "black-formatter.importStrategy": "fromEnvironment",
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[toml]": {
+        "editor.defaultFormatter": "tamasfe.even-better-toml"
+    }
+}

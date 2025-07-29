@@ -1,0 +1,40 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "chneau.resource-monitor",          // Status do sistema (CPU, RAM)
+                "ms-azuretools.vscode-containers",  // Gerenciador de containers
+                "ms-python.black-formatter",        // Formatter
+                "ms-python.python",                 // Pylance e DebugPy, além de suporte geral
+                "ms-python.flake8"                  // Linter
+            ]
+        }
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/sshd:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "azureDnsAutoDetection": true
+        }
+    },
+
+    /*  
+    Para uso do Docker dentro do container vindo de um host com o Docker instalado,
+    descomentar a linha abaixo e comentar o feature 'docker-in-docker' acima.
+    */
+
+    /*
+    "mounts": [
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
+    */
+
+    // Servidor SSH pra acesso remoto.
+    "forwardPorts": [
+        2222
+    ],
+    
+    // Setup do Docker e instalação de dependências
+    "postCreateCommand": "chmod +x ./.devcontainer/installDependencies.sh && ./.devcontainer/installDependencies.sh",
+    "remoteUser": "vscode"
+}

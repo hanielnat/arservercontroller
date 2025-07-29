@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "chneau.resource-monitor",
+        "ms-azuretools.vscode-containers",
+        "ms-python.black-formatter",
+        "ms-python.python",
+        "ms-python.flake8",
+    ]
+}

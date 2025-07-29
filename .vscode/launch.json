@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Module tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "tests"
+        },
+        {
+            "name": "Python Debugger: Module source/main",
+            "type": "debugpy",
+            "request": "launch",
+            "args": [
+                "create",
+                "Test2",
+                "--port",
+                "12313",
+                "--config",
+                "./config.json",
+            ],
+            "module": "arservercontroller.main"
+        },
+    ]
+}
