@@ -15,6 +15,7 @@
     "python.analysis.autoFormatStrings": true,
     "python.analysis.addHoverSummaries": true,
     "python.analysis.supportDocstringTemplate": true,
+    "black-formatter.importStrategy": "fromEnvironment",
     "python.analysis.aiCodeActions": {
         "generateDocstring": true,
         "generateSymbol": true,
@@ -71,14 +72,16 @@
         "venv",
         ".venv"
     ],
+    "editor.codeActionsOnSave": {
+        "source.unusedImports": "explicit",
+    },
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
-    "black-formatter.importStrategy": "fromEnvironment",
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
     "[toml]": {
         "editor.defaultFormatter": "tamasfe.even-better-toml"
-    }
+    },
 }
