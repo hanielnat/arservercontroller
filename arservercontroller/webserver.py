@@ -1,7 +1,8 @@
 from typing import Any, Optional
+from fastapi import FastAPI
 from pydantic import BaseModel
 
-from arservercontroller.main import app
+app: FastAPI = FastAPI()
 
 
 class Item(BaseModel):
@@ -23,3 +24,15 @@ async def read_item(item_id: int, q: Optional[str] = None) -> dict[str, Any]:
 @app.put("/items/{item_id}")
 def update_item(item_id: int, item: Item) -> dict[str, Any]:
     return {"item_name": item.name, "item_id": item_id}
+
+
+def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Run the FastAPI application.
+
+    Args:
+        host: Host address to bind the server to
+        port: Port number to listen on
+    """
+    import uvicorn
+
+    uvicorn.run(app=app, host=host, port=port)

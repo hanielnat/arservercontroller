@@ -8,16 +8,11 @@
             "module": "tests"
         },
         {
-            "name": "Python Debugger: Module source/main",
+            "name": "Python Debugger: webserver.py",
             "type": "debugpy",
             "request": "launch",
             "args": [
-                "create",
-                "Test2",
-                "--port",
-                "12313",
-                "--config",
-                "./config.json",
+                "--serve"
             ],
             "module": "arservercontroller.main"
         },

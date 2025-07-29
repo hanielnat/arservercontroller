@@ -1,21 +1,34 @@
 import os
+import sys
 import argparse
-from fastapi import FastAPI
 from arservercontroller.controller import ARServerController
 from arservercontroller.configs import ServerConfigManager
 from arservercontroller.logger import get_logger
 
 logger = get_logger()
 
-app: FastAPI = FastAPI()
 
-
-def main(args: list[str] | str | None) -> int:
+def main() -> int:
     parser = argparse.ArgumentParser(prog="arservercontroller")
 
-    parser.add_argument("--serve")
+    parser.add_argument("--serve", action="store_true", help="Run the web server")
 
-    subparsers = parser.add_subparsers(dest="command")
+    # Server configuration arguments
+    parser.add_argument(
+        "--host",
+        required=False,
+        default="127.0.0.1",
+        help="Host address to bind the server to",
+    )
+    parser.add_argument(
+        "--port",
+        required=False,
+        type=int,
+        default=8000,
+        help="Port number to listen on",
+    )
+
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     create = subparsers.add_parser("create")
     create.add_argument("name")
@@ -34,46 +47,52 @@ def main(args: list[str] | str | None) -> int:
 
     subparsers.add_parser("list")
 
-    parsed: argparse.Namespace = parser.parse_args(args)
-    if not parsed.command:
+    parsed: argparse.Namespace = parser.parse_args(sys.argv[1:])
+    if not parsed:
         parser.print_help()
         return 1
 
     config_manager = ServerConfigManager(os.curdir)
     controller = ARServerController(config_manager)
 
-    # TODO: fazer uma maneira de iniciar o webserver por uma função global se '--serve' for passado
-    if parsed.command == "--serve":
+    # Start web server if '--serve' flag is passed
+    if parsed.serve:
         try:
-            ...
+            from arservercontroller.webserver import run_server
+
+            run_server(host=parsed.host, port=parsed.port)
+            return 0
         except Exception as e:
             logger.error(e)
             return 1
 
+    result: bool = True
     try:
         if parsed.command == "create":
-            controller.create_server(parsed.name, {"udp": parsed.port}, parsed.config)
+            result = controller.create_server(
+                parsed.name, {"udp": parsed.port}, parsed.config
+            )
         elif parsed.command == "start":
-            controller.start(parsed.name, parsed.user)
+            result = controller.start(parsed.name, parsed.user)
         elif parsed.command == "stop":
-            controller.stop(parsed.name, parsed.user)
+            result = controller.stop(parsed.name, parsed.user)
         elif parsed.command == "restart":
-            controller.restart(parsed.name, parsed.user)
+            result = controller.restart(parsed.name, parsed.user)
         elif parsed.command == "remove":
-            controller.remove_server(parsed.name, parsed.remove_volumes)
+            result = controller.remove_server(parsed.name, parsed.remove_volumes)
         elif parsed.command == "list":
-            print(controller.get_running_servers())
+            logger.info(controller.get_running_servers())
     except Exception as e:
         logger.error(e)
         return 1
 
+    if not result:
+        return 1
     return 0
 
 
 if __name__ == "__main__":
-    import sys
-
     try:
-        sys.exit(main(sys.argv[1:]))
+        sys.exit(main())
     except Exception as e:
         logger.error("%s", e)
