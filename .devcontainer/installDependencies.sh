@@ -13,13 +13,8 @@ else
 fi
 
 echo "Creating Python virtual environment..."
-python3 -m venv .venv
+pipx install uv && uv --directory backend venv .venv
 
 echo "Installing Python packages into the virtual environment..."
-source .venv/bin/activate
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install --editable .
-.venv/bin/pip install --editable .['dev']
-deactivate
-
+uv --directory backend sync
 echo "Dependency installation and venv creation complete."
