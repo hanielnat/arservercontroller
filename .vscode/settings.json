@@ -10,7 +10,6 @@
     "python.analysis.typeCheckingMode": "standard",
     "python.analysis.languageServerMode": "full",
     "python.analysis.autoImportCompletions": true,
-    "editor.defaultFormatter": "ms-python.black-formatter",
     "python.createEnvironment.contentButton": "show",
     "python.analysis.autoFormatStrings": true,
     "python.analysis.addHoverSummaries": true,
@@ -24,9 +23,9 @@
     "python-envs.pythonProjects": [
         {
             "name": "arservercontroller",
-            "path": "${workspaceFolder}",
-            "venvPath": "${workspaceFolder}/.venv",
-            "pythonPath": "${workspaceFolder}/.venv/bin/python"
+            "path": "${workspaceFolder}/backend",
+            "venvPath": "${workspaceFolder}/backend/.venv",
+            "pythonPath": "${workspaceFolder}/backend/.venv/bin/python"
         }
     ],
     "python.analysis.typeshedPaths": [
@@ -74,14 +73,5 @@
     ],
     "editor.codeActionsOnSave": {
         "source.unusedImports": "explicit",
-    },
-    "[jsonc]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "[json]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "[toml]": {
-        "editor.defaultFormatter": "tamasfe.even-better-toml"
     },
 }

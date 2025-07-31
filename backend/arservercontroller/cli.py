@@ -1,9 +1,9 @@
 import os
 import sys
 import argparse
-from arservercontroller.controller import ARServerController
-from arservercontroller.configs import ServerConfigManager
-from arservercontroller.logger import get_logger
+from arservercontroller.services.controller import ARServerController
+from arservercontroller.services.server_config import ServerConfigManager
+from arservercontroller.services.logger import get_logger
 
 logger = get_logger()
 
@@ -58,9 +58,9 @@ def main() -> int:
     # Start web server if '--serve' flag is passed
     if parsed.serve:
         try:
-            from arservercontroller.webserver import run_server
+            # from arservercontroller.routes.api_v1.webserver import run_server
 
-            run_server(host=parsed.host, port=parsed.port)
+            # run_server(host=parsed.host, port=parsed.port)
             return 0
         except Exception as e:
             logger.error(e)
