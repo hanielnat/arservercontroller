@@ -1,13 +1,14 @@
 {
-    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    "image": "mcr.microsoft.com/devcontainers/python:3.13",
     "customizations": {
         "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "backend/.venv/bin/python"
+            },
             "extensions": [
                 "chneau.resource-monitor", // Status do sistema (CPU, RAM)
                 "ms-azuretools.vscode-containers", // Gerenciador de containers
-                "ms-python.black-formatter", // Formatter
-                "ms-python.python", // Pylance e DebugPy, além de suporte geral
-                "ms-python.flake8" // Linter
+                "ms-python.python" // Pylance e DebugPy, além de suporte geral
             ]
         }
     },
@@ -17,15 +18,16 @@
             "azureDnsAutoDetection": true
         }
     },
-    /*  
-    Para uso do Docker dentro do container vindo de um host com o Docker instalado,
-    descomentar a linha abaixo e comentar o feature 'docker-in-docker' acima.
-    */
-    /*
+    "containerEnv": {
+        "UV_LINK_MODE": "copy"
+    },
     "mounts": [
-        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+        {
+            "source": "vscode-server",
+            "target": "/home/vscode/.vscode-server",
+            "type": "volume"
+        }
     ],
-    */
     // Servidor SSH pra acesso remoto.
     "forwardPorts": [
         2222

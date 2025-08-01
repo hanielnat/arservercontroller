@@ -13,7 +13,7 @@ else
 fi
 
 echo "Creating Python virtual environment..."
-pipx install uv && uv --directory backend venv .venv
+pipx install uv && uv venv -c backend/.venv
 
 echo "Installing Python packages into the virtual environment..."
 uv --directory backend sync
