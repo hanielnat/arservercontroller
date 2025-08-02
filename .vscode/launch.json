@@ -3,17 +3,16 @@
     "configurations": [
         {
             "name": "Python Debugger: Module tests",
+            "cwd": "${workspaceFolder}/backend",
             "type": "debugpy",
             "request": "launch",
             "module": "tests"
         },
         {
-            "name": "Python Debugger: webserver.py",
+            "name": "Python Debugger: Module main",
+            "cwd": "${workspaceFolder}/backend",
             "type": "debugpy",
             "request": "launch",
-            "args": [
-                "--serve"
-            ],
             "module": "arservercontroller.main"
         },
     ]

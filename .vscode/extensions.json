@@ -1,9 +1,9 @@
 {
     "recommendations": [
-        "chneau.resource-monitor",
+        "charliermarsh.ruff",
         "ms-azuretools.vscode-containers",
-        "ms-python.black-formatter",
         "ms-python.python",
-        "ms-python.flake8",
+        "mutantdino.resourcemonitor",
+        "njpwerner.autodocstring"
     ]
 }

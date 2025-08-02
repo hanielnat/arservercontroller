@@ -1,8 +1,5 @@
 {
     "editor.formatOnSave": true,
-    "gruvboxConcoctis.useBoldFont": true,
-    "gruvboxConcoctis.useItalicFont": false,
-    "gruvboxConcoctis.usePalette": "mix",
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.analysis.generateWithTypeAnnotation": true,
@@ -14,7 +11,6 @@
     "python.analysis.autoFormatStrings": true,
     "python.analysis.addHoverSummaries": true,
     "python.analysis.supportDocstringTemplate": true,
-    "black-formatter.importStrategy": "fromEnvironment",
     "python.analysis.aiCodeActions": {
         "generateDocstring": true,
         "generateSymbol": true,
@@ -28,36 +24,18 @@
             "pythonPath": "${workspaceFolder}/backend/.venv/bin/python"
         }
     ],
-    "python.analysis.typeshedPaths": [
-        "./venv/lib/python3.*/typeshed/stdlib",
-        "./venv/lib/python3.*/typeshed/third_party",
-        "/usr/lib/python3.*/typeshed/stdlib",
-        "/usr/lib/python3.*/typeshed/third_party",
-        ".venv/lib/python3.*/typeshed/stdlib",
-        ".venv/lib/python3.*/typeshed/third_party"
-    ],
     "python.analysis.ignore": [
-        "**/env",
         "**/venv",
         "**/.venv",
-        "**/build",
-        "**/__pycache__",
-        "**/__mypy_cache__",
-        "**/.mypy_cache",
-        "**/.pytest_cache",
-        "/usr/lib/python3.*",
-        "/usr/lib/python3.*/site-packages",
         "/usr/lib/python3.*/**",
         "/usr/lib/python3.*/site-packages/**",
         "/usr/local/lib/python3.*",
-        "/usr/local/lib/python3.*/site-packages",
-        "/usr/local/lib/python3.*/site-packages/**",
+        "/usr/local/lib/python3.*/**",
     ],
     "python.testing.unittestArgs": [
         "-v",
         "-s",
-        "./tests",
-        "-p",
+        "./backend/tests",
         "test_*.py"
     ],
     "flake8.args": [
@@ -67,11 +45,15 @@
         "--max-doc-length=140",
         "--ignore=E501"
     ],
-    "flake8.ignorePatterns": [
-        "venv",
-        ".venv"
-    ],
     "editor.codeActionsOnSave": {
         "source.unusedImports": "explicit",
+        "source.convertImportFormat": "always"
+    },
+    "[python]": {
+        "diffEditor.ignoreTrimWhitespace": false,
+        "editor.defaultColorDecorators": "auto",
+        "editor.formatOnType": true,
+        "editor.wordBasedSuggestions": "currentDocument",
+        "editor.defaultFormatter": "charliermarsh.ruff",
     },
 }
