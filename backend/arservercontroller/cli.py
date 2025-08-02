@@ -1,11 +1,12 @@
+import argparse
 import os
 import sys
-import argparse
-from arservercontroller.services.controller import ARServerController
-from arservercontroller.services.server_config import ServerConfigManager
-from arservercontroller.services.logger import get_logger
 
-logger = get_logger()
+from arservercontroller.services.controller import ServerController
+from arservercontroller.services.logger import get_logger
+from arservercontroller.services.server_config import ServerConfigManager
+
+logger = get_logger(__name__)
 
 
 def main() -> int:
@@ -53,7 +54,7 @@ def main() -> int:
         return 1
 
     config_manager = ServerConfigManager(os.curdir)
-    controller = ARServerController(config_manager)
+    controller = ServerController(config_manager)
 
     # Start web server if '--serve' flag is passed
     if parsed.serve:

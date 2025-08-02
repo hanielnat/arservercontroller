@@ -5,7 +5,7 @@ class ARServerConfigType:
         server_name: str,
         profile_path: str,
         arserver_config_path: str,
-        ports: dict[int, int],
+        ports: dict[str, int],
         arserver_bin: str,
         arserver_bin_path: str,
         container_id: str | None,

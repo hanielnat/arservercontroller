@@ -1,29 +1,28 @@
 import os
-from typing import Dict, List, Mapping, Optional
+from typing import Mapping, Optional
+
 import docker
-from docker import DockerClient
-from docker.api.client import APIClient
 import docker.constants
 import docker.errors
+from docker import DockerClient
+from docker.api.client import APIClient
 from docker.models.containers import Container
 
+from arservercontroller.constants import EnumARServerStatus
+from arservercontroller.db.models.ARServer import ARServer
+from arservercontroller.db.models.server_configs import (
+    ARServerConfigType,
+    ServerConfigType,
+)
+from arservercontroller.services.logger import get_logger
 from arservercontroller.services.server_config import ServerConfigManager
 
-from arservercontroller.db.models.server_configs import (
-    ServerConfigType,
-    ARServerConfigType,
-)
-
-from arservercontroller.db.models.ARServer import ARServer
-from arservercontroller.constants import EnumARServerStatus
-from arservercontroller.services.logger import get_logger
-
 # Get logger instance
-logger = get_logger()
+logger = get_logger(__name__)
 
 
-class ARServerController:
-    roles: Dict[str, List[str]] = {"user": ["view"]}
+class ServerController:
+    roles: dict[str, list[str]] = {"user": ["view"]}
     default_arserver_image: str = "alpine"
     cpu_percent: int = 50
     cpu_count: int = 8
@@ -33,19 +32,24 @@ class ARServerController:
         config_manager: ServerConfigManager,
         docker_client: DockerClient = docker.from_env(),
         docker_api: APIClient = docker.APIClient(docker.constants.DEFAULT_UNIX_SOCKET),
-        root_path: str = "/usr/local/share/arserver-controller",
+        root_path: Optional[str] = os.environ.get("SERVER_CONTROLLER_DATA_DIR"),
         container_name_prefix: str = "arserver_",
     ) -> None:
         self.docker_client: DockerClient = docker_client
         self.docker_api_client: APIClient = docker_api
         self.config_manager: ServerConfigManager = config_manager
+
+        if not root_path:
+            # TODO: usar pathlib
+            root_path = ""
+
         self._root_path: str = root_path
         self._volumes_path: str = root_path + "/volumes"
         self._profiles_path: str = root_path + "/profiles"
         self._configs_path: str = root_path + "/configs"
         self._container_name_prefix: str = container_name_prefix
-        self.servers: Dict[str, ARServer] = {}
-        self.roles: Dict[str, List[str]] = self._get_controller_permissions()
+        self.servers: dict[str, ARServer] = {}
+        self.roles: dict[str, list[str]] = self._get_controller_permissions()
 
     def __exit__(self):
         self.docker_client.close()  # type: ignore
@@ -123,7 +127,7 @@ class ARServerController:
     def set_cpu_count(cls, new_cpu_count: int) -> None:
         cls.cpu_count = new_cpu_count
 
-    def list_servers_config(self) -> Dict[str, List[ServerConfigType]]:
+    def list_servers_config(self) -> dict[str, list[ServerConfigType]]:
         return self.config_manager.list_servers()
 
     def get_server_config(self, server_name: str) -> Optional[ServerConfigType]:
@@ -221,9 +225,9 @@ class ARServerController:
             return False
 
     # TODO: a função não está retornando os servidores em execução corretamente
-    def get_running_servers(self) -> List[ARServer]:
+    def get_running_servers(self) -> list[ARServer]:
         """Retorna uma lista de servidores AR em execução."""
-        running_servers: List[ARServer] = []
+        running_servers: list[ARServer] = []
         for _, server in self.servers.items():
             server.container.reload()
             if server.status != EnumARServerStatus.RUNNING:
@@ -431,21 +435,21 @@ class ARServerController:
     def create_server(
         self,
         server_name: str,
-        ports: Dict[str, int],
+        ports: dict[str, int],
         config_path: str,
         dockerfile_path: str | None = None,
         custom_image_tag: str | None = None,
-        command: List[str] | str | None = None,
+        command: list[str] | str | None = None,
     ) -> bool:
         """Cria um novo ArmaReforgerServer com a configuração especificada.
 
         Args:
             server_name (str): Nome do servidor a ser criado.
-            ports (Dict[str, int]): Dicionário de tipos de porta e números para vincular.
+            ports (dict[str, int]): Dicionário de tipos de porta e números para vincular.
             config_path (str): Caminho para o arquivo de configuração.
             dockerfile_path (str | None, optional): Caminho para um Dockerfile personalizado para construir a imagem do servidor.
             custom_image_tag (str | None, optional): Tag para a imagem personalizada construída.
-            command (List[str] | str | None, optional): Comando personalizado para executar no container.
+            command (list[str] | str | None, optional): Comando personalizado para executar no container.
 
         Returns:
             bool: True se a criação do servidor for bem-sucedida, False caso contrário.
@@ -458,18 +462,18 @@ class ARServerController:
         try:
             container_name: str = f"{self._container_name_prefix}{server_name}"
 
-            port_bindings: Mapping[str, int | List[int] | tuple[str, int] | None] = {}
+            port_bindings: Mapping[str, int | list[int] | tuple[str, int] | None] = {}
             for port_type, port in ports.items():
                 port_bindings[f"{port}/{port_type}"] = port
 
-            command_to_use: List[str] | str = (
+            command_to_use: list[str] | str = (
                 command
                 if command is not None
                 else f"/bin/sh -c 'echo Iniciando ARServer `{server_name}` && sleep infinity'"
             )
 
             volume_key: str = f"{self._volumes_path}/{server_name}.volume"
-            volumes: Dict[str, Dict[str, str]] = {
+            volumes: dict[str, dict[str, str]] = {
                 volume_key: {"bind": f"/home/{server_name}", "mode": "rw"}
             }
 
@@ -481,7 +485,7 @@ class ARServerController:
             # try:
             #     if self.docker_client.containers.get(container_name):
             #         logger.info(\1)
-            #         container_list: List[Container] = self.docker_client.containers.list(all=True, filters={"name": container_name})  # type: ignore
+            #         container_list: list[Container] = self.docker_client.containers.list(all=True, filters={"name": container_name})  # type: ignore
             #         index: int = len(container_list) + 1  # type: ignore
             #         container_name = f"{container_name}_{index}"
             # except docker.errors.NotFound:

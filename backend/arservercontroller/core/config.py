@@ -1,8 +1,7 @@
 import os
-from pathlib import Path
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from pydantic import Field
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class BaseConfig(BaseSettings):
@@ -41,29 +40,17 @@ class BaseConfig(BaseSettings):
         },
     }
 
-    # Directory Settings
-    BASE_DIR: Path = Path(__file__).parent.parent
-    DATA_DIR: Path = BASE_DIR / "data"
-    LOGS_DIR: Path = BASE_DIR / "logs"
-
     # Create required directories
     def create_directories(self):
         """Create necessary directories if they don't exist"""
-        for directory in [self.DATA_DIR, self.LOGS_DIR]:
+        from arservercontroller.constants import BaseDirectories
+
+        for directory in [BaseDirectories.DATA_DIR, BaseDirectories.LOGS_DIR]:
             directory.mkdir(parents=True, exist_ok=True)
 
     model_config = SettingsConfigDict(
         case_sensitive=True, env_file=".env", env_file_encoding="utf-8"
     )
-
-    # TODO: remover
-    # Load environment variables from .env file
-    def __init__(self, **kwargs):
-        # Load environment variables from .env file
-        env_path = self.BASE_DIR / ".env"
-        if env_path.exists():
-            load_dotenv(dotenv_path=env_path)
-        super().__init__(**kwargs)
 
 
 class DevelopmentConfig(BaseConfig):
