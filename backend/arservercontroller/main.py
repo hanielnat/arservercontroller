@@ -1,17 +1,18 @@
 from logging import Logger
-from typing import Any, Generator
 
 from fastapi import FastAPI
-from sqlalchemy.orm.session import Session
 
-import arservercontroller.db.session as db_session
 from arservercontroller.core.config import BaseConfig, get_config
+from arservercontroller.db.session import get_async_db
 from arservercontroller.services.logger import get_logger
 
 settings: BaseConfig = get_config()
 
-logger: Logger = get_logger()
+logger: Logger = get_logger(settings.APP_NAME)
+logger.info("Logger initialized, starting app...")
 
-db: Generator[Session, Any, None] = db_session.get_db()
+database = get_async_db()
+logger.info("Database initialized.")
 
 app: FastAPI = FastAPI()
+logger.info("App started.")

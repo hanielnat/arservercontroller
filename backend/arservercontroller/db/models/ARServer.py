@@ -1,6 +1,7 @@
 from docker.models.containers import Container
-from arservercontroller.configs import ARServerConfigType
+
 from arservercontroller.constants import EnumARServerStatus
+from arservercontroller.db.models.server_configs import ARServerConfigType
 
 
 class ARServer:

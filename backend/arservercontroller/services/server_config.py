@@ -1,9 +1,11 @@
-import os
 import json
+import os
+
 from arservercontroller.db.models.server_configs import ServerConfigType
 from arservercontroller.services.logger import get_logger
 
-logger = get_logger()
+logger = get_logger(__name__)
+
 
 # TODO: converter operações em arquivos para usar o sqlalchemy
 class ServerConfigManager:
