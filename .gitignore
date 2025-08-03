@@ -39,4 +39,5 @@ venv.bak/
 Thumbs.db
 
 # Project-specific
-tests/test_controller
+backend/tests/test_controller
+backend/data
