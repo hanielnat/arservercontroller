@@ -1,9 +1,13 @@
-import os
-from typing import Optional
-import pydantic
 import datetime
+import os
 import random
-import arservercontroller.logger as logger
+from logging import Logger
+from typing import Optional
+
+import pydantic
+from arservercontroller.services.logger import get_logger
+
+test_logger: Logger = get_logger(__name__)
 
 
 class TestData(pydantic.BaseModel):
@@ -21,8 +25,6 @@ class Nested(pydantic.BaseModel):
 def test_json_validation():
     result: str
     random_id: int
-
-    test_logger = logger.get_logger()
 
     random_id = random.randint(0, 1000)
     test_data_type: TestData = TestData(
