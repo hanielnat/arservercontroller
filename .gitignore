@@ -17,17 +17,31 @@ lib64/
 parts/
 sdist/
 var/
-*.egg-info/
 .installed.cfg
-*.egg
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
+*.egg
+**/.egg-info/
+**/.egg
+**/.pytest_cache/
+**/.ruff_cache/
+**/build/
+**/develop-eggs/
+**/dist/
+**/downloads/
+**/eggs/
+**/.eggs/
+**/parts/
+**/sdist/
 
 # Virtual Environment
 .venv/
 venv/
 env.bak/
 venv.bak/
+**/venv
+**/.venv
 
 # IDE files
 .idea/
@@ -41,3 +55,9 @@ Thumbs.db
 # Project-specific
 backend/tests/test_controller
 backend/data
+.env
+*.env
+env.*
+**/.env
+**/*.env
+**/env.*
