@@ -1,7 +1,7 @@
 import enum
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 import arservercontroller
 
@@ -14,12 +14,14 @@ class BaseDirectories(BaseModel):
 
 
 class ControllerDirectories(BaseDirectories):
-    def __init__(self, /, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.CONTROLLER_DIR = self.DATA_DIR / "controller"
-        self.DS_CONFIGS_DIR: Path = self.CONTROLLER_DIR / "ds_configs"
-        self.DS_PROFILES_DIR: Path = self.CONTROLLER_DIR / "profiles"
-        self.CONTAINER_VOLUMES_DIR: Path = self.CONTROLLER_DIR / "volumes"
+    @computed_field
+    @property
+    def CONTROLLER_DIR(self) -> Path:
+        return self.DATA_DIR / "controller"
+
+    DS_CONFIGS_DIR: Path = Path(f"{CONTROLLER_DIR}/ds_configs")
+    DS_PROFILES_DIR: Path = Path(f"{CONTROLLER_DIR}/profiles")
+    CONTAINER_VOLUMES_DIR: Path = Path(f"{CONTROLLER_DIR}/volumes")
 
 
 class EnumARServerStatus(enum.Enum):
