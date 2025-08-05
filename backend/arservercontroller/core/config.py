@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from arservercontroller.constants import BaseDirectories
@@ -27,19 +27,20 @@ class BaseConfig(BaseSettings):
     PORT: int = 8000
 
     # Database Settings
-    DATABASE_DRIVER: str = "aiosqlite"
-    DATABASE_NAME: str = "arservercontroller.db"
-    DATABASE_CONNECT_TIMEOUT: int = 30
-    DATABASE_POOL_SIZE: int = 20
-    DATABASE_MAX_OVERFLOW: int = 10
-    DATABASE_PATH: str = Field(
+    DB_DRIVER: str = "aiosqlite"
+    DB_NAME: str = "arservercontroller.db"
+    DB_CONNECT_TIMEOUT: int = 30
+    DB_POOL_SIZE: int = 20
+    DB_MAX_OVERFLOW: int = 10
+    DB_PATH: str = Field(
         default=str(_base_directories.DATA_DIR / "db"),
         description="Database file path.",
     )
 
+    @computed_field
     @property
     def DATABASE_URL(self) -> str:
-        return f"sqlite+{self.DATABASE_DRIVER}:///{self.DATABASE_PATH}/{self.DATABASE_NAME}"
+        return f"sqlite+{self.DB_DRIVER}:///{self.DB_PATH}/{self.DB_NAME}"
 
     # SQLAlchemy Settings
     SQLALCHEMY_ECHO: bool = False
@@ -65,7 +66,7 @@ class BaseConfig(BaseSettings):
         for directory in [
             Path(_base_directories.DATA_DIR),
             Path(_base_directories.LOGS_DIR),
-            Path(self.DATABASE_PATH),
+            Path(self.DB_PATH),
         ]:
             directory.mkdir(parents=True, exist_ok=True)
 
@@ -75,14 +76,14 @@ class DevelopmentConfig(BaseConfig):
 
     DEBUG: bool = True
     SQLALCHEMY_ECHO: bool = True  # Enable SQL logging in development
-    DATABASE_NAME: str = "arservercontroller_devel.db"
+    DB_NAME: str = "arservercontroller_devel.db"
 
 
 class ProductionConfig(BaseConfig):
     """Production environment configuration."""
 
     DEBUG: bool = False
-    DATABASE_NAME: str = "arservercontroller_prod.db"
+    DB_NAME: str = "arservercontroller_prod.db"
     # Override SQLAlchemy engine options for production
     SQLALCHEMY_ENGINE_OPTIONS: dict = {
         "pool_pre_ping": True,
@@ -98,13 +99,13 @@ class TestingConfig(BaseConfig):
 
     DEBUG: bool = True
     TESTING: bool = True
-    DATABASE_NAME: str = "arservercontroller_test.db"
-    DATABASE_DRIVER: str = "aiosqlite"
+    DB_NAME: str = "arservercontroller_test.db"
 
     # Use in-memory database for testing
+    @computed_field
     @property
     def DATABASE_URL(self) -> str:
-        return f"sqlite+{self.DATABASE_DRIVER}:///:memory:"
+        return f"sqlite+{self.DB_DRIVER}:///:memory:"
 
 
 # Configuration mapping
