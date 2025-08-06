@@ -15,5 +15,17 @@
             "request": "launch",
             "module": "arservercontroller.main"
         },
+        {
+            "name": "Python Debugger: Run with fastapi",
+            "cwd": "${workspaceFolder}/backend",
+            "type": "debugpy",
+            "request": "launch",
+            "envFile": "${workspaceFolder}/.env",
+            "module": "uvicorn",
+            "args": [
+                "${workspaceFolderBasename}.main:app",
+                "--reload"
+            ]
+        },
     ]
 }
