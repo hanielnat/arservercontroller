@@ -11,7 +11,7 @@ name = "arservercontroller"
 version = "0.1.0"
 description = "Arma Reforger Dedicated Server container manager."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.21.0",
     "alembic>=1.16.4",
@@ -19,18 +19,17 @@ dependencies = [
     "fastapi[standard]>=0.116.1",
     "pydantic-extra-types>=2.10.5",
     "pydantic-settings>=2.10.1",
-    "pytest>=8.4.1",
     "sqlalchemy>=2.0.41",
     "types-docker>=7.1.0.20250705",
 ]
 
 [dependency-groups]
 dev = [
-    "black>=25.1.0",
+    "ruff>=0.12.7",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "pytest-mock>=3.14.1",
 ]
 
 [project.scripts]
-arservercontroller = "arservercontroller.main:main"
+arservercontroller = "arservercontroller.cli:main"
