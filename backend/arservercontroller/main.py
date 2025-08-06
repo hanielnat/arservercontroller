@@ -2,6 +2,7 @@ from logging import Logger
 
 from fastapi import FastAPI
 
+from arservercontroller.api.v1.servers import server_router
 from arservercontroller.core.config import BaseConfig, get_config
 from arservercontroller.db.session import get_async_db
 from arservercontroller.services.logger import get_logger
@@ -16,3 +17,5 @@ logger.info("Database initialized.")
 
 app: FastAPI = FastAPI()
 logger.info("App started.")
+
+app.include_router(router=server_router)
