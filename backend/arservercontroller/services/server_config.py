@@ -1,20 +1,107 @@
 import json
 import os
+from pathlib import Path
+from typing import Optional
 
+from pydantic import UUID4, ValidationError
+
+from arservercontroller.api.dependencies import DbSessionDep
+from arservercontroller.constants import ControllerDirectories
 from arservercontroller.db.models.server_configs import ServerConfigType
+from arservercontroller.schemas.server_config import (
+    ServerConfig,
+    ServerConfigBase,
+)
 from arservercontroller.services.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+class ServerConfigManagerV2:
+    def __init__(self, db: DbSessionDep) -> None:
+        self._db = db
+
+    def save_db(self, config: ServerConfigBase) -> None: ...
+
+    def load_db(self) -> ServerConfigBase: ...
+
+    @staticmethod
+    def initialize_directories() -> bool:
+        try:
+            Path.mkdir(ControllerDirectories.DS_CONFIGS_DIR, exist_ok=True)
+
+        except OSError as e:
+            logger.exception(e)
+            return False
+
+        return True
+
+    @staticmethod
+    def save_config(config: ServerConfig) -> bool:
+        ok: bool = True
+
+        try:
+            with open(
+                ControllerDirectories.DS_CONFIGS_DIR / f"{str(config.id)}.json",
+                mode="w",
+            ) as file:
+                file.write(config.model_dump_json())
+                return ok
+
+        except OSError as e:
+            logger.exception(e)
+
+        finally:
+            return not ok
+
+    @staticmethod
+    def load_configs() -> list[ServerConfigBase]:
+        result_list: list[ServerConfigBase] = []
+        result_config: ServerConfigBase
+
+        for config_file in os.listdir(ControllerDirectories.DS_CONFIGS_DIR):
+            if not config_file.endswith(".json"):
+                continue
+
+            try:
+                with open(
+                    ControllerDirectories.DS_CONFIGS_DIR / f"{config_file}"
+                ) as config:
+                    result_config = ServerConfigBase.model_validate_json(
+                        json.loads(config.read())
+                    )
+                    result_list.append(result_config)
+            except (OSError, FileNotFoundError, PermissionError, ValidationError) as e:
+                logger.exception(e)
+                continue
+        return []
+
+    @staticmethod
+    def load_config(server_id: UUID4) -> Optional[ServerConfigBase]:
+        try:
+            result_config: ServerConfigBase
+            with open(
+                ControllerDirectories.DS_CONFIGS_DIR / f"{str(server_id)}.json"
+            ) as config:
+                result_config = ServerConfigBase.model_validate_json(
+                    json.loads(config.read())
+                )
+                logger.debug("loaded json config file for server_id = %s" % server_id)
+
+            return result_config
+        except (OSError, FileNotFoundError, PermissionError, ValidationError) as e:
+            logger.exception(e)
+            return None
 
 
 # TODO: converter operações em arquivos para usar o sqlalchemy
 class ServerConfigManager:
     def __init__(
         self,
-        base_configs_path: str = "/usr/local/share/arserver-controller/config-manager",
-        base_configs_file: str = "serverConfigs.json",
+        base_configs_path: Path = ControllerDirectories.DS_CONFIGS_DIR,
+        base_configs_file: str = "server_configs.json",
     ) -> None:
-        self.base_configs_path: str = base_configs_path
+        self.base_configs_path: Path = base_configs_path
         self.base_configs_file: str = base_configs_file
         self.initialize_directories()
         self.configs: dict[str, list[ServerConfigType]] = {}

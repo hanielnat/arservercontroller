@@ -17,6 +17,8 @@ class BaseConfig(BaseSettings):
         case_sensitive=False, env_file=".env", env_file_encoding="utf-8"
     )
 
+    SECRET_KEY: str = Field(default="secretkey")
+
     # Application Settings
     APP_NAME: str = "arservercontroller"
     VERSION: str = "0.0.1"
@@ -27,7 +29,6 @@ class BaseConfig(BaseSettings):
     PORT: int = 8000
 
     # Database Settings
-    DB_DRIVER: str = "aiosqlite"
     DB_NAME: str = "arservercontroller.db"
     DB_CONNECT_TIMEOUT: int = 30
     DB_POOL_SIZE: int = 20
@@ -39,8 +40,8 @@ class BaseConfig(BaseSettings):
 
     @computed_field
     @property
-    def DATABASE_URL(self) -> str:
-        return f"sqlite+{self.DB_DRIVER}:///{self.DB_PATH}/{self.DB_NAME}"
+    def DB_URL(self) -> str:
+        return f"sqlite:///{self.DB_PATH}/{self.DB_NAME}"
 
     # SQLAlchemy Settings
     SQLALCHEMY_ECHO: bool = False
@@ -104,8 +105,8 @@ class TestingConfig(BaseConfig):
     # Use in-memory database for testing
     @computed_field
     @property
-    def DATABASE_URL(self) -> str:
-        return f"sqlite+{self.DB_DRIVER}:///:memory:"
+    def DB_URL(self) -> str:
+        return "sqlite:///:memory:"
 
 
 # Configuration mapping

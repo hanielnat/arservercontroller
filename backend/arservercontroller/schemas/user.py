@@ -1,12 +1,29 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
-class UserCreate(BaseModel):
+class BaseUser(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     email: EmailStr
+    role: str
+
+
+class UserUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    email: EmailStr
+    password: str
+    role: str
+
+
+class UserRegister(BaseUser):
     password: str
 
 
-class UserOut(BaseModel):
+class UserOut(BaseUser):
     id: int
-    email: EmailStr
-    role: str
+
+
+class UsersOut(BaseModel):
+    data: list[UserOut]
+    count: int

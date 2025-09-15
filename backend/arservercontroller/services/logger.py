@@ -1,4 +1,3 @@
-import datetime
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
@@ -22,7 +21,7 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     stdout_handler.setLevel(logging.DEBUG)
 
     file_handler = RotatingFileHandler(
-        filename=f"{BaseDirectories().LOGS_DIR}/{datetime.datetime.now()}.log",
+        filename=f"{BaseDirectories().LOGS_DIR}/arservercontroller.log",
         maxBytes=1024 * 512,
         backupCount=10,
     )

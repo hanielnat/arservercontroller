@@ -1,1 +1,1 @@
-pyproject configuration, with an async dbapi.
+Generic single-database configuration.

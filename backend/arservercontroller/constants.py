@@ -5,6 +5,8 @@ from pydantic import BaseModel, computed_field
 
 import arservercontroller
 
+SERVER_SCHEMA_VERSION: str = "0.0.1"
+
 
 class BaseDirectories(BaseModel):
     MODULE_DIR: Path = Path(arservercontroller.__file__).parent
@@ -24,7 +26,7 @@ class ControllerDirectories(BaseDirectories):
     CONTAINER_VOLUMES_DIR: Path = Path(f"{CONTROLLER_DIR}/volumes")
 
 
-class EnumARServerStatus(enum.Enum):
+class ServerStatusEnum(enum.Enum):
     RUNNING = "running"
     CREATED = "created"
     EXITED = "exited"

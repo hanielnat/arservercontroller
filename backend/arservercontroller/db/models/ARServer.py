@@ -1,6 +1,6 @@
 from docker.models.containers import Container
 
-from arservercontroller.constants import EnumARServerStatus
+from arservercontroller.constants import ServerStatusEnum
 from arservercontroller.db.models.server_configs import ARServerConfigType
 
 
@@ -10,12 +10,12 @@ class ARServer:
         server_name: str,
         server_config: ARServerConfigType,
         container: Container,
-        status: EnumARServerStatus,
+        status: ServerStatusEnum,
     ) -> None:
         self._server_name: str = server_name
         self._server_config: ARServerConfigType = server_config
         self._container: Container = container
-        self._status: EnumARServerStatus = status
+        self._status: ServerStatusEnum = status
         if not self._server_name:
             raise ValueError("O nome do servidor não pode ser vazio.")
 
@@ -55,18 +55,18 @@ class ARServer:
         self._container = value
 
     @property
-    def status(self) -> EnumARServerStatus:
+    def status(self) -> ServerStatusEnum:
         """Retorna o status atual do servidor."""
         status = self.update_container_status()
         return status
 
-    def update_container_status(self) -> EnumARServerStatus:
+    def update_container_status(self) -> ServerStatusEnum:
         """Atualiza o status do servidor com base no status do container."""
         self.container.reload()
-        self._status = EnumARServerStatus[self.container.status.upper()]
+        self._status = ServerStatusEnum[self.container.status.upper()]
         return self._status
 
-    def reload_container_status(self) -> EnumARServerStatus:
+    def reload_container_status(self) -> ServerStatusEnum:
         """Recarrega o status do container e atualiza o status do servidor."""
         self._container.reload()
         self.update_container_status()

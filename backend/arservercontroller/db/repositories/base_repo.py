@@ -1,35 +1,50 @@
 from abc import ABC, abstractmethod
-from ast import TypeVar
+from typing import Generic, TypeVar
+from warnings import deprecated
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from arservercontroller.db.base import Base
-
-TModel = TypeVar("TModel", bound=Base)
+from sqlalchemy.orm import Session
 
 
-class BaseAsyncRepository[TModel](ABC):
-    auto_commit: bool = True
+M = TypeVar("M")
+K = TypeVar("K")
 
-    def __init__(self, db: AsyncSession) -> None:
+
+@deprecated("")
+class RepositoryInterface(ABC, Generic[M, K]):
+    def __init__(
+        self,
+        db: Session,
+        # db: DbSessionDep,
+        model: type[M],
+    ) -> None:
         self.db = db
+        self.model = model
 
     @abstractmethod
-    async def find_all(self, model: TModel) -> None:
+    def find_one(self, key: K) -> M:
         raise NotImplementedError()
 
     @abstractmethod
-    async def find_one(self, model: TModel) -> None:
+    def find_all(self) -> list[M]:
         raise NotImplementedError()
 
-    @abstractmethod
-    async def add(self, model: TModel) -> None:
-        raise NotImplementedError()
+    def add(self, model: M) -> M:
+        self.db.add(model)
+        self.db.commit()
+        self.db.refresh(model)
+        return model
 
-    @abstractmethod
-    async def update(self, model: TModel) -> None:
-        raise NotImplementedError()
+    def update(self, model: M) -> M:
+        self.db.commit()
+        self.db.refresh(model)
+        return model
 
-    @abstractmethod
-    async def remove(self, model: TModel) -> None:
-        raise NotImplementedError()
+    def remove(self, key: K) -> bool:
+        obj = self.find_one(key)
+
+        if not obj:
+            return False
+
+        self.db.delete(obj)
+        self.db.commit()
+        return True

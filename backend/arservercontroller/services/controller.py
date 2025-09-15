@@ -8,7 +8,7 @@ from docker import DockerClient
 from docker.api.client import APIClient
 from docker.models.containers import Container
 
-from arservercontroller.constants import EnumARServerStatus
+from arservercontroller.constants import ServerStatusEnum
 from arservercontroller.db.models.ARServer import ARServer
 from arservercontroller.db.models.server_configs import (
     ARServerConfigType,
@@ -230,7 +230,7 @@ class ServerController:
         running_servers: list[ARServer] = []
         for _, server in self.servers.items():
             server.container.reload()
-            if server.status != EnumARServerStatus.RUNNING:
+            if server.status != ServerStatusEnum.RUNNING:
                 continue
             running_servers.append(server)
         return running_servers
@@ -302,7 +302,7 @@ class ServerController:
                 server_name=server_name,
                 server_config=config.arserver_config,
                 container=container,
-                status=EnumARServerStatus.CREATED,  # CREATED é o status inicial
+                status=ServerStatusEnum.CREATED,  # CREATED é o status inicial
             )
 
         self.servers[server_name] = server
@@ -312,7 +312,7 @@ class ServerController:
             [s.server_name for s in self.servers.values()],
         )
 
-        if container.status == EnumARServerStatus.RUNNING.value:
+        if container.status == ServerStatusEnum.RUNNING.value:
             logger.info("Container '%s' já está em execução.", server_name)
             return True
 
@@ -353,7 +353,7 @@ class ServerController:
         container: Container = server.container
 
         container.reload()
-        if server.status != EnumARServerStatus.RUNNING:
+        if server.status != ServerStatusEnum.RUNNING:
             logger.info("Container '%s' não está em execução.", server_name)
             return True
 
@@ -385,7 +385,7 @@ class ServerController:
         container: Container = server.container
 
         container.reload()
-        if container.status != EnumARServerStatus.RUNNING.value:
+        if container.status != ServerStatusEnum.RUNNING.value:
             logger.info("Container '%s' não está em execução.", server_name)
             return False
 
@@ -541,7 +541,7 @@ class ServerController:
                     detach=True,
                 )
 
-                if container.status != EnumARServerStatus.CREATED.value:
+                if container.status != ServerStatusEnum.CREATED.value:
                     logger.info("Falha ao criar o container '%s'.", container_name)
                     return False
 
@@ -585,7 +585,7 @@ class ServerController:
                     server_name=server_name,
                     server_config=server_config,
                     container=container,
-                    status=EnumARServerStatus.CREATED,
+                    status=ServerStatusEnum.CREATED,
                 )
 
             logger.info("Servidor '%s' instanciado com sucesso.", server_name)
@@ -648,13 +648,13 @@ class ServerController:
                 container=self.docker_client.containers.get(
                     f"{self._container_name_prefix}{server_name}"
                 ),
-                status=EnumARServerStatus.CREATED,
+                status=ServerStatusEnum.CREATED,
             )
 
         container: Container = server.container
 
         container.reload()
-        if container.status == EnumARServerStatus.RUNNING.value:
+        if container.status == ServerStatusEnum.RUNNING.value:
             logger.info("Parando o servidor '%s' antes de remover.", server_name)
             self.stop(server_name)
         try:
