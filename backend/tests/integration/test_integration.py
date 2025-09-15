@@ -4,7 +4,7 @@ from typing import Any, Generator
 
 import docker.errors
 import pytest
-from arservercontroller.constants import EnumARServerStatus
+from arservercontroller.constants import ServerStatusEnum
 from arservercontroller.db.models.ARServer import ARServer
 from arservercontroller.db.models.server_configs import ServerConfigType
 from arservercontroller.services.controller import ServerController
@@ -395,7 +395,7 @@ class TestDockerIntegration:
         servers: list[ARServer] = arserver_controller.get_running_servers()
         for server in servers:
             print(f"Server: {server}")
-            status: EnumARServerStatus = server.status
+            status: ServerStatusEnum = server.status
 
             # Assert
-            assert status in list(EnumARServerStatus)
+            assert status in list(ServerStatusEnum)
