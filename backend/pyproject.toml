@@ -25,17 +25,18 @@ dependencies = [
     "pyjwt>=2.10.1",
     "python-multipart>=0.0.20",
     "sqlalchemy>=2.0.41",
-    "types-docker>=7.1.0.20250705",
 ]
 
 [dependency-groups]
-dev = [
+dev = [{ include-group = "lint" }, { include-group = "test" }]
+lint = [
+    "mypy>=1.18.2",
+    "pre-commit>=4.3.0",
     "ruff>=0.12.7",
-    "pytest>=8.4.1",
-    "pytest-cov>=6.2.1",
-    "pytest-mock>=3.14.1",
     "types-passlib>=1.7.7.20250602",
+    "types-docker>=7.1.0.20250705",
 ]
+test = ["pytest>=8.4.1", "pytest-cov>=6.2.1", "pytest-mock>=3.14.1"]
 
 [project.scripts]
 arservercontroller = "arservercontroller.cli:main"
