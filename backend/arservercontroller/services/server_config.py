@@ -3,32 +3,50 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from pydantic import UUID4, ValidationError
-
-from arservercontroller.api.dependencies import DbSessionDep
-from arservercontroller.constants import ControllerDirectories
+from arservercontroller.constants import directory_manager
+from arservercontroller.db.models.server import Server
 from arservercontroller.db.models.server_configs import ServerConfigType
 from arservercontroller.schemas.server_config import (
     ServerConfig,
     ServerConfigBase,
 )
 from arservercontroller.services.logger import get_logger
+from pydantic import UUID4, ValidationError
+from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
 
 
 class ServerConfigManagerV2:
-    def __init__(self, db: DbSessionDep) -> None:
+    def __init__(self, db: Session) -> None:
         self._db = db
 
-    def save_db(self, config: ServerConfigBase) -> None: ...
+    def save_db(self, id: UUID4) -> None:
+        model = self._db.get(Server, id)
+        if not model:
+            raise
 
-    def load_db(self) -> ServerConfigBase: ...
+        try:
+            config = ServerConfig.model_validate(model.server_config_data)
+            ServerConfigManagerV2.save_config(config)
+
+        except Exception as e:
+            raise Exception from e
+
+    def load_db(self, id: UUID4) -> Optional[ServerConfig]:
+        try:
+            out_config = ServerConfigManagerV2.load_config(id)
+        except Exception:
+            return None
+
+        return out_config
 
     @staticmethod
     def initialize_directories() -> bool:
         try:
-            Path.mkdir(ControllerDirectories.DS_CONFIGS_DIR, exist_ok=True)
+            Path.mkdir(
+                directory_manager.controller_directories.DS_CONFIGS_DIR, exist_ok=True
+            )
 
         except OSError as e:
             logger.exception(e)
@@ -42,7 +60,8 @@ class ServerConfigManagerV2:
 
         try:
             with open(
-                ControllerDirectories.DS_CONFIGS_DIR / f"{str(config.id)}.json",
+                directory_manager.controller_directories.DS_CONFIGS_DIR
+                / f"{str(config.id)}.json",
                 mode="w",
             ) as file:
                 file.write(config.model_dump_json())
@@ -59,13 +78,16 @@ class ServerConfigManagerV2:
         result_list: list[ServerConfigBase] = []
         result_config: ServerConfigBase
 
-        for config_file in os.listdir(ControllerDirectories.DS_CONFIGS_DIR):
+        for config_file in os.listdir(
+            directory_manager.controller_directories.DS_CONFIGS_DIR
+        ):
             if not config_file.endswith(".json"):
                 continue
 
             try:
                 with open(
-                    ControllerDirectories.DS_CONFIGS_DIR / f"{config_file}"
+                    directory_manager.controller_directories.DS_CONFIGS_DIR
+                    / f"{config_file}"
                 ) as config:
                     result_config = ServerConfigBase.model_validate_json(
                         json.loads(config.read())
@@ -77,13 +99,14 @@ class ServerConfigManagerV2:
         return []
 
     @staticmethod
-    def load_config(server_id: UUID4) -> Optional[ServerConfigBase]:
+    def load_config(server_id: UUID4) -> Optional[ServerConfig]:
         try:
-            result_config: ServerConfigBase
+            result_config: ServerConfig
             with open(
-                ControllerDirectories.DS_CONFIGS_DIR / f"{str(server_id)}.json"
+                directory_manager.controller_directories.DS_CONFIGS_DIR
+                / f"{str(server_id)}.json"
             ) as config:
-                result_config = ServerConfigBase.model_validate_json(
+                result_config = ServerConfig.model_validate_json(
                     json.loads(config.read())
                 )
                 logger.debug("loaded json config file for server_id = %s" % server_id)
@@ -98,7 +121,7 @@ class ServerConfigManagerV2:
 class ServerConfigManager:
     def __init__(
         self,
-        base_configs_path: Path = ControllerDirectories.DS_CONFIGS_DIR,
+        base_configs_path: Path = directory_manager.controller_directories.DS_CONFIGS_DIR,
         base_configs_file: str = "server_configs.json",
     ) -> None:
         self.base_configs_path: Path = base_configs_path

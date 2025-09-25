@@ -1,24 +1,342 @@
 import os
-from typing import Mapping, Optional
+from functools import singledispatchmethod
+from pathlib import Path
+from typing import Any, Mapping, Optional
 
 import docker
 import docker.constants
 import docker.errors
-from docker import DockerClient
-from docker.api.client import APIClient
-from docker.models.containers import Container
-
-from arservercontroller.constants import ServerStatusEnum
+from arservercontroller.api.dependencies import (
+    Annotated,
+    DbSessionDep,
+    Depends,
+    DockerClientDep,
+)
+from arservercontroller.constants import (
+    CONTAINER_NAME_PREFIX,
+    ServerStatusEnum,
+    directory_manager,
+)
 from arservercontroller.db.models.ARServer import ARServer
+from arservercontroller.db.models.server import Server, ServerConfig
 from arservercontroller.db.models.server_configs import (
     ARServerConfigType,
     ServerConfigType,
 )
+from arservercontroller.db.session import get_db
 from arservercontroller.services.logger import get_logger
 from arservercontroller.services.server_config import ServerConfigManager
+from docker import DockerClient
+from docker.api.client import APIClient
+from docker.models.containers import Container
 
-# Get logger instance
 logger = get_logger(__name__)
+
+
+class ServerControllerV2:
+    def __init__(
+        self,
+        db: DbSessionDep,
+        docker_client: DockerClientDep,
+        container_name_prefix: str = CONTAINER_NAME_PREFIX,
+    ) -> None:
+        # constante temporária
+        self.DEFAULT_CONTAINER_IMAGE_DIR: Path = (
+            directory_manager.base_directories.ROOT_DIR / "reforger.Dockerfile"
+        )
+        self.DEFAULT_CONTAINER_IMAGE_NAME: str = "arserver:latest"
+
+        self.ARGS_FILE_ENV: str = "ARGS_FILE"
+        self.ARGS_FILE_PATH: str = "/data/controller"
+        self.ARGS_FILE: str = f"{self.ARGS_FILE_PATH}/args.txt"
+
+        # TODO: integrar
+        # self.REFORGER_ARGS: str = "REFORGER_ARGS"
+        # self.REFORGER_ENV: str = "REFORGER"
+        # self.REFORGER_PATH: str = "/reforger"
+        # self.REFORGER_BIN: str = f"{self.REFORGER_PATH}/ArmaReforgerServer"
+        # self.REFORGER_APPID: int = 1874900
+
+        # self.STEAMCMD_ENV: str = "STEAMCMD"
+        # self.STEAMCMD_PATH: str = "/steamcmd"
+        # self.STEAMCMD_FILE: str = f"{self.STEAMCMD_PATH}/steamcmd.sh"
+
+        self._db = db
+        self._docker = docker_client
+        self._container_name_prefix = container_name_prefix
+
+        try:
+            self._get_docker_version()
+        except docker.errors.APIError as e:
+            logger.error(
+                "Erro ao inicializar o docker client.Operações com containers irão falhar a partir desse ponto."
+            )
+            logger.exception(e)
+
+    def _refresh(self, model: object):
+        self._db.commit()
+        self._db.refresh(model)
+
+    def _get_docker_version(self) -> dict[str, Any]:
+        docker_version: dict[str, Any] = {}
+
+        try:
+            docker_version = self._docker.version()
+            logger.debug("Versão do docker obtida '%s'" % docker_version["Version"])
+        except docker.errors.APIError as e:
+            logger.exception(e)
+
+        return docker_version
+
+    @singledispatchmethod
+    def _update_status(self, model: Server, status: ServerStatusEnum):
+        if not model.server_config_data:
+            return
+
+        model.server_config_data = model.server_config_data.model_copy(
+            update={"status": status}
+        )
+        self._refresh(model)
+
+    @_update_status.register
+    def _(self, model: ServerConfig, container: Container):
+        if not model:
+            return
+        model.update_status(container)
+
+    def _make_container_name(self, server_name: str) -> str:
+        return self._container_name_prefix.join(server_name)
+
+    def _make_command_line(self, server_config: ServerConfig) -> list[str]:
+        command_line: list[str] = []
+        command_line.append("-profile")
+
+        command_line.append(
+            server_config.arserver_profile_path
+            or str(
+                directory_manager.controller_directories.DS_PROFILES_DIR
+                / server_config.name
+            )
+        )
+
+        command_line.append(
+            server_config.arserver_config_path
+            or str(
+                directory_manager.controller_directories.DS_CONFIGS_DIR
+                / f"{server_config.name}.json"
+            )
+        )
+
+        if server_config.command_line:
+            command_line.extend(
+                [cmd for cmd in server_config.command_line if cmd.startswith("-")]
+            )
+
+        return command_line
+
+    def add_server(
+        self,
+        server_config: ServerConfig,
+        environ: Optional[dict[str, str]] = None,
+        *docker_args,
+        **docker_kwargs,
+    ) -> bool:
+        port_bindings: Mapping[str, int | list[int] | tuple[str, int] | None] = {
+            "reforger_udp": server_config.bind_port,
+            "rcon_tcp": server_config.rcon_port,
+            "a2s_udp": server_config.a2s_port,
+        }
+
+        host_config_path = server_config.arserver_config_path or str(
+            directory_manager.controller_directories.DS_CONFIGS_DIR
+            / f"{server_config.name}.json"
+        )
+        host_profile_path = server_config.arserver_profile_path or str(
+            directory_manager.controller_directories.DS_PROFILES_DIR
+            / server_config.name
+        )
+
+        container_directories = directory_manager.get_container_directories(
+            server_config.name
+        )
+        container_config_file: str = str(container_directories.CONTAINER_CONFIG_FILE)
+        container_profile_path: str = str(container_directories.CONTAINER_PROFILE_DIR)
+
+        volumes: dict[str, dict[str, str]] = {
+            host_config_path: {
+                "bind": container_config_file,
+                "mode": "rw",
+            },
+            host_profile_path: {
+                "bind": container_profile_path,
+                "mode": "rw",
+            },
+        }
+
+        host_args_path = str(
+            directory_manager.controller_directories.CONTROLLER_DIR / self.ARGS_FILE
+        )
+        command_line: str = " ".join(self._make_command_line(server_config))
+        with open(host_args_path, "w") as f:
+            f.write(command_line)
+
+        container_args_path: str = str(
+            container_directories.CONTAINER_CONTROLLER_DIR / self.ARGS_FILE
+        )
+        volumes[host_args_path] = {
+            "bind": container_args_path,
+            "mode": "rw",
+        }
+
+        try:
+            container: Container | None = self._docker.containers.create(
+                name=self._make_container_name(server_config.name),
+                environment=environ,
+                image=self.DEFAULT_CONTAINER_IMAGE_NAME,
+                ports=port_bindings,
+                volumes=volumes,
+                detach=True,
+                *docker_args,
+                **docker_kwargs,
+            )
+
+            if not container.id:
+                logger.error("Erro ao recuperar o id do container pelo docker.")
+                return False
+
+        except (docker.errors.ImageNotFound, docker.errors.APIError) as e:
+            logger.error(
+                "Erro ao criar container para o server '%s'" % server_config.id,
+            )
+            logger.exception(e)
+            return False
+
+        server_config.container_id = container.id
+        self._update_status(model=server_config, container=container)
+
+        return True
+
+    def remove_server(self, server_config: ServerConfig) -> bool:
+        try:
+            container: Container | None = self._docker.containers.get(
+                server_config.container_id
+            )
+            container.remove()
+
+        except (docker.errors.APIError, docker.errors.NotFound) as e:
+            container = None
+            logger.exception(e)
+            return False
+
+        return True
+
+    def start(self, model: Server) -> bool:
+        server_config = model.server_config_data
+        if not server_config:
+            logger.error(
+                "Server '%s' não tem uma instancia de 'ServerConfig', é 'None'."
+                % model.id
+            )
+            return False
+
+        container_id = server_config.container_id
+
+        try:
+            container: Container | None = self._docker.containers.get(str(container_id))
+        except docker.errors.NotFound as e:
+            container = None
+            logger.error(
+                "Container '%s' não encontrado. Certifique-se de que o servidor foi criado corretamente."
+                % model.id,
+            )
+            logger.exception(e)
+            return False
+
+        try:
+            logger.info("Iniciando container do Server '%s'...", model.id)
+            container.start()
+            self._update_status(model, ServerStatusEnum.RUNNING)
+            logger.info("Container do Server '%s' iniciado.", model.id)
+        except (docker.errors.APIError, Exception) as e:
+            logger.error("Erro ao iniciar container '%s'" % container_id)
+            logger.exception(e)
+            return False
+        return True
+
+    def stop(self, model: Server) -> bool:
+        server_config = model.server_config_data
+        if not server_config:
+            logger.error(
+                "Server '%s' não tem uma instancia de 'ServerConfig', é 'None'."
+                % model.id
+            )
+            return False
+
+        container_id = server_config.container_id
+        try:
+            container: Container | None = self._docker.containers.get(container_id)
+        except docker.errors.APIError as e:
+            container = None
+            logger.error(
+                "Container '%s' não encontrado. Certifique-se de que o servidor foi criado corretamente."
+                % model.id,
+            )
+            logger.exception(e)
+            return False
+
+        try:
+            logger.info("Parando container do Server '%s'...", model.id)
+            container.stop()
+            self._update_status(model, ServerStatusEnum.EXITED)
+            logger.info("Container do Server '%s' parado.", model.id)
+        except (docker.errors.APIError, Exception) as e:
+            logger.error("Erro ao parar container '%s'" % container_id)
+            logger.exception(e)
+            return False
+        return True
+
+    def restart(self, model: Server) -> bool:
+        server_config = model.server_config_data
+        if not server_config:
+            logger.error(
+                "Server '%s' não tem uma instancia de 'ServerConfig', é 'None'."
+                % model.id
+            )
+            return False
+
+        container_id = server_config.container_id
+        try:
+            container: Container | None = self._docker.containers.get(container_id)
+        except docker.errors.APIError as e:
+            container = None
+            logger.error(
+                "Container '%s' não encontrado. Certifique-se de que o servidor foi criado corretamente."
+                % model.id,
+            )
+            logger.exception(e)
+            return False
+
+        try:
+            logger.info("Reiniciando container do Server '%s'...", model.id)
+            self._update_status(model, ServerStatusEnum.RESTARTING)
+            container.restart()
+            self._update_status(model, ServerStatusEnum.RUNNING)
+            logger.info("Container do Server '%s' reiniciado.", model.id)
+        except (docker.errors.APIError, Exception) as e:
+            logger.error("Erro ao reiniciar container '%s'" % container_id)
+            logger.exception(e)
+            return False
+        return True
+
+
+server_controller = ServerControllerV2(next(get_db()), docker.from_env())
+
+
+def get_server_controller() -> ServerControllerV2:
+    return server_controller
+
+
+ServerControllerDep = Annotated[ServerControllerV2, Depends(get_server_controller)]
 
 
 class ServerController:

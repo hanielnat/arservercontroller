@@ -1,21 +1,15 @@
 import os
 from functools import lru_cache
-from pathlib import Path
 
+from arservercontroller.constants import directory_manager
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from arservercontroller.constants import BaseDirectories
-
-_base_directories = BaseDirectories()
 
 
 class BaseConfig(BaseSettings):
     """Base application configuration class with common settings."""
 
-    model_config = SettingsConfigDict(
-        case_sensitive=False, env_file=".env", env_file_encoding="utf-8"
-    )
+    model_config = SettingsConfigDict(case_sensitive=False, env_file=".env", env_file_encoding="utf-8")
 
     SECRET_KEY: str = Field(default="secretkey")
 
@@ -33,15 +27,11 @@ class BaseConfig(BaseSettings):
     DB_CONNECT_TIMEOUT: int = 30
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 10
-    DB_PATH: str = Field(
-        default=str(_base_directories.DATA_DIR / "db"),
-        description="Database file path.",
-    )
 
     @computed_field
     @property
     def DB_URL(self) -> str:
-        return f"sqlite:///{self.DB_PATH}/{self.DB_NAME}"
+        return f"sqlite:///{directory_manager.base_directories.DB_DIR}/{self.DB_NAME}"
 
     # SQLAlchemy Settings
     SQLALCHEMY_ECHO: bool = False
@@ -60,16 +50,6 @@ class BaseConfig(BaseSettings):
     CORS_ORIGINS: list[str] = ["*"]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
-
-    # Create required directories
-    def create_directories(self):
-        """Create necessary directories if they don't exist"""
-        for directory in [
-            Path(_base_directories.DATA_DIR),
-            Path(_base_directories.LOGS_DIR),
-            Path(self.DB_PATH),
-        ]:
-            directory.mkdir(parents=True, exist_ok=True)
 
 
 class DevelopmentConfig(BaseConfig):
@@ -126,5 +106,7 @@ def get_config() -> BaseConfig:
         raise ValueError(f"Invalid environment: {environment}")
 
     config = config_dict[environment]()
-    config.create_directories()
     return config
+
+
+settings = get_config()
