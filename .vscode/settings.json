@@ -56,4 +56,18 @@
         "editor.wordBasedSuggestions": "currentDocument",
         "editor.defaultFormatter": "charliermarsh.ruff",
     },
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "arservercontroller-devel",
+            "database": "${workspaceFolder:arservercontroller}/backend/data/db/arservercontroller_devel.db"
+        }
+    ],
+    "explorer.fileNesting.patterns": {
+        "Dockerfile": "*.sh",
+        "*.Dockerfile": "*.sh",
+        "pyproject.toml": "*.md, uv.lock, .python-version, alembic.ini, .*ignore"
+    },
 }

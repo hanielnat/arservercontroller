@@ -2,29 +2,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Module tests",
+            "name": "Run module tests",
             "cwd": "${workspaceFolder}/backend",
             "type": "debugpy",
             "request": "launch",
             "module": "tests"
         },
         {
-            "name": "Python Debugger: Module main",
+            "name": "Run module main",
             "cwd": "${workspaceFolder}/backend",
             "type": "debugpy",
             "request": "launch",
             "module": "arservercontroller.main"
         },
         {
-            "name": "Python Debugger: Run with fastapi",
-            "cwd": "${workspaceFolder}/backend",
+            "name": "Run with fastapi",
+            "cwd": "${workspaceFolder}/backend/arservercontroller",
             "type": "debugpy",
             "request": "launch",
+            "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
-            "module": "uvicorn",
+            "python": "${command:python.interpreterPath}",
+            "module": "fastapi",
             "args": [
-                "${workspaceFolderBasename}.main:app",
-                "--reload"
+                "dev"
             ]
         },
     ]
