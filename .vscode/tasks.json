@@ -2,97 +2,91 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Limpar repositório",
+            "label": "Format",
             "type": "shell",
-            "command": "rm -rfv .venv .pytest_cache *.eggs *.egg-info && find . -type d -name '__pycache__' -exec rm -rfv {} + && rm -rfv tests/test_controller",
-            "detail": "Remove o venv e arquivos cache/temporários do repositório.",
-        },
-        {
-            "label": "Formatar código com Black",
-            "type": "shell",
-            "command": "black ${workspaceFolder}",
+            "command": "./tasks.sh format",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
             "group": "build",
             "detail": "Formata o repositório com o Black."
         },
         {
-            "label": "Criar venv",
+            "label": "Lint",
             "type": "shell",
-            "command": "python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip setuptools",
+            "command": "./tasks.sh lint",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "detail": ""
+        },
+        {
+            "label": "Format & test",
+            "type": "shell",
+            "command": "./tasks.sh check",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "detail": ""
+        },
+        {
+            "label": "Install",
+            "type": "shell",
+            "command": "./tasks.sh install",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
             "group": "build",
-            "detail": "Cria um ambiente virtual e atualiza o pip e setuptools."
+            "detail": ""
         },
         {
-            "label": "Executar linter",
+            "label": "Build",
             "type": "shell",
-            "command": "source .venv/bin/activate && flake8 --count --statistics --exit-zero --max-line-length=120 --max-doc-length=140 --ignore=E501 source tests",
+            "command": "./tasks.sh build",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
             "group": "build",
-            "detail": "Executa o Flake8 para verificar o código fonte e os testes."
+            "detail": ""
         },
         {
-            "label": "Instalar dependências do projeto (dev)",
+            "label": "Clean",
             "type": "shell",
-            "command": "source .venv/bin/activate && pip install -e .['dev']",
-            "group": {
-                "kind": "build"
+            "command": "./tasks.sh clean",
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
             },
-            "dependsOn": [
-                "Criar venv",
-                "Formatar código com Black",
-                "Executar linter"
-            ],
-            "detail": "Instala as dependências do projeto no ambiente virtual (desenvolvedor)."
+            "detail": "Remove o venv e arquivos cache/temporários do repositório."
         },
         {
-            "label": "Instalar dependências do projeto",
+            "label": "Run dev",
             "type": "shell",
-            "command": "source .venv/bin/activate && pip install -e .",
-            "group": {
-                "kind": "build"
+            "command": "./tasks.sh run-dev",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
             },
-            "dependsOn": [
-                "Criar venv",
-                "Formatar código com Black",
-                "Executar linter"
-            ],
-            "detail": "Instala as dependências do projeto no ambiente virtual."
+            "problemMatcher": [
+                "$python"
+            ]
         },
         {
-            "label": "Construir o pacote (dev)",
+            "label": "Run",
             "type": "shell",
-            "command": "source .venv/bin/activate && pip install -e .['dev'] && python setup.py build",
-            "group": {
-                "kind": "build",
-                "isDefault": true
+            "command": "./tasks.sh run",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
             },
-            "dependsOn": [
-                "Criar venv",
-                "Instalar dependências do projeto (dev)",
-                "Formatar código com Black",
-                "Executar linter"
-            ],
-            "detail": "Construir o pacote do projéto. Isso ativa o venv e instala o pacote no modo de desenvolvimento."
+            "detail": ""
         },
         {
-            "label": "Construir o pacote",
+            "label": "Test",
             "type": "shell",
-            "command": "source .venv/bin/activate && pip install -e . && python setup.py build",
-            "group": {
-                "kind": "build"
+            "command": "./tasks.sh test",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
             },
-            "dependsOn": [
-                "Criar venv",
-                "Instalar dependências do projeto",
-                "Formatar código com Black",
-                "Executar linter"
-            ],
-            "detail": "Construir o pacote do projéto. Isso ativa o venv e instala o pacote."
-        },
-        {
-            "label": "Reconfigurar o repositório",
-            "dependsOn": [
-                "Limpar repositório",
-                "Instalar dependências do projeto (dev)"
-            ],
+            "detail": ""
         }
     ]
 }

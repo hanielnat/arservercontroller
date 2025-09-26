@@ -66,8 +66,7 @@
         }
     ],
     "explorer.fileNesting.patterns": {
-        "Dockerfile": "*.sh",
-        "*.Dockerfile": "*.sh",
+        "*.Dockerfile": "build-image.sh",
         "pyproject.toml": "*.md, uv.lock, .python-version, alembic.ini, .*ignore"
     },
 }

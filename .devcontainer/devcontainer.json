@@ -8,6 +8,7 @@
             "extensions": [
                 "chneau.resource-monitor",
                 "ms-azuretools.vscode-containers",
+                "Vue.volar",
                 "ms-python.python",
                 "charliermarsh.ruff",
                 "tamasfe.even-better-toml",
@@ -19,6 +20,7 @@
         "ghcr.io/devcontainers/features/node": {
             "version": "28.4.0"
         },
+        "ghcr.io/devcontainers-extra/features/bun": {},
         "ghcr.io/devcontainers-extra/features/uv": {},
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
             "azureDnsAutoDetection": true
