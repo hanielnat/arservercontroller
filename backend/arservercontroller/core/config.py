@@ -1,15 +1,18 @@
 import os
 from functools import lru_cache
 
-from arservercontroller.constants import directory_manager
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from arservercontroller.constants import directory_manager
 
 
 class BaseConfig(BaseSettings):
     """Base application configuration class with common settings."""
 
-    model_config = SettingsConfigDict(case_sensitive=False, env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        case_sensitive=False, env_file=".env", env_file_encoding="utf-8"
+    )
 
     SECRET_KEY: str = Field(default="secretkey")
 
@@ -17,6 +20,10 @@ class BaseConfig(BaseSettings):
     APP_NAME: str = "arservercontroller"
     VERSION: str = "0.0.1"
     API_V1_STR: str = "/api/v1"
+    SERVE_STATIC_DIR: str = str(
+        directory_manager.base_directories.ROOT_DIR.parent.resolve()
+        / "frontend/arservercontroller/.output"
+    )
 
     # Server Settings
     HOST: str = "0.0.0.0"

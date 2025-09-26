@@ -1,9 +1,10 @@
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import Optional
 
-from arservercontroller.constants import BaseDirectories
+from arservercontroller.constants import directory_manager
 
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
@@ -20,8 +21,17 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setLevel(logging.DEBUG)
 
+    logs_dir = directory_manager.base_directories.LOGS_DIR
+    log_file_path = logs_dir / "arservercontroller.log"
+
+    if not logs_dir.exists():
+        try:
+            Path.mkdir(logs_dir, parents=True, exist_ok=True)
+        except OSError as e:
+            raise e
+
     file_handler = RotatingFileHandler(
-        filename=f"{BaseDirectories().LOGS_DIR}/arservercontroller.log",
+        filename=log_file_path,
         maxBytes=1024 * 512,
         backupCount=10,
     )
