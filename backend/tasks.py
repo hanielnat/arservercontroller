@@ -81,7 +81,7 @@ TASKS: dict[str, Callable[[], bool]] = {
                             [
                                 "-c",
                                 textwrap.dedent(
-                                    """rm -rfi .pytest_cache dist .eggs .ruff_cache .mypy_cache
+                                    """rm -rf .pytest_cache dist .eggs .ruff_cache .mypy_cache
                                     .coverage *.egg-info build */build .idea *.swp *.swo .DS_Store Thumbs.db
                                     && find . -type d -name '__pycache__' -exec rm -rf {} +"""
                                 ),
