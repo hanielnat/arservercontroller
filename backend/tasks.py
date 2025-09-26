@@ -5,16 +5,18 @@ Usage: uv run tasks <command>  (e.g., uv run tasks lint)
 """
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 from typing import Callable
 
 SCRIPT_PATH: str = str(Path(__file__).parent.resolve())
 ROOT_PATH: str = str(Path(SCRIPT_PATH).parent.resolve())
 
-ENV: dict[str, str] = {"UV_LINK_MODE": "copy"}
+ENV: dict[str, str] = {"UV_LINK_MODE": os.getenv("UV_LINK_MODE") or "copy"}
 """Environment to be passed to task commands."""
 
 
@@ -72,47 +74,88 @@ def run_command(
         return False
 
 
+# fmt: off
 TASKS: dict[str, Callable[[], bool]] = {
-    "clean": lambda: TASKS["clean-venv"]()
-    and run_command(
-        "bash",
-        [
-            "-c",
-            "rm -rf .pytest_cache dist .eggs .ruff_cache .mypy_cache .coverage *.egg-info build */build .idea *.swp *.swo .DS_Store Thumbs.db && find . -type d -name '__pycache__' -exec rm -rf {} +",
-        ],
-        cwd=ROOT_PATH,
+    "clean":             lambda: TASKS["clean-venv"]() and run_command(
+                            "bash",
+                            [
+                                "-c",
+                                textwrap.dedent(
+                                    """rm -rfi .pytest_cache dist .eggs .ruff_cache .mypy_cache
+                                    .coverage *.egg-info build */build .idea *.swp *.swo .DS_Store Thumbs.db
+                                    && find . -type d -name '__pycache__' -exec rm -rf {} +"""
+                                ),
+                            ],
+                            cwd=ROOT_PATH,
     ),
-    "clean-venv": lambda: run_command(
-        "bash",
-        ["-c", "rm -rf .venv venv env.bak venv.bak */venv */.venv"],
+
+    "clean-venv":        lambda: run_command(
+                            "bash",
+                            [
+                                "-c",
+                                textwrap.dedent(
+                                    """rm -rf .venv venv */venv */.venv"""
+                                ),
+                            ],
     ),
-    "clean-app-data": lambda: run_command("bash", ["-c", "rm -rf data/"]),
-    "venv": lambda: TASKS["clean-venv"]()
-    and run_command("uv", ["venv", "--prompt", "arservercontroller", "."]),
-    "install": lambda: TASKS["venv"]()
-    and run_command(
-        "uv", ["sync", "--all-groups", "--reinstall", "--compile-bytecode"]
+
+    "clean-app-data":    lambda: run_command("bash", ["-c", "rm -rf data/"]),
+
+    "venv":              lambda: TASKS["clean-venv"]() and run_command(
+                            "uv",
+                            ["venv", "--prompt", "arservercontroller", ".venv"],
     ),
-    "lint": lambda: run_command("uv", ["run", "ruff", "check", "."])
-    and run_command("uv", ["run", "mypy", "."]),
-    "format": lambda: run_command("uv", ["run", "ruff", "format", "."]),
-    "test": lambda: run_command("uv", ["run", "pytest"]),
-    "check": lambda: TASKS["lint"]() and TASKS["test"](),
-    "coverage": lambda: run_command(
-        "uv", ["run", "pytest", "--cov", "--cov-report=html"]
+
+    "install":           lambda: TASKS["venv"]() and run_command(
+                            "uv",
+                            ["sync", "--all-groups", "--reinstall", "--compile-bytecode"],
     ),
-    "pre-commit": lambda: run_command("uv", ["run", "pre-commit", "install"])
-    and run_command("uv", ["run", "pre-commit", "run", "--all-files"]),
-    "run-dev": lambda: run_command(
-        "uv", ["run", "fastapi", "dev"], cwd=f"{SCRIPT_PATH}/arservercontroller"
+
+    "lint":              lambda: (
+                            run_command("uv", ["run", "ruff", "check", "."])
+                            and run_command("uv", ["run", "mypy", "."])
     ),
-    "run": lambda: run_command(
-        "uv", ["run", "fastapi", "run"], cwd=f"{SCRIPT_PATH}/arservercontroller"
+
+    "format":            lambda: run_command("uv", ["run", "ruff", "format", "."]),
+
+    "test":              lambda: run_command("uv", ["run", "pytest"]),
+
+    "check":             lambda: TASKS["lint"]() and TASKS["test"](),
+
+    "coverage":          lambda: run_command(
+                            "uv",
+                            ["run", "pytest", "--cov", "--cov-report=html"],
+
     ),
-    "migrate": lambda: run_command("uv", ["run", "alembic", "upgrade", "head"]),
-    "build-dockerfiles": lambda: TASKS["install"]()
-    and run_command("bash", ["-c", "build-image.sh"]),
+
+    "pre-commit":        lambda: (
+                            run_command("uv", ["run", "pre-commit", "install"])
+                            and run_command("uv", ["run", "pre-commit", "run", "--all-files"])
+    ),
+
+    "run-dev":           lambda: run_command(
+                            "uv",
+                            ["run", "fastapi", "dev"],
+                            cwd=f"{SCRIPT_PATH}/arservercontroller",
+    ),
+
+    "run":               lambda: run_command(
+                            "uv",
+                            ["run", "fastapi", "run"],
+                            cwd=f"{SCRIPT_PATH}/arservercontroller",
+    ),
+
+    "migrate":           lambda: run_command(
+                            "uv",
+                            ["run", "alembic", "upgrade", "head"],
+    ),
+
+    "build-dockerfiles": lambda: TASKS["install"]() and run_command(
+                            "bash",
+                            ["-c", "build-image.sh"],
+    ),
 }
+# fmt: on
 
 
 def main() -> int:
@@ -134,10 +177,7 @@ def main() -> int:
 
     success: bool = False
     if not args.command:
-        # success = TASKS["install"]()
-        parser.print_help()
-        print("\nUse --help-tasks to list available tasks.")
-        return 1
+        args.command = "install"
 
     if args.command not in TASKS:
         print(f"Unknown command: {args.command}")

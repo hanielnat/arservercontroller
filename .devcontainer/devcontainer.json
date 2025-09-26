@@ -6,14 +6,20 @@
                 "python.defaultInterpreterPath": "backend/.venv/bin/python"
             },
             "extensions": [
-                "chneau.resource-monitor", // Status do sistema (CPU, RAM)
-                "ms-azuretools.vscode-containers", // Gerenciador de containers
-                "ms-python.python" // Pylance e DebugPy, além de suporte geral
+                "chneau.resource-monitor",
+                "ms-azuretools.vscode-containers",
+                "ms-python.python",
+                "charliermarsh.ruff",
+                "tamasfe.even-better-toml",
+                "njpwerner.autodocstring"
             ]
         }
     },
     "features": {
-        "ghcr.io/devcontainers/features/sshd:1": {},
+        "ghcr.io/devcontainers/features/node": {
+            "version": "28.4.0"
+        },
+        "ghcr.io/devcontainers-extra/features/uv": {},
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
             "azureDnsAutoDetection": true
         }
@@ -21,18 +27,9 @@
     "containerEnv": {
         "UV_LINK_MODE": "copy"
     },
-    "mounts": [
-        {
-            "source": "vscode-server",
-            "target": "/home/vscode/.vscode-server",
-            "type": "volume"
-        }
-    ],
-    // Servidor SSH pra acesso remoto.
     "forwardPorts": [
-        2222
+        8000
     ],
-    // Setup do Docker e instalação de dependências
-    "postCreateCommand": "chmod +x ./.devcontainer/installDependencies.sh && ./.devcontainer/installDependencies.sh",
+    "postCreateCommand": "chmod +x ./.devcontainer/install-dependencies.sh && ./.devcontainer/install-dependencies.sh",
     "remoteUser": "vscode"
 }

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
@@ -12,9 +12,10 @@ else
     echo "Docker installation failed or is not working correctly."
 fi
 
+chmod +x backend/tasks.sh
 echo "Creating Python virtual environment..."
-pipx install uv && uv venv -c backend/.venv
+backend/tasks.sh venv
 
 echo "Installing Python packages into the virtual environment..."
-uv --directory backend sync
+backend/tasks.sh
 echo "Dependency installation and venv creation complete."
