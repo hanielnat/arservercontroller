@@ -20,6 +20,7 @@ var/
 .installed.cfg
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 *.egg-info/
 *.egg
 **/.egg-info/
@@ -34,6 +35,8 @@ var/
 **/.eggs/
 **/parts/
 **/sdist/
+
+.pnpm-store
 
 # Virtual Environment
 .venv/
