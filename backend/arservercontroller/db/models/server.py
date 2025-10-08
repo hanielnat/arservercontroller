@@ -1,4 +1,3 @@
-import json
 import uuid
 from typing import Any, Optional
 
@@ -28,23 +27,14 @@ class Server(Base):
     created_at: Mapped[int]
     updated_at: Mapped[int]
 
-    # TODO: verificar se é possível usar Mapped[ServerConfig]
-    data: Mapped[Any] = mapped_column(JSON, nullable=True)
+    data: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
     @property
     def server_config_data(self) -> Optional[ServerConfig]:
-        if self.data is None:
-            return None
-
-        if isinstance(self.data, str):
-            data_dict = json.loads(self.data)
-        else:
-            data_dict = self.data
-
-        return ServerConfig.model_validate(data_dict)
+        return None if not self.data else ServerConfig.model_validate(self.data)
 
     @server_config_data.setter
-    def server_config_data(self, value: Optional[ServerConfig]):
+    def server_config_data(self, value: Optional[ServerConfig | dict[str, Any]]):
         if value is None:
             self.data = None
         else:
@@ -54,9 +44,8 @@ class Server(Base):
 
             data_dict = value.model_dump()
 
-            for field in ["id", "container_id"]:
-                if data_dict.get(field) is not None:
-                    data_dict[field] = str(data_dict[field])
+            if data_dict.get("id") is not None:
+                data_dict["id"] = str(data_dict["id"])
 
             if data_dict.get("bind_address") is not None:
                 data_dict["bind_address"] = str(data_dict["bind_address"])

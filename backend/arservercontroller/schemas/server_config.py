@@ -2,7 +2,6 @@ import uuid
 from ipaddress import IPv4Address
 from typing import Annotated, Optional
 
-from arservercontroller.constants import SERVER_SCHEMA_VERSION, ServerStatusEnum
 from docker.models.containers import Container
 from pydantic import (
     UUID4,
@@ -11,6 +10,11 @@ from pydantic import (
     IPvAnyAddress,
     field_validator,
 )
+
+from arservercontroller.constants import SERVER_SCHEMA_VERSION, ServerStatusEnum
+
+_PORT_MAX: int = 65535
+_PORT_MIN: int = 0
 
 
 class ServerConfigBase(BaseModel):
@@ -24,7 +28,7 @@ class ServerConfigBase(BaseModel):
     ]
 
     bind_port: Annotated[
-        int, Field(default=2001, gt=0, lt=63535)
+        int, Field(default=2001, gt=_PORT_MIN, lt=_PORT_MAX)
     ]
 
     bind_address: Annotated[
@@ -32,11 +36,11 @@ class ServerConfigBase(BaseModel):
     ]
 
     a2s_port: Annotated[
-        Optional[int], Field(default=17777, gt=0, lt=63535)
+        Optional[int], Field(default=17777, gt=_PORT_MIN, lt=_PORT_MAX)
     ]
 
     rcon_port: Annotated[
-        Optional[int], Field(default=19999, gt=0, lt=63535)
+        Optional[int], Field(default=19999, gt=_PORT_MIN, lt=_PORT_MAX)
     ]
 
     status: Annotated[
@@ -94,7 +98,7 @@ class ServerConfigUpdate(ServerConfigBase):
     ]
 
     bind_port: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
-        Optional[int], Field(default=None, gt=0, lt=63535)
+        Optional[int], Field(default=None, gt=_PORT_MIN, lt=_PORT_MAX)
     ]
 
     bind_address: Annotated[
@@ -102,11 +106,11 @@ class ServerConfigUpdate(ServerConfigBase):
     ]
 
     a2s_port: Annotated[
-        Optional[int], Field(default=None, gt=0, lt=63535)
+        Optional[int], Field(default=None, gt=_PORT_MIN, lt=_PORT_MAX)
     ]
 
     rcon_port: Annotated[
-        Optional[int], Field(default=None, gt=0, lt=63535)
+        Optional[int], Field(default=None, gt=_PORT_MIN, lt=_PORT_MAX)
     ]
 
     status: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]

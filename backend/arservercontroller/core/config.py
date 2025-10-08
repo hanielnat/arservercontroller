@@ -15,6 +15,7 @@ class BaseConfig(BaseSettings):
     )
 
     SECRET_KEY: str = Field(default="secretkey")
+    JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     # Application Settings
     APP_NAME: str = "arservercontroller"
@@ -22,7 +23,7 @@ class BaseConfig(BaseSettings):
     API_V1_STR: str = "/api/v1"
     SERVE_STATIC_DIR: str = str(
         directory_manager.base_directories.ROOT_DIR.parent.resolve()
-        / "frontend/arservercontroller/.output"
+        / "frontend/.output/public"
     )
 
     # Server Settings
@@ -57,6 +58,7 @@ class BaseConfig(BaseSettings):
     CORS_ORIGINS: list[str] = ["*"]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
+    CORS_ALLOW_CREDS: bool = False
 
 
 class DevelopmentConfig(BaseConfig):
