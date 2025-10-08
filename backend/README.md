@@ -1,3 +1,3 @@
 # arservercontroller
 
-Arma Reforger Dedicated Server container manager.
+Arma Reforger Dedicated Server container manager backend.
