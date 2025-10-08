@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../frontend"
+		}
+	],
+	"settings": {
+		"npm.packageManager": "pnpm",
+		"files.associations": {
+			"*.css": "tailwindcss"
+		},
+		"tailwindCSS.classAttributes": [
+			"class",
+			"ui"
+		],
+	}
+}
