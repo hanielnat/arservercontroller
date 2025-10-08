@@ -12,9 +12,9 @@ _settings = get_config()
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def create_access_token(subject: str | Any, expires_delta: timedelta) -> str:
-    expire = datetime.now(timezone.utc) + expires_delta
-    to_encode = {"exp": expire, "sub": str(subject)}
+def create_access_token(data: dict[str, Any], expires_delta: timedelta) -> str:
+    to_encode = data.copy()
+    to_encode.update({"exp": datetime.now(timezone.utc) + expires_delta})
     encoded_jwt = jwt.encode(to_encode, _settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

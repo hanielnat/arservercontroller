@@ -36,6 +36,6 @@ app.add_middleware(
 
 logger.info("App started.")
 
-app.include_router(router=server_router)
-app.include_router(router=users_router)
-app.include_router(router=roles_router)
+app.include_router(router=server_router, prefix=settings.API_V1_STR)
+app.include_router(router=users_router, prefix=settings.API_V1_STR)
+app.include_router(router=roles_router, prefix=settings.API_V1_STR)
