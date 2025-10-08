@@ -6,10 +6,14 @@ from typing import Any, Mapping, Optional
 import docker
 import docker.constants
 import docker.errors
+from docker import DockerClient
+from docker.api.client import APIClient
+from docker.models.containers import Container
+from fastapi import Depends
+
 from arservercontroller.api.dependencies import (
     Annotated,
     DbSessionDep,
-    Depends,
     DockerClientDep,
 )
 from arservercontroller.constants import (
@@ -23,12 +27,8 @@ from arservercontroller.db.models.server_configs import (
     ARServerConfigType,
     ServerConfigType,
 )
-from arservercontroller.db.session import get_db
 from arservercontroller.services.logger import get_logger
 from arservercontroller.services.server_config import ServerConfigManager
-from docker import DockerClient
-from docker.api.client import APIClient
-from docker.models.containers import Container
 
 logger = get_logger(__name__)
 
@@ -50,7 +50,6 @@ class ServerControllerV2:
         self.ARGS_FILE_PATH: str = "/data/controller"
         self.ARGS_FILE: str = f"{self.ARGS_FILE_PATH}/args.txt"
 
-        # TODO: integrar
         # self.REFORGER_ARGS: str = "REFORGER_ARGS"
         # self.REFORGER_ENV: str = "REFORGER"
         # self.REFORGER_PATH: str = "/reforger"
@@ -329,14 +328,9 @@ class ServerControllerV2:
         return True
 
 
-server_controller = ServerControllerV2(next(get_db()), docker.from_env())
-
-
-def get_server_controller() -> ServerControllerV2:
-    return server_controller
-
-
-ServerControllerDep = Annotated[ServerControllerV2, Depends(get_server_controller)]
+ServerControllerDep = Annotated[
+    ServerControllerV2, Depends(ServerControllerV2.__init__)
+]
 
 
 class ServerController:

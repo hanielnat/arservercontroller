@@ -1,4 +1,3 @@
-# TODO: converter para BaseModel do pydantic
 class ARServerConfigType:
     def __init__(
         self,
@@ -19,7 +18,6 @@ class ARServerConfigType:
         self.container_id = container_id
 
 
-# TODO: converter para BaseModel do pydantic
 class ServerConfigType:
     def __init__(self, server_name: str, arserver_config: ARServerConfigType):
         self.server_name = server_name
