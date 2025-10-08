@@ -1,72 +1,14 @@
 {
     "editor.formatOnSave": true,
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.analysis.generateWithTypeAnnotation": true,
-    "python.analysis.useLibraryCodeForTypes": true,
-    "python.analysis.typeCheckingMode": "standard",
-    "python.analysis.languageServerMode": "full",
-    "python.analysis.autoImportCompletions": true,
-    "python.createEnvironment.contentButton": "show",
-    "python.analysis.autoFormatStrings": true,
-    "python.analysis.addHoverSummaries": true,
-    "python.analysis.supportDocstringTemplate": true,
-    "python.analysis.aiCodeActions": {
-        "generateDocstring": true,
-        "generateSymbol": true,
-        "implementAbstractClasses": true
-    },
-    "python-envs.pythonProjects": [
-        {
-            "name": "arservercontroller",
-            "path": "${workspaceFolder}/backend",
-            "venvPath": "${workspaceFolder}/backend/.venv",
-            "pythonPath": "${workspaceFolder}/backend/.venv/bin/python"
-        }
-    ],
-    "python.analysis.ignore": [
-        "**/venv",
-        "**/.venv",
-        "/usr/lib/python3.*/**",
-        "/usr/lib/python3.*/site-packages/**",
-        "/usr/local/lib/python3.*",
-        "/usr/local/lib/python3.*/**",
-    ],
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "./backend/tests",
-        "test_*.py"
-    ],
-    "flake8.args": [
-        "--count",
-        "--statistics",
-        "--max-line-length=120",
-        "--max-doc-length=140",
-        "--ignore=E501"
-    ],
     "editor.codeActionsOnSave": {
         "source.unusedImports": "explicit",
         "source.convertImportFormat": "always"
     },
-    "[python]": {
-        "diffEditor.ignoreTrimWhitespace": false,
-        "editor.defaultColorDecorators": "auto",
-        "editor.formatOnType": true,
-        "editor.wordBasedSuggestions": "currentDocument",
-        "editor.defaultFormatter": "charliermarsh.ruff",
-    },
-    "sqltools.useNodeRuntime": true,
-    "sqltools.connections": [
-        {
-            "previewLimit": 50,
-            "driver": "SQLite",
-            "name": "arservercontroller-devel",
-            "database": "${workspaceFolder:arservercontroller}/backend/data/db/arservercontroller_devel.db"
-        }
-    ],
     "explorer.fileNesting.patterns": {
         "*.Dockerfile": "build-image.sh",
         "pyproject.toml": "*.md, uv.lock, .python-version, alembic.ini, .*ignore"
+    },
+    "editor.quickSuggestions": {
+        "strings": "on"
     },
 }
