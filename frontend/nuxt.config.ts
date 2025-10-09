@@ -3,16 +3,14 @@ export default defineNuxtConfig({
     modules: [
         "@nuxt/eslint",
         "@nuxt/ui",
-        "@vueuse/nuxt"
+        "@vueuse/nuxt",
+        "@compodium/nuxt",
     ],
+
+    ssr: true,
 
     devtools: {
         enabled: true
-    },
-
-    ssr: true,
-    nitro: {
-        preset: "static"
     },
 
     css: ["~/assets/css/main.css"],
@@ -24,6 +22,9 @@ export default defineNuxtConfig({
     },
 
     compatibilityDate: "2024-07-11",
+    nitro: {
+        preset: "static"
+    },
 
     eslint: {
         config: {
