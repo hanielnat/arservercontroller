@@ -2,6 +2,7 @@ from logging import Logger
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from arservercontroller.api.v1.servers import server_router
 from arservercontroller.api.v1.users import roles_router, users_router
@@ -30,9 +31,10 @@ app.add_middleware(
     allow_headers=settings.CORS_HEADERS,
 )
 
-# app.mount(
-#     "/", StaticFiles(directory=settings.SERVE_STATIC_DIR, html=True), name="static"
-# )
+if settings.SERVE_STATIC:
+    app.mount(
+        "/", StaticFiles(directory=settings.SERVE_STATIC_DIR, html=True), name="static"
+    )
 
 logger.info("App started.")
 
