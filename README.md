@@ -23,3 +23,8 @@ Arma Reforger Dedicated Server container manager.
 
 [TODO] terminar e refazer integration tests dos services primeiro.\
 [TODO] por fim fazer os unit tests dos endpoints da API.
+
+## `tasks.py`
+
+[TODO] sincronizar HOST e PORT com as settings do app.\
+[TODO] abrir o app pelo uvicorn passando HOST e PORT.
