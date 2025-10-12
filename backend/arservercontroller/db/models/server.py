@@ -1,8 +1,9 @@
+import datetime
 import uuid
 from typing import Any, Optional
 
-from sqlalchemy import JSON, UUID, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import JSON, UUID, Connection, String, event
+from sqlalchemy.orm import Mapped, Mapper, mapped_column
 
 from arservercontroller.constants import SERVER_SCHEMA_VERSION
 from arservercontroller.db.base import Base
@@ -31,26 +32,31 @@ class Server(Base):
 
     @property
     def server_config_data(self) -> Optional[ServerConfig]:
-        return None if not self.data else ServerConfig.model_validate(self.data)
+        return ServerConfig.model_validate(self.data) if self.data else None
 
     @server_config_data.setter
-    def server_config_data(self, value: Optional[ServerConfig | dict[str, Any]]):
+    def server_config_data(
+        self, value: Optional[ServerConfig | dict[str, Any]]
+    ) -> None:
         if value is None:
             self.data = None
         else:
-            # Se value for um dicionário, validar como ServerConfig primeiro
+            # Make sure it validates
             if isinstance(value, dict):
                 value = ServerConfig.model_validate(value)
 
-            data_dict = value.model_dump()
+            self.data = value.model_dump()
 
-            if data_dict.get("id") is not None:
-                data_dict["id"] = str(data_dict["id"])
 
-            if data_dict.get("bind_address") is not None:
-                data_dict["bind_address"] = str(data_dict["bind_address"])
+@event.listens_for(Server, "before_insert")
+def _create_created_ts_event(
+    mapper: Mapper, connection: Connection, target: Server
+) -> None:
+    target.created_at = int(datetime.datetime.now().timestamp())
 
-            if data_dict.get("status") is not None:
-                data_dict["status"] = data_dict["status"].value
 
-            self.data = data_dict
+@event.listens_for(Server, "before_update")
+def _create_updated_ts_event(
+    mapper: Mapper, connection: Connection, target: Server
+) -> None:
+    target.updated_at = int(datetime.datetime.now().timestamp())
