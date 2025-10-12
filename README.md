@@ -4,15 +4,21 @@ Arma Reforger Dedicated Server container manager.
 
 # TODO's
 
-## `api/v1/users.py`
+## `api/v1/servers.py`
 
-[TODO] criar token jwt em `login_user`.\
-[TODO] configurar middleware `OAuth2PasswordBearer`.
+[TODO] terminar os endpoints (start, stop e etc.).\
+[TODO] terminar de fazer o Dockerfile e scripts do servidor.
 
 ## `services/controller.py`
 
 [TODO] terminar a integração de env vars de apoio (ln 54..ln 62).\
-[TODO] terminar a integração do `add_server` e `start_server` e etc. com a API.
+[TODO] terminar a integração do `add_server` e `start_server` e etc. com a API.\
+[TODO] adicionar labels aos containers em `add_server`.\
+[TODO] separar o controller em `ServerContainerController` para manejar servidores dentro de containers e `ServerController` para controlar servidores diretamente.
+
+## `services/server.py`
+
+[TODO] fazer um `ServerService` para cuidar de erros e operações no banco de dados e delegar lógica para o controller.
 
 ## `services/server_config.py`
 
@@ -28,3 +34,7 @@ Arma Reforger Dedicated Server container manager.
 
 [TODO] sincronizar HOST e PORT com as settings do app.\
 [TODO] abrir o app pelo uvicorn passando HOST e PORT.
+
+## misc
+
+[TODO] resolver o problema do `fastapi` chamar funções do `ServerController` mais de uma vez por request.
