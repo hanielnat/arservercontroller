@@ -1,9 +1,10 @@
-import enum
 from dataclasses import dataclass
+from enum import Flag, StrEnum, auto
 from pathlib import Path
 
-import arservercontroller
 from pydantic import BaseModel, ConfigDict
+
+import arservercontroller
 
 CONTAINER_NAME_PREFIX: str = "arserver_"
 SERVER_SCHEMA_VERSION: str = "0.0.1"
@@ -128,11 +129,28 @@ class DirectoryManager:
 directory_manager = DirectoryManager()
 
 
-class ServerStatusEnum(enum.Enum):
-    RUNNING = "running"
-    CREATED = "created"
-    EXITED = "exited"
-    PAUSED = "paused"
-    RESTARTING = "restarting"
-    REMOVING = "removing"
-    DEAD = "dead"
+class ServerStatusEnum(StrEnum):
+    RUNNING = auto()
+    CREATED = auto()
+    EXITED = auto()
+    PAUSED = auto()
+    RESTARTING = auto()
+    REMOVING = auto()
+    DEAD = auto()
+
+
+class UserRoles(StrEnum):
+    ADMIN = auto()
+    MODERATOR = auto()
+    USER = auto()
+
+
+class RolePermissions(Flag):
+    READ_SERVERS = auto()
+    WRITE_SERVERS = auto()
+    READ_USERS = auto()
+    WRITE_USERS = auto()
+
+    RW_SERVERS = READ_SERVERS | WRITE_SERVERS
+    RW_USERS = READ_USERS | WRITE_USERS
+    RW_ALL = RW_SERVERS | RW_USERS
