@@ -14,10 +14,11 @@ OAuth2TokenDep = Annotated[str, Depends(oauth2_bearer)]
 OAuth2FormDep = Annotated[OAuth2PasswordRequestForm, Depends()]
 
 
-def get_docker_client(**docker_kwargs) -> DockerClient:
-    import docker
+import docker  # noqa: E402
 
-    return docker.from_env(**docker_kwargs)
+
+def get_docker_client() -> DockerClient:
+    return docker.from_env()
 
 
 DockerClientDep = Annotated[DockerClient, Depends(get_docker_client)]
