@@ -20,6 +20,8 @@ make_directories(logger)
 app: FastAPI = FastAPI(
     name=settings.APP_NAME,
     version=settings.VERSION,
+    docs_url="/docs" if isinstance(settings, DevelopmentConfig) else None,
+    redoc_url=None,
     debug=isinstance(settings, DevelopmentConfig),
 )
 
