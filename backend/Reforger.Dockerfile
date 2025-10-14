@@ -3,7 +3,15 @@ FROM debian:bullseye-slim AS builder
 RUN dpkg --add-architecture i386 \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-    lib32gcc-s1 wget ca-certificates \
+    libcurl4 \
+    libssl1.1 \
+    lib32gcc-s1 \
+    curl \
+    wget \
+    netcat \
+    iproute2 \
+    net-tools \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /steamcmd \
@@ -25,14 +33,15 @@ RUN ${STEAMCMD} \
     +app_update ${REFORGER_APPID} validate \
     +quit
 
-COPY entrypoint.sh update.sh data/controller /data/controller/
+COPY entrypoint.sh update.sh healthcheck.sh data/controller /data/controller/
 RUN chmod +x /data/controller/update.sh \
     && chmod +x /data/controller/entrypoint.sh
 
-ENV REFORGER="/reforger/ArmaReforgerServer"
+ENV REFORGER_DIR="/reforger"
+ENV REFORGER="${REFORGER_DIR}/ArmaReforgerServer"
 ENV ARGS_FILE="/data/controller/args.txt"
 
-WORKDIR /data/controller
+WORKDIR ${REFORGER_DIR}
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/data/controller/healthcheck.sh" ]
 ENTRYPOINT [ "/data/controller/entrypoint.sh" ]
-CMD [ ]
+# CMD [ ]

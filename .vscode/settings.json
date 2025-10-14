@@ -5,7 +5,7 @@
         "source.convertImportFormat": "always"
     },
     "explorer.fileNesting.patterns": {
-        "*.Dockerfile": "build-image.sh",
+        "Reforger.Dockerfile": "build-image.sh, entrypoint.sh, update.sh, healthcheck.sh",
         "pyproject.toml": "*.md, uv.lock, .python-version, alembic.ini, .*ignore"
     },
     "editor.quickSuggestions": {
