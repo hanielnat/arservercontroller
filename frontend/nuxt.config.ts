@@ -4,13 +4,13 @@ export default defineNuxtConfig({
         "@nuxt/eslint",
         "@nuxt/ui",
         "@vueuse/nuxt",
-        "@compodium/nuxt",
+        // "@compodium/nuxt",
     ],
 
-    ssr: true,
+    ssr: false,
 
     devtools: {
-        enabled: true
+        enabled: false
     },
 
     css: ["~/assets/css/main.css"],
@@ -26,6 +26,20 @@ export default defineNuxtConfig({
         preset: "static"
     },
 
+    vite: {
+        optimizeDeps: {
+            include: [
+                // "@nuxt/ui",
+                "@unovis/ts",
+                "@unovis/vue",
+                "@vueuse/nuxt",
+                "@internationalized/date",
+                "date-fns",
+                "zod"
+            ]
+        }
+    },
+
     eslint: {
         config: {
             stylistic: {
@@ -36,5 +50,9 @@ export default defineNuxtConfig({
                 severity: "warn"
             }
         }
+    },
+
+    vueuse: {
+        autoImports: false
     },
 })
