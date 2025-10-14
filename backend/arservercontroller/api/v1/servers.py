@@ -1,7 +1,6 @@
-import datetime
 import uuid
 
-from arservercontroller.api.dependencies import DbSessionDep
+from arservercontroller.api.dependencies import DbSessionDep, ModeratorOrAdminDep
 from arservercontroller.db.models.server import Server
 from arservercontroller.schemas.server import ServerOut, ServersOut
 from arservercontroller.schemas.server_config import (
@@ -9,7 +8,8 @@ from arservercontroller.schemas.server_config import (
     ServerConfigCreate,
     ServerConfigUpdate,
 )
-from fastapi import APIRouter, HTTPException
+from arservercontroller.services.controller import ServerControllerDep
+from fastapi import APIRouter, HTTPException, status
 from pydantic import UUID4
 
 server_router = APIRouter(prefix="/servers", tags=["server"])
@@ -32,19 +32,26 @@ async def get_servers(db: DbSessionDep, offset: int = 0, limit: int = 10) -> Ser
 
 @server_router.post("/")
 async def add_server(
-    server_config: ServerConfigCreate, db: DbSessionDep
+    server_config: ServerConfigCreate,
+    db: DbSessionDep,
+    server_controller: ServerControllerDep,
+    # _: ModeratorOrAdminDep,
 ) -> ServerConfig:
     server_id = uuid.uuid4()
 
     config_dict = server_config.model_dump()
-    config_dict.update({"id": server_id, "container_id": str(server_id)})
+    config_dict.update({"id": server_id, "container_id": ""})
     server_config_data = ServerConfig.model_validate(config_dict)
 
-    now = int(datetime.datetime.now().timestamp())
-    out_db = Server(
-        id=server_id, name=server_config.name, created_at=now, updated_at=now
-    )
+    out_db = Server(id=server_id, name=server_config.name)
     out_db.server_config_data = server_config_data
+
+    result, err = server_controller.add_server(out_db)
+    if not result:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "%s" % err,
+        )
 
     db.add(out_db)
     db.commit()
@@ -53,9 +60,12 @@ async def add_server(
     return ServerConfig.model_validate(out_db.server_config_data)
 
 
-@server_router.put("/{server_id}")
+@server_router.patch("/{server_id}")
 async def update_server(
-    server_id: UUID4, new_server: ServerConfigUpdate, db: DbSessionDep
+    server_id: UUID4,
+    new_server: ServerConfigUpdate,
+    db: DbSessionDep,
+    _: ModeratorOrAdminDep,
 ) -> ServerOut:
     model = find_server_by_id(server_id, db)
 
@@ -71,7 +81,23 @@ async def update_server(
 
 
 @server_router.delete("/{server_id}")
-async def delete_server(server_id: UUID4, db: DbSessionDep) -> None:
+async def delete_server(
+    server_id: UUID4, db: DbSessionDep, _: ModeratorOrAdminDep
+) -> None:
     model = find_server_by_id(server_id, db)
     db.delete(model)
     db.commit()
+
+
+@server_router.post("/{server_id}")
+async def start_server(
+    server_id: UUID4,
+    db: DbSessionDep,
+    server_controller: ServerControllerDep,
+    # _: ModeratorOrAdminDep
+) -> None:
+    model = find_server_by_id(server_id, db)
+
+    result, err = server_controller.start(model)
+    if not result:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "%s" % err)

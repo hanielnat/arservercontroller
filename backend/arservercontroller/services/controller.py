@@ -1,5 +1,4 @@
 import os
-from functools import singledispatchmethod
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -32,6 +31,9 @@ from arservercontroller.services.server_config import ServerConfigManager
 
 logger = get_logger(__name__)
 
+PortMap = Mapping[str, int | list[int] | tuple[str, int] | None]
+ControllerResult = tuple[bool, str]
+
 
 class ServerControllerV2:
     def __init__(
@@ -42,13 +44,13 @@ class ServerControllerV2:
     ) -> None:
         # constante temporária
         self.DEFAULT_CONTAINER_IMAGE_DIR: Path = (
-            directory_manager.base_directories.ROOT_DIR / "reforger.Dockerfile"
+            directory_manager.base_directories.ROOT_DIR / "Reforger.Dockerfile"
         )
         self.DEFAULT_CONTAINER_IMAGE_NAME: str = "arserver:latest"
 
         self.ARGS_FILE_ENV: str = "ARGS_FILE"
         self.ARGS_FILE_PATH: str = "/data/controller"
-        self.ARGS_FILE: str = f"{self.ARGS_FILE_PATH}/args.txt"
+        self.ARGS_FILE: str = "args.txt"
 
         # self.REFORGER_ARGS: str = "REFORGER_ARGS"
         # self.REFORGER_ENV: str = "REFORGER"
@@ -72,7 +74,7 @@ class ServerControllerV2:
             )
             logger.exception(e)
 
-    def _refresh(self, model: object):
+    def _refresh_and_commit(self, model: object):
         self._db.commit()
         self._db.refresh(model)
 
@@ -87,24 +89,8 @@ class ServerControllerV2:
 
         return docker_version
 
-    @singledispatchmethod
-    def _update_status(self, model: Server, status: ServerStatusEnum):
-        if not model.server_config_data:
-            return
-
-        model.server_config_data = model.server_config_data.model_copy(
-            update={"status": status}
-        )
-        self._refresh(model)
-
-    @_update_status.register
-    def _(self, model: ServerConfig, container: Container):
-        if not model:
-            return
-        model.update_status(container)
-
     def _make_container_name(self, server_name: str) -> str:
-        return self._container_name_prefix.join(server_name)
+        return self._container_name_prefix + server_name
 
     def _make_command_line(self, server_config: ServerConfig) -> list[str]:
         command_line: list[str] = []
@@ -135,16 +121,29 @@ class ServerControllerV2:
 
     def add_server(
         self,
-        server_config: ServerConfig,
+        server: Server,
+        ports: Optional[PortMap] = None,
         environ: Optional[dict[str, str]] = None,
         *docker_args,
         **docker_kwargs,
-    ) -> bool:
-        port_bindings: Mapping[str, int | list[int] | tuple[str, int] | None] = {
-            "reforger_udp": server_config.bind_port,
-            "rcon_tcp": server_config.rcon_port,
-            "a2s_udp": server_config.a2s_port,
+    ) -> ControllerResult:
+        if not server.server_config_data:
+            return False, "Server config data is `None`"
+
+        server_config = server.server_config_data
+
+        port_bindings: PortMap = {
+            f"{server_config.bind_port}/udp": server_config.bind_port,
+            f"{server_config.a2s_port}/udp": server_config.a2s_port,
+            f"{server_config.rcon_port}/tcp": server_config.rcon_port,
         }
+
+        if ports:
+            port_bindings = {
+                f"{ports.get('bind', server_config.bind_port)}/udp": server_config.bind_port,
+                f"{ports.get('a2s', server_config.a2s_port)}/udp": server_config.a2s_port,
+                f"{ports.get('rcon', server_config.rcon_port)}/tcp": server_config.rcon_port,
+            }
 
         host_config_path = server_config.arserver_config_path or str(
             directory_manager.controller_directories.DS_CONFIGS_DIR
@@ -171,6 +170,13 @@ class ServerControllerV2:
                 "mode": "rw",
             },
         }
+
+        try:
+            reforger_server_volume = self._docker.volumes.get("reforger")
+        except (docker.errors.NotFound, docker.errors.APIError):
+            reforger_server_volume = self._docker.volumes.create("reforger")
+
+        volumes[reforger_server_volume.name] = {"bind": "/reforger", "mode": "rw"}
 
         host_args_path = str(
             directory_manager.controller_directories.CONTROLLER_DIR / self.ARGS_FILE
@@ -200,20 +206,21 @@ class ServerControllerV2:
             )
 
             if not container.id:
-                logger.error("Erro ao recuperar o id do container pelo docker.")
-                return False
+                msg = "Erro ao recuperar o id do container pelo docker"
+                logger.error(msg)
+                return False, msg
 
         except (docker.errors.ImageNotFound, docker.errors.APIError) as e:
-            logger.error(
-                "Erro ao criar container para o server '%s'" % server_config.id,
-            )
+            msg = "Erro ao criar container para o server '%s'" % server_config.id
+            logger.error(msg)
             logger.exception(e)
-            return False
+            return False, f"{msg}: {e}"
 
-        server_config.container_id = container.id
-        self._update_status(model=server_config, container=container)
+        server.server_config_data = server.server_config_data.model_copy(
+            update={"status": container.status, "container_id": container.id}
+        )
 
-        return True
+        return True, ""
 
     def remove_server(self, server_config: ServerConfig) -> bool:
         try:
@@ -229,14 +236,15 @@ class ServerControllerV2:
 
         return True
 
-    def start(self, model: Server) -> bool:
-        server_config = model.server_config_data
+    def start(self, model: Server) -> ControllerResult:
+        server_config: ServerConfig | None = model.server_config_data
         if not server_config:
-            logger.error(
+            msg = (
                 "Server '%s' não tem uma instancia de 'ServerConfig', é 'None'."
                 % model.id
             )
-            return False
+            logger.error(msg)
+            return False, msg
 
         container_id = server_config.container_id
 
@@ -244,23 +252,29 @@ class ServerControllerV2:
             container: Container | None = self._docker.containers.get(str(container_id))
         except docker.errors.NotFound as e:
             container = None
-            logger.error(
+            msg = (
                 "Container '%s' não encontrado. Certifique-se de que o servidor foi criado corretamente."
                 % model.id,
             )
+
+            logger.error(msg)
             logger.exception(e)
-            return False
+            return False, f"{msg}: {e}"
 
         try:
             logger.info("Iniciando container do Server '%s'...", model.id)
             container.start()
-            self._update_status(model, ServerStatusEnum.RUNNING)
+            container.wait()
+            server_config = server_config.model_copy(
+                update={"status": container.status}
+            )
             logger.info("Container do Server '%s' iniciado.", model.id)
         except (docker.errors.APIError, Exception) as e:
-            logger.error("Erro ao iniciar container '%s'" % container_id)
+            msg = "Erro ao iniciar container '%s'" % container_id
+            logger.error(msg)
             logger.exception(e)
-            return False
-        return True
+            return False, f"{msg}: {e}"
+        return True, ""
 
     def stop(self, model: Server) -> bool:
         server_config = model.server_config_data
@@ -286,7 +300,7 @@ class ServerControllerV2:
         try:
             logger.info("Parando container do Server '%s'...", model.id)
             container.stop()
-            self._update_status(model, ServerStatusEnum.EXITED)
+            self._update_status(model, container)
             logger.info("Container do Server '%s' parado.", model.id)
         except (docker.errors.APIError, Exception) as e:
             logger.error("Erro ao parar container '%s'" % container_id)
@@ -317,9 +331,9 @@ class ServerControllerV2:
 
         try:
             logger.info("Reiniciando container do Server '%s'...", model.id)
-            self._update_status(model, ServerStatusEnum.RESTARTING)
+            self._update_status(model, container)
             container.restart()
-            self._update_status(model, ServerStatusEnum.RUNNING)
+            self._update_status(model, container)
             logger.info("Container do Server '%s' reiniciado.", model.id)
         except (docker.errors.APIError, Exception) as e:
             logger.error("Erro ao reiniciar container '%s'" % container_id)
@@ -328,9 +342,15 @@ class ServerControllerV2:
         return True
 
 
-ServerControllerDep = Annotated[
-    ServerControllerV2, Depends(ServerControllerV2.__init__)
-]
+def get_server_controller(
+    db: DbSessionDep,
+    docker_client: DockerClientDep,
+    container_name_prefix: str = CONTAINER_NAME_PREFIX,
+) -> ServerControllerV2:
+    return ServerControllerV2(db, docker_client, container_name_prefix)
+
+
+ServerControllerDep = Annotated[ServerControllerV2, Depends(get_server_controller)]
 
 
 class ServerController:

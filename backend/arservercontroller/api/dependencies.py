@@ -2,8 +2,9 @@ from typing import Annotated
 
 from arservercontroller.core.config import get_config
 from arservercontroller.db.session import get_db
+from arservercontroller.schemas.user import UserOut
 from docker import DockerClient
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -22,3 +23,43 @@ def get_docker_client() -> DockerClient:
 
 
 DockerClientDep = Annotated[DockerClient, Depends(get_docker_client)]
+
+from arservercontroller.services.user import UserServiceDep  # noqa: E402
+
+
+def _get_current_user(token: OAuth2TokenDep, user_service: UserServiceDep) -> UserOut:
+    return user_service.get_current_user(token)
+
+
+CurrentUserDepV2 = Annotated[UserOut, Depends(_get_current_user)]
+
+
+async def require_role_checker(
+    user: CurrentUserDepV2, required_role: str
+) -> CurrentUserDepV2:
+    if user.role != required_role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+        )
+    return user
+
+
+async def require_admin_checker(user: CurrentUserDepV2) -> CurrentUserDepV2:
+    return await require_role_checker(user, "admin")
+
+
+async def require_moderator_or_admin_checker(
+    user: CurrentUserDepV2,
+) -> CurrentUserDepV2:
+    if user.role not in ["admin", "moderator"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+        )
+    return user
+
+
+CurrentUserDep = CurrentUserDepV2
+AdminUserDep = Annotated[CurrentUserDepV2, Depends(require_admin_checker)]
+ModeratorOrAdminDep = Annotated[
+    CurrentUserDepV2, Depends(require_moderator_or_admin_checker)
+]
