@@ -43,7 +43,7 @@
         8000,
         2555
     ],
-    "postCreateCommand": "bash -c 'chmod +x ./.devcontainer/install-dependencies.sh && ./.devcontainer/install-dependencies.sh'",
+    "postCreateCommand": "chmod +x ./.devcontainer/install-dependencies.sh && ./.devcontainer/install-dependencies.sh",
     "remoteUser": "vscode",
     "runArgs": [
         "--privileged",
