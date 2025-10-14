@@ -16,7 +16,11 @@ from typing import Callable
 SCRIPT_PATH: str = str(Path(__file__).parent.resolve())
 ROOT_PATH: str = str(Path(SCRIPT_PATH).parent.resolve())
 
-ENV: dict[str, str] = {"UV_LINK_MODE": os.getenv("UV_LINK_MODE") or "copy"}
+ENV: dict[str, str] = {
+    "HOST": os.getenv("HOST") or "127.0.0.1",
+    "PORT": os.getenv("PORT") or "8000",
+    "UV_LINK_MODE": os.getenv("UV_LINK_MODE") or "copy",
+}
 """Environment to be passed to task commands."""
 
 
@@ -135,13 +139,13 @@ TASKS: dict[str, Callable[[], bool]] = {
 
     "run-dev":           lambda: run_command(
                             "uv",
-                            ["run", "fastapi", "dev"],
+                            ["run", "fastapi", "dev", "--host", ENV["HOST"], "--port", ENV["PORT"]],
                             cwd=f"{SCRIPT_PATH}/arservercontroller",
     ),
 
     "run":               lambda: run_command(
                             "uv",
-                            ["run", "fastapi", "run"],
+                            ["run", "fastapi", "run", "--host", ENV["HOST"], "--port", ENV["PORT"]],
                             cwd=f"{SCRIPT_PATH}/arservercontroller",
     ),
 
