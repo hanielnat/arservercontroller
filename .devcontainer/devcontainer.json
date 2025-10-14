@@ -1,5 +1,5 @@
 {
-    "image": "mcr.microsoft.com/devcontainers/python:3.13",
+    "image": "mcr.microsoft.com/devcontainers/python:3.13-bookworm",
     "customizations": {
         "vscode": {
             "settings": {
@@ -17,14 +17,14 @@
         }
     },
     "features": {
-        "ghcr.io/devcontainers/features/node": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {
+            "azureDnsAutoDetection": true
+        },
+        "ghcr.io/devcontainers/features/node:1.6.3": {
             "version": "28.4.0"
         },
-        "ghcr.io/devcontainers-extra/features/bun": {},
-        "ghcr.io/devcontainers-extra/features/uv": {},
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {
-            "azureDnsAutoDetection": true
-        }
+        "ghcr.io/devcontainers-extra/features/uv:1.0.0": {},
+        "ghcr.io/devcontainers-extra/features/bun:1.0.0": {}
     },
     "containerEnv": {
         "UV_LINK_MODE": "copy"
