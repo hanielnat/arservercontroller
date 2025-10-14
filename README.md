@@ -35,6 +35,10 @@ Arma Reforger Dedicated Server container manager.
 [TODO] sincronizar HOST e PORT com as settings do app.\
 [TODO] abrir o app pelo uvicorn passando HOST e PORT.
 
+## `data/controller/ds_configs/base.json`
+
+[TODO] testar a conexão usando `bindAddress` com o IP da `bridge` network
+
 ## misc
 
 [TODO] resolver o problema do `fastapi` chamar funções do `ServerController` mais de uma vez por request.
