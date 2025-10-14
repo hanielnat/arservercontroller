@@ -18,4 +18,7 @@ backend/tasks.sh venv
 
 echo "Installing Python packages into the virtual environment..."
 backend/tasks.sh
+
+echo "Installing pnpm packages..."
+pnpm install -C frontend/
 echo "Dependency installation and venv creation complete."
