@@ -29,9 +29,29 @@
     "containerEnv": {
         "UV_LINK_MODE": "copy"
     },
+    "portsAttributes": {
+        "3000": {
+            "label": "Frontend",
+            "onAutoForward": "openPreview"
+        },
+        "8000": {
+            "label": "Backend",
+            "onAutoForward": "openBrowser"
+        }
+    },
     "forwardPorts": [
-        8000
+        8000,
+        2555
     ],
     "postCreateCommand": "chmod +x ./.devcontainer/install-dependencies.sh && ./.devcontainer/install-dependencies.sh",
-    "remoteUser": "vscode"
+    "remoteUser": "vscode",
+    "runArgs": [
+        "--privileged",
+        "-p",
+        "2555:2555/udp",
+        "-p",
+        "18989:18989/udp",
+        "-p",
+        "18787:18787/tcp"
+    ]
 }
