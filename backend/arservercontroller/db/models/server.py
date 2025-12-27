@@ -28,35 +28,31 @@ class Server(Base):
     created_at: Mapped[int]
     updated_at: Mapped[int]
 
-    data: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=True)
 
     @property
-    def server_config_data(self) -> Optional[ServerConfig]:
-        return ServerConfig.model_validate(self.data) if self.data else None
+    def server_config_data(self) -> ServerConfig:
+        return ServerConfig.model_validate(self.data)
 
     @server_config_data.setter
-    def server_config_data(
-        self, value: Optional[ServerConfig | dict[str, Any]]
-    ) -> None:
-        if value is None:
-            self.data = None
-        else:
-            # Make sure it validates
-            if isinstance(value, dict):
-                value = ServerConfig.model_validate(value)
+    def server_config_data(self, value: ServerConfig | dict[str, Any]) -> None:
+        if isinstance(value, dict):
+            value = ServerConfig.model_validate(value)
 
-            self.data = value.model_dump()
+        self.data = value.model_dump()
 
 
 @event.listens_for(Server, "before_insert")
-def _create_created_ts_event(
+def _set_created_timestamp_event(
     mapper: Mapper, connection: Connection, target: Server
 ) -> None:
-    target.created_at = int(datetime.datetime.now().timestamp())
+    now = int(datetime.datetime.now().timestamp())
+    target.created_at = now
+    target.updated_at = now
 
 
 @event.listens_for(Server, "before_update")
-def _create_updated_ts_event(
+def _set_updated_timestamp_event(
     mapper: Mapper, connection: Connection, target: Server
 ) -> None:
     target.updated_at = int(datetime.datetime.now().timestamp())

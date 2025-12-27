@@ -24,6 +24,7 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "pyjwt>=2.10.1",
     "python-multipart>=0.0.20",
+    "rich>=14.1.0",
     "sqlalchemy>=2.0.41",
 ]
 

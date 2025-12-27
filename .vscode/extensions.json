@@ -1,5 +1,8 @@
 {
     "recommendations": [
+        "Vue.volar",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
         "charliermarsh.ruff",
         "ms-azuretools.vscode-containers",
         "ms-python.python",

@@ -12,7 +12,10 @@
                 "ms-python.python",
                 "charliermarsh.ruff",
                 "tamasfe.even-better-toml",
-                "njpwerner.autodocstring"
+                "njpwerner.autodocstring",
+                "bradlc.vscode-tailwindcss",
+                "ms-python.mypy-type-checker",
+                "dbaeumer.vscode-eslint"
             ]
         }
     },

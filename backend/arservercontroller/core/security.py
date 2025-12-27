@@ -9,7 +9,7 @@ from arservercontroller.core.config import get_config
 ALGORITHM = "HS256"
 
 _settings = get_config()
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta) -> str:
@@ -20,8 +20,8 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return _pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    return _pwd_context.hash(password)
+    return pwd_context.hash(password)

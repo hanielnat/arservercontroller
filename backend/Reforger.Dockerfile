@@ -33,7 +33,7 @@ RUN ${STEAMCMD} \
     +app_update ${REFORGER_APPID} validate \
     +quit
 
-COPY entrypoint.sh update.sh healthcheck.sh data/controller /data/controller/
+COPY entrypoint.sh update.sh healthcheck.sh /data/controller/
 RUN chmod +x /data/controller/update.sh \
     && chmod +x /data/controller/entrypoint.sh
 

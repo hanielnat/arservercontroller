@@ -16,6 +16,19 @@
             "module": "arservercontroller.main"
         },
         {
+            "name": "Run with uvicorn",
+            "cwd": "${workspaceFolder}/backend/arservercontroller",
+            "type": "debugpy",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "python": "${command:python.interpreterPath}",
+            "module": "uvicorn",
+            "args": [
+                "arservercontroller.main:app",
+            ]
+        },
+        {
             "name": "Run with fastapi",
             "cwd": "${workspaceFolder}/backend/arservercontroller",
             "type": "debugpy",

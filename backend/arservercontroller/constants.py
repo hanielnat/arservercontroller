@@ -1,13 +1,25 @@
 from dataclasses import dataclass
 from enum import Flag, StrEnum, auto
+from ipaddress import IPv4Address
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, IPvAnyAddress
 
 import arservercontroller
 
 CONTAINER_NAME_PREFIX: str = "arserver_"
 SERVER_SCHEMA_VERSION: str = "0.0.1"
+
+BIND_IP_AUTOMATIC: IPvAnyAddress = IPv4Address("0.0.0.0")
+RCON_IP_AUTOMATIC: IPvAnyAddress = IPv4Address("0.0.0.0")
+DEFAULT_BIND_IP: IPvAnyAddress = IPv4Address("127.0.0.1")
+DEFAULT_RCON_IP: IPvAnyAddress = IPv4Address("127.0.0.1")
+DEFAULT_BIND_PORT: int = 2001
+DEFAULT_A2S_PORT: int = 1_9999
+DEFAULT_RCON_PORT: int = 1_7777
+PROTOCOL_BIND_PORT: str = "udp"
+PROTOCOL_A2S_PORT: str = "udp"
+PROTOCOL_RCON_PORT: str = "tcp"
 
 
 class BaseDirectories(BaseModel):

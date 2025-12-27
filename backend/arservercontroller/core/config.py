@@ -18,7 +18,6 @@ class BaseConfig(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     # Application Settings
-    APP_NAME: str = "arservercontroller"
     VERSION: str = "0.0.1"
     API_V1_STR: str = "/api/v1"
 

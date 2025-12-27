@@ -7,7 +7,7 @@ Arma Reforger Dedicated Server container manager.
 ## `api/v1/servers.py`
 
 [TODO] terminar os endpoints (start, stop e etc.).\
-[TODO] terminar de fazer o Dockerfile e scripts do servidor.
+~~[TODO] terminar de fazer o Dockerfile e scripts do servidor.~~
 
 ## `services/controller.py`
 
@@ -37,7 +37,12 @@ Arma Reforger Dedicated Server container manager.
 
 ## `data/controller/ds_configs/base.json`
 
-[TODO] testar a conexão usando `bindAddress` com o IP da `bridge` network
+[TODO] gerar esse arquivo de config automáticamente quando o app for aberto.\
+[TODO] testar a conexão usando `bindAddress` com o IP da `bridge` network.
+
+## `backend/alembic`
+
+[TODO] add script para dar upgrade automático da database quando o app for aberto.
 
 ## misc
 
