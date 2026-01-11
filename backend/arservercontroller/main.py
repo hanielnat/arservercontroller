@@ -59,7 +59,7 @@ def seed_database(db: Session):
         admin = User(
             email="admin@arservercontroller.com",
             name="Admin",
-            hashed_password=pwd_context.hash("root"),
+            hashed_password=pwd_context.hash("rootroot"),
             role=UserRoles.ADMIN,
         )
         db.add(admin)
@@ -88,8 +88,8 @@ def seed_database(db: Session):
             rcon_port=18787,
             status=ServerStatusEnum.CREATED,
             command_line="",
-            arserver_profile_path="/home/reforger",
-            arserver_config_path=f"/data/controller/ds_configs/{default_config_filename}.json",
+            arserver_profile_path="reforger",
+            arserver_config_path="",
         )
 
         server = Server(
@@ -97,6 +97,8 @@ def seed_database(db: Session):
             name="test-server",
             data=server_config.model_dump(),
         )
+
+        db.add(server)
 
         res, err = controller.add_server(server)
         if not res:
@@ -123,22 +125,23 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
 
     try:
-        from alembic import command
-        from alembic.config import Config
+        # from alembic import command
+        # from alembic.config import Config
 
-        root_dir = directory_manager.base_directories.ROOT_DIR
-        alembic_cfg = Config()
-        alembic_cfg.set_main_option("script_location", str(root_dir / "alembic"))
-        alembic_cfg.set_main_option("sqlalchemy.url", settings.DB_URL)
-        alembic_cfg.config_file_name = str(root_dir / "alembic.ini")
+        # root_dir = directory_manager.base_directories.ROOT_DIR
+        # alembic_cfg = Config()
+        # alembic_cfg.set_main_option("script_location", str(root_dir / "alembic"))
+        # alembic_cfg.set_main_option("sqlalchemy.url", settings.DB_URL)
+        # alembic_cfg.config_file_name = str(root_dir / "alembic.ini")
 
-        command.upgrade(alembic_cfg, "heads")
+        # command.upgrade(alembic_cfg, "heads")
         logger.info("Database migrations applied successfully.")
 
         from .db.session import SessionLocal
 
-        with SessionLocal() as db:
-            seed_database(db)
+        # FIXME: this does't work because of the db session
+        # with SessionLocal() as db:
+        #     seed_database(db)
 
         logger.info("Database seeding completed.")
     except Exception as e:

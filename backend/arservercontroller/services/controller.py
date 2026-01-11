@@ -1,4 +1,5 @@
 import socket
+from email import errors
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -88,30 +89,22 @@ class ServerControllerV2:
     def _make_container_name(self, server_name: str) -> str:
         return self._container_name_prefix + server_name
 
-    def _make_command_line(self, server_config: ServerConfig) -> list[str]:
+    def _make_command_line(
+        self,
+        profile_path: str,
+        config_path: str,
+        server_cmd_line: list[str] | str | None,
+    ) -> list[str]:
         command_line: list[str] = []
+
         command_line.append("-profile")
+        command_line.append(profile_path)
 
-        command_line.append(
-            server_config.arserver_profile_path
-            or str(
-                directory_manager.controller_directories.DS_PROFILES_DIR
-                / server_config.name
-            )
-        )
+        command_line.append("-config")
+        command_line.append(config_path)
 
-        command_line.append(
-            server_config.arserver_config_path
-            or str(
-                directory_manager.controller_directories.DS_CONFIGS_DIR
-                / f"{server_config.name}.json"
-            )
-        )
-
-        if server_config.command_line:
-            command_line.extend(
-                [cmd for cmd in server_config.command_line if cmd.startswith("-")]
-            )
+        if server_cmd_line:
+            command_line.extend([cmd for cmd in server_cmd_line if cmd.startswith("-")])
 
         return command_line
 
@@ -119,6 +112,36 @@ class ServerControllerV2:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind(("", 0))
             return s.getsockname()[1]
+
+    def _get_server_config_path(self, server_config: ServerConfig):
+        # handle test server config
+        testing_config = (
+            directory_manager.controller_directories.DS_CONFIGS_DIR / "base.json"
+        )
+        testing_config_exists = Path.exists(testing_config)
+
+        if server_config.name == "test-server" and testing_config_exists:
+            return str(
+                directory_manager.controller_directories.DS_CONFIGS_DIR / "base.json"
+            )
+        elif not testing_config_exists:
+            return ""
+
+        # default case
+        config = (
+            directory_manager.controller_directories.DS_CONFIGS_DIR
+            / f"{server_config.name}.json"
+        )
+        return (
+            server_config.arserver_config_path or str(config)
+            if Path.exists(config)
+            else ""
+        )
+
+    def _get_server_profile_path(self, server_config: ServerConfig):
+        profile_name = server_config.arserver_profile_path or server_config.name
+        profiles_dir = directory_manager.controller_directories.DS_PROFILES_DIR
+        return str(Path(profiles_dir / profile_name))
 
     def add_server(
         self,
@@ -128,8 +151,10 @@ class ServerControllerV2:
         *docker_args,
         **docker_kwargs,
     ) -> ControllerResult:
+        success: bool = True
+
         if not server.server_config_data:
-            return False, "Server config data is `None`"
+            return (not success, "Server config data is `None`")
 
         server_config = server.server_config_data
 
@@ -146,14 +171,11 @@ class ServerControllerV2:
                 f"{ports['rcon']}/{PROTOCOL_RCON_PORT}": DEFAULT_RCON_PORT,
             }
 
-        host_config_path = server_config.arserver_config_path or str(
-            directory_manager.controller_directories.DS_CONFIGS_DIR
-            / f"{server_config.name}.json"
-        )
-        host_profile_path = server_config.arserver_profile_path or str(
-            directory_manager.controller_directories.DS_PROFILES_DIR
-            / server_config.name
-        )
+        host_config_path = self._get_server_config_path(server_config)
+        if not host_config_path:
+            return (not success, "Server config file not found.")
+
+        host_profile_path = self._get_server_profile_path(server_config)
 
         container_directories = directory_manager.get_container_directories(
             server_config.name
@@ -184,7 +206,14 @@ class ServerControllerV2:
                 directory_manager.controller_directories.CONTROLLER_DIR / self.ARGS_FILE
             )
         )
-        command_line: str = " ".join(self._make_command_line(server_config))
+
+        command_line: str = " ".join(
+            self._make_command_line(
+                container_profile_path,
+                container_config_file,
+                server_config.command_line,
+            )
+        )
 
         with open(host_args_path, "w") as f:
             f.write(command_line)
@@ -197,7 +226,6 @@ class ServerControllerV2:
             "mode": "ro",
         }
 
-        success: bool = True
         container: Container | None = None
         try:
             create_kwargs = {
@@ -212,6 +240,19 @@ class ServerControllerV2:
                 create_kwargs["image"] = str(self.DEFAULT_CONTAINER_IMAGE_NAME)
 
             create_kwargs.update(docker_kwargs)
+
+            try:
+                _ = self._docker.images.get(self.DEFAULT_CONTAINER_IMAGE_NAME)
+
+            except docker.errors.ImageNotFound:
+                logger.info(
+                    "Server container image not found, pulling '%s'...",
+                    self.DEFAULT_CONTAINER_IMAGE_NAME,
+                )
+
+                (repo, tag) = self.DEFAULT_CONTAINER_IMAGE_NAME.split(":")
+                _ = self._docker.images.pull(repo, tag)
+                logger.info("Done")
 
             container = self._docker.containers.create(
                 *docker_args,
@@ -229,7 +270,7 @@ class ServerControllerV2:
                 update={"status": container.status, "container_id": container.id}
             )
 
-        except (docker.errors.ImageNotFound, docker.errors.APIError) as e:
+        except docker.errors.APIError as e:
             msg = "Erro ao criar container para o server '%s'" % server_config.id
             logger.error(msg)
             logger.exception(e)

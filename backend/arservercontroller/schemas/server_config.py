@@ -122,7 +122,7 @@ class ServerConfigUpdate(ServerConfigBase):
 
 class ServerConfig(ServerConfigBase):
     id: Annotated[UUID4, Field(default_factory=uuid.uuid4)]
-    container_id: Annotated[str, Field()]
+    container_id: Annotated[str, Field(default="")]
 
     @classmethod
     @field_validator("version")
