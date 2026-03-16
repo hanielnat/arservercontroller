@@ -1,10 +1,28 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router"
-import HomePage from "./views/HomePage.vue"
+import DashboardHome from "./components/DashboardHome.vue"
 import AboutPage from "./views/AboutPage.vue"
+import AddServerPage from "./views/AddServerPage.vue"
+import ListServerPage from "./views/ListServerPage.vue"
 import LoginPage from "./views/LoginPage.vue"
 import RegisterPage from "./views/RegisterPage.vue"
+import RemoveServerPage from "./views/RemoveServerPage.vue"
 
 const routes: RouteRecordRaw[] = [
+    {
+        path: "/server/add",
+        name: "Add server",
+        component: AddServerPage
+    },
+    {
+        path: "/server/remove",
+        name: "Remove server",
+        component: RemoveServerPage
+    },
+    {
+        path: "/server/list",
+        name: "List servers",
+        component: ListServerPage
+    },
     {
         path: "/login",
         name: "Login",
@@ -18,7 +36,7 @@ const routes: RouteRecordRaw[] = [
     {
         path: "/",
         name: "Home",
-        component: HomePage
+        component: DashboardHome
     },
     {
         path: "/about",

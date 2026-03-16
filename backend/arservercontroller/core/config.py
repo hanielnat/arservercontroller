@@ -56,7 +56,7 @@ class BaseConfig(BaseSettings):
     }
 
     # CORS
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = ["http://127.0.0.1:5173"]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
     CORS_ALLOW_CREDS: bool = False

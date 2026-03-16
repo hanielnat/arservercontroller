@@ -1,17 +1,17 @@
 <script lang="ts" setup>
+import { Form, FormField, FormSubmitEvent } from "@primevue/forms";
+import { zodResolver } from "@primevue/forms/resolvers/zod";
 import {
     Button,
-    InputText,
-    Password,
     Card,
     Checkbox,
+    InputText,
     // Toast,
     Message,
+    Password,
     useToast,
 } from "primevue";
-import { Form, FormField, FormSubmitEvent } from "@primevue/forms";
 import { ref } from "vue";
-import { zodResolver } from "@primevue/forms/resolvers/zod";
 import z from "zod";
 
 const toast = useToast()
@@ -27,10 +27,10 @@ const resolver = ref(
         })
     )
 )
-const onFormSubmit = (event: FormSubmitEvent) => 
+const onFormSubmit = (event: FormSubmitEvent) =>
 {
-    if (event.valid) 
-{
+    if (event.valid)
+    {
         toast.add({
             severity: "success",
             detail: "Logged in",
