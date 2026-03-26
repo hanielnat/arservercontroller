@@ -8,6 +8,18 @@
 		}
 	],
 	"settings": {
+		"basedpyright.analysis.useLibraryCodeForTypes": true,
+		"basedpyright.analysis.typeCheckingMode": "recommended",
+		"basedpyright.analysis.autoImportCompletions": true,
+		"basedpyright.analysis.configFilePath": "${workspaceFolder}/backend",
+		"basedpyright.analysis.stubPath": "${workspaceFolder}/backend/typings",
+		"basedpyright.disableOrganizeImports": true,
+		"basedpyright.analysis.ignore": [
+			"/usr/lib/python3.*/**",
+			"/usr/lib/python3.*/site-packages/**",
+			"/usr/local/lib/python3.*",
+			"/usr/local/lib/python3.*/**",
+		],
 		"python.testing.unittestEnabled": false,
 		"python.testing.pytestEnabled": true,
 		"python.analysis.generateWithTypeAnnotation": true,
@@ -24,6 +36,7 @@
 			"generateSymbol": true,
 			"implementAbstractClasses": true
 		},
+		"python.venvPath": "${workspaceFolder}/backend/.venv",
 		"python-envs.pythonProjects": [
 			{
 				"name": "arservercontroller",

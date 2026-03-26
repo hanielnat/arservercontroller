@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { ref } from "vue";
+
+const servers = ref([
+  { id: 1, name: "Server 1", status: "Online" },
+  { id: 2, name: "Server 2", status: "Offline" },
+]);
+
+function removeServer(id: number)
+{
+  servers.value = servers.value.filter(server => server.id !== id);
+}
+</script>
+
 <template>
   <div class="p-6">
     <header class="mb-6">
@@ -18,21 +32,3 @@
     </ul>
   </div>
 </template>
-
-<script setup>
-import { ref } from "vue";
-
-const servers = ref([
-  { id: 1, name: "Server 1", status: "Online" },
-  { id: 2, name: "Server 2", status: "Offline" },
-]);
-
-function removeServer(id) 
-{
-  servers.value = servers.value.filter(server => server.id !== id);
-}
-</script>
-
-<style scoped>
-/* Add any additional styles here */
-</style>

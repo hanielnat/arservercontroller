@@ -1,0 +1,8 @@
+{
+    "basedpyright.analysis.stubPath": "${workspaceFolder}/backend/typings",
+    "basedpyright.analysis.ignore": [
+        "backend/.venv",
+        "backend/venv",
+        "~/.local/share/uv/python/**"
+    ]
+}

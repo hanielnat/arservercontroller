@@ -1,6 +1,6 @@
 import datetime
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import JSON, UUID, Connection, String, event
 from sqlalchemy.orm import Mapped, Mapper, mapped_column
@@ -13,7 +13,7 @@ from arservercontroller.schemas.server_config import ServerConfig
 class Server(Base):
     __tablename__ = "servers"
 
-    id: Mapped[int] = mapped_column(
+    id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         unique=True,
@@ -43,16 +43,12 @@ class Server(Base):
 
 
 @event.listens_for(Server, "before_insert")
-def _set_created_timestamp_event(
-    mapper: Mapper, connection: Connection, target: Server
-) -> None:
+def _set_created_timestamp_event(mapper, connection, target: Server) -> None:
     now = int(datetime.datetime.now().timestamp())
     target.created_at = now
     target.updated_at = now
 
 
 @event.listens_for(Server, "before_update")
-def _set_updated_timestamp_event(
-    mapper: Mapper, connection: Connection, target: Server
-) -> None:
+def _set_updated_timestamp_event(mapper, connection, target: Server) -> None:
     target.updated_at = int(datetime.datetime.now().timestamp())

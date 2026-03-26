@@ -13,9 +13,14 @@ import {
 } from "primevue";
 import { ref } from "vue";
 import z from "zod";
+import ThemeToggler from "./ThemeToggler.vue";
+
+// const { isLoading, isAuthenticated, login, user } = useAuthStore()
 
 const toast = useToast()
+
 const rememberUser = ref(false)
+
 const resolver = ref(zodResolver(
     z.object({
         username: z.string()
@@ -30,10 +35,11 @@ const resolver = ref(zodResolver(
             .min(8, { error: "Password must have at least 8 characters." })
     })
 ))
-const onFormSubmit = (event: FormSubmitEvent) => 
+
+const onFormSubmit = (event: FormSubmitEvent) =>
 {
-    if (event.valid) 
-{
+    if (event.valid)
+    {
         toast.add({
             severity: "success",
             detail: "User registered",
@@ -50,7 +56,12 @@ const onFormSubmit = (event: FormSubmitEvent) =>
             </template>
 
             <template #title>
-                <h1 class="text-primary">Register</h1>
+                <div class="flex justify-between">
+
+                    <h1 class="text-primary">Register</h1>
+                    <ThemeToggler />
+
+                </div>
             </template>
 
             <template #content>

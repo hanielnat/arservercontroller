@@ -1,18 +1,15 @@
 import socket
-from email import errors
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Annotated
+from uuid import UUID
 
 import docker
 import docker.errors
 from docker.models.containers import Container
 from fastapi import Depends
 
-from arservercontroller.api.dependencies import (
-    Annotated,
-    DbSessionDep,
-    DockerClientDep,
-)
+from arservercontroller.api.dependencies import DbSessionDep, DockerClientDep
 from arservercontroller.constants import (
     CONTAINER_NAME_PREFIX,
     DEFAULT_A2S_PORT,
@@ -23,7 +20,14 @@ from arservercontroller.constants import (
     PROTOCOL_RCON_PORT,
     directory_manager,
 )
-from arservercontroller.db.models.server import Server, ServerConfig
+from arservercontroller.db.models.server import Server
+from arservercontroller.schemas.server_config import ServerConfig
+from arservercontroller.services.creation_manager import (
+    ServerCreationManagerDep,
+)
+from arservercontroller.services.docker import (
+    DockerContainerManagerDep,
+)
 from arservercontroller.services.logger import get_logger
 
 logger = get_logger(__name__)
@@ -37,34 +41,28 @@ class ServerControllerV2:
         self,
         db: DbSessionDep,
         docker_client: DockerClientDep,
-        container_name_prefix: str = CONTAINER_NAME_PREFIX,
+        docker_manager: DockerContainerManagerDep,
+        creation_manager: ServerCreationManagerDep,
     ) -> None:
         # constante temporária
         self.DEFAULT_CONTAINER_IMAGE_DIR: Path = (
             directory_manager.base_directories.ROOT_DIR / "Reforger.Dockerfile"
         )
-        self.DEFAULT_CONTAINER_IMAGE_NAME: str = "arserver:latest"
+        self.DEFAULT_CONTAINER_IMAGE_NAME: str = "arserver-mock:latest"
 
         self.ARGS_FILE_ENV: str = "ARGS_FILE"
         self.ARGS_FILE_PATH: str = "/data/controller"
         self.ARGS_FILE: str = "args.txt"
 
-        # self.REFORGER_ARGS: str = "REFORGER_ARGS"
-        # self.REFORGER_ENV: str = "REFORGER"
-        # self.REFORGER_PATH: str = "/reforger"
-        # self.REFORGER_BIN: str = f"{self.REFORGER_PATH}/ArmaReforgerServer"
-        # self.REFORGER_APPID: int = 1874900
-
-        # self.STEAMCMD_ENV: str = "STEAMCMD"
-        # self.STEAMCMD_PATH: str = "/steamcmd"
-        # self.STEAMCMD_FILE: str = f"{self.STEAMCMD_PATH}/steamcmd.sh"
-
         self._db = db
         self._docker = docker_client
-        self._container_name_prefix = container_name_prefix
+        self.docker_manager = docker_manager
+        self.creation_manager = creation_manager
+        self._container_name_prefix = "arserver_"
 
         try:
-            self._get_docker_version()
+            _ = self._ping()
+
         except docker.errors.APIError as e:
             logger.error(
                 "Erro ao inicializar o docker client.Operações com containers irão falhar a partir desse ponto."
@@ -75,16 +73,8 @@ class ServerControllerV2:
         self._db.commit()
         self._db.refresh(model)
 
-    def _get_docker_version(self) -> dict[str, Any]:
-        docker_version: dict[str, Any] = {}
-
-        try:
-            docker_version = self._docker.version()
-            logger.debug("Versão do docker obtida '%s'" % docker_version["Version"])
-        except docker.errors.APIError as e:
-            logger.exception(e)
-
-        return docker_version
+    def _ping(self) -> bool:
+        return self._docker.ping()
 
     def _make_container_name(self, server_name: str) -> str:
         return self._container_name_prefix + server_name
@@ -143,11 +133,48 @@ class ServerControllerV2:
         profiles_dir = directory_manager.controller_directories.DS_PROFILES_DIR
         return str(Path(profiles_dir / profile_name))
 
+    async def add_serverV2(
+        self,
+        server: Server,
+    ) -> ServerConfig:
+        if not server.server_config_data:
+            raise ValueError("Server config data is None")
+
+        config: ServerConfig = server.server_config_data
+
+        self._db.add(server)
+        self._db.commit()
+        self._db.refresh(server)
+
+        await self.creation_manager.start_creation(
+            server, config, self.DEFAULT_CONTAINER_IMAGE_NAME
+        )
+
+        logger.info(
+            "Server creation started for '%s' (id: '%s')", config.name, server.id
+        )
+
+        out_server = ServerConfig.model_validate(obj=server.server_config_data)
+
+        return out_server
+
+    async def cancel_creation(self, server_id: UUID) -> bool:
+        try:
+            cancelled = self.creation_manager.cancel_creation(server_id)
+            if cancelled:
+                logger.info("Creation cancelled for server id '%s'", server_id)
+
+        except Exception as err:
+            logger.exception(err)
+            return False
+
+        return cancelled
+
     def add_server(
         self,
         server: Server,
-        ports: Optional[PortMap] = None,
-        environ: Optional[dict[str, str]] = None,
+        ports: PortMap | None = None,
+        environ: dict[str, str] | None = None,
         *docker_args,
         **docker_kwargs,
     ) -> ControllerResult:
@@ -331,7 +358,6 @@ class ServerControllerV2:
         try:
             logger.info("Iniciando container do Server '%s'...", model.id)
             container.start()
-            container.wait()
             server_config = server_config.model_copy(
                 update={"status": container.status}
             )
@@ -398,9 +424,17 @@ class ServerControllerV2:
 
         try:
             logger.info("Reiniciando container do Server '%s'...", model.id)
-            self._update_status(model, container)
+
+            server_config = server_config.model_copy(
+                update={"status": container.status}
+            )
+
             container.restart()
-            self._update_status(model, container)
+
+            server_config = server_config.model_copy(
+                update={"status": container.status}
+            )
+
             logger.info("Container do Server '%s' reiniciado.", model.id)
         except (docker.errors.APIError, Exception) as e:
             logger.error("Erro ao reiniciar container '%s'" % container_id)
@@ -412,104 +446,10 @@ class ServerControllerV2:
 def get_server_controller(
     db: DbSessionDep,
     docker_client: DockerClientDep,
-    container_name_prefix: str = CONTAINER_NAME_PREFIX,
+    docker_manager: DockerContainerManagerDep,
+    creation_manager: ServerCreationManagerDep,
 ) -> ServerControllerV2:
-    return ServerControllerV2(db, docker_client, container_name_prefix)
+    return ServerControllerV2(db, docker_client, docker_manager, creation_manager)
 
 
 ServerControllerDep = Annotated[ServerControllerV2, Depends(get_server_controller)]
-
-
-# Refactored function definitions for separating DB/request logic from business logic
-
-
-# DB/Repository layer functions
-def _get_server_from_db(self, server_id: str) -> Server | None:
-    """Retrieve a server instance from the database."""
-    raise NotImplementedError
-
-
-def _update_server_config_in_db(self, server: Server, config_updates: dict) -> None:
-    """Update server configuration in the database."""
-    raise NotImplementedError
-
-
-def _commit_server_changes(self, server: Server) -> None:
-    """Commit server model changes to the database."""
-    raise NotImplementedError
-
-
-def _get_server_config_from_db(self, server_id: str) -> ServerConfig | None:
-    """Retrieve server configuration from the database."""
-    raise NotImplementedError
-
-
-# Business logic layer functions
-def _create_docker_container(
-    self,
-    server_config: ServerConfig,
-    ports: PortMap,
-    volumes: dict,
-    environ: dict | None = None,
-    **docker_kwargs,
-) -> Container:
-    """Create a Docker container for the server."""
-    raise NotImplementedError
-
-
-def _start_docker_container(self, container_id: str) -> bool:
-    """Start a Docker container."""
-    raise NotImplementedError
-
-
-def _stop_docker_container(self, container_id: str) -> bool:
-    """Stop a Docker container."""
-    raise NotImplementedError
-
-
-def _restart_docker_container(self, container_id: str) -> bool:
-    """Restart a Docker container."""
-    raise NotImplementedError
-
-
-def _remove_docker_container(self, container_id: str, force: bool = False) -> bool:
-    """Remove a Docker container."""
-    raise NotImplementedError
-
-
-def _get_container_status(self, container_id: str) -> str:
-    """Get the status of a Docker container."""
-    raise NotImplementedError
-
-
-def _generate_container_volumes(self, server_config: ServerConfig) -> dict:
-    """Generate volume mappings for the container."""
-    raise NotImplementedError
-
-
-def _generate_container_ports(
-    self, server_config: ServerConfig, ports: PortMap | None = None
-) -> dict:
-    """Generate port bindings for the container."""
-    raise NotImplementedError
-
-
-def _generate_command_line_args(self, server_config: ServerConfig) -> list[str]:
-    """Generate command line arguments for the server."""
-    raise NotImplementedError
-
-
-def _cleanup_server_resources(self, volumes: dict, args_file_path: Path) -> None:
-    """Clean up server resources (volumes, temp files, etc.)."""
-    raise NotImplementedError
-
-
-# Request/API layer functions (if needed for external calls)
-def _validate_server_access(self, server: Server, user_role: str, action: str) -> bool:
-    """Validate user access for server operations."""
-    raise NotImplementedError
-
-
-def _log_server_operation(self, server_id: str, operation: str, status: str) -> None:
-    """Log server operations."""
-    raise NotImplementedError

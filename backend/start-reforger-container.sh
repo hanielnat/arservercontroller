@@ -2,6 +2,7 @@
 
 set -ux
 
+TESTSERVER_IMAGE_NAME="arserver-mock:latest"
 TESTSERVER_CONTAINER_NAME="reforger_testserver"
 TESTSERVER_BIND_PORT="2555"
 TESTSERVER_A2S_PORT="18989"
@@ -21,7 +22,7 @@ docker run \
     --name $TESTSERVER_CONTAINER_NAME \
     -p "$TESTSERVER_BIND_PORT:$TESTSERVER_BIND_PORT/udp" \
     -p "$TESTSERVER_A2S_PORT:$TESTSERVER_A2S_PORT/udp" \
-    arserver:latest \
+    $TESTSERVER_IMAGE_NAME \
     bash
 
 exit $?

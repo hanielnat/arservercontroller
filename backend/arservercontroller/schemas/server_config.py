@@ -1,6 +1,6 @@
 import uuid
 from ipaddress import IPv4Address
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import (
     UUID4,
@@ -38,17 +38,17 @@ class ServerConfigBase(BaseModel):
     ]
 
     bind_address: Annotated[
-        Optional[IPvAnyAddress],
+        IPvAnyAddress | None,
         Field(IPv4Address("0.0.0.0"))
     ]
 
     a2s_port: Annotated[
-        Optional[int],
+        int | None,
         Field(17777, gt=_PORT_MIN, lt=_PORT_MAX)
     ]
 
     rcon_port: Annotated[
-        Optional[int],
+        int | None,
         Field(19999, gt=_PORT_MIN, lt=_PORT_MAX)
     ]
 
@@ -58,17 +58,27 @@ class ServerConfigBase(BaseModel):
     ]
 
     command_line: Annotated[
-        Optional[list[str] | str],
+        list[str] | str | None,
+        Field(None)
+    ]
+
+    environment: Annotated[
+        dict[str, str] | list[str] | None,
+        Field(None)
+    ]
+
+    extra_ports: Annotated[
+        list[tuple[str, int]] | None,
         Field(None)
     ]
 
     arserver_profile_path: Annotated[
-        Optional[str],
+        str | None,
         Field(None)
     ]
 
     arserver_config_path: Annotated[
-        Optional[str],
+        str | None,
         Field(None)
     ]
     # fmt: on
@@ -84,37 +94,37 @@ class ServerConfigCreate(ServerConfigBase):
 class ServerConfigUpdate(ServerConfigBase):
     # fmt: off
     container_id: Annotated[
-        Optional[str],
+        str | None,
         Field(None)
     ] = None
 
     name: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
-        Optional[str],
+        str | None,
         Field(None, min_length=4, max_length=20)
     ] = None
 
     bind_port: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
-        Optional[int],
+        int | None,
         Field(None, gt=_PORT_MIN, lt=_PORT_MAX)
     ] = None
 
     bind_address: Annotated[
-        Optional[IPvAnyAddress],
+        IPvAnyAddress | None,
         Field(None)
     ] = None
 
     a2s_port: Annotated[
-        Optional[int],
+        int | None,
         Field(None, gt=_PORT_MIN, lt=_PORT_MAX)
     ] = None
 
     rcon_port: Annotated[
-        Optional[int],
+        int | None,
         Field(None, gt=_PORT_MIN, lt=_PORT_MAX)
     ] = None
 
     status: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
-        Optional[ServerStatusEnum],
+        ServerStatusEnum | None,
         Field(None, exclude=True, validate_default=True)
     ] = None
     # fmt: on
@@ -136,7 +146,7 @@ class ServerConfig(ServerConfigBase):
         return v
 
     @field_serializer("bind_address")
-    def serialize_bind_address_maybe(self, v: IPvAnyAddress) -> Optional[str]:
+    def serialize_bind_address_maybe(self, v: IPvAnyAddress) -> str | None:
         return str(v) if v else None
 
     @field_serializer("id")

@@ -9,7 +9,8 @@ from arservercontroller.schemas.server_config import (
     ServerConfigUpdate,
 )
 from arservercontroller.services.controller import ServerControllerDep
-from fastapi import APIRouter, HTTPException, status
+from arservercontroller.services.creation_manager import ServerCreationManagerDep
+from fastapi import APIRouter, HTTPException, WebSocket, status
 from pydantic import UUID4
 
 server_router = APIRouter(prefix="/servers", tags=["server"])
@@ -33,9 +34,7 @@ async def get_servers(db: DbSessionDep, offset: int = 0, limit: int = 10) -> Ser
 @server_router.post("/")
 async def add_server(
     server_config: ServerConfigCreate,
-    db: DbSessionDep,
     server_controller: ServerControllerDep,
-    # _: ModeratorOrAdminDep,
 ) -> ServerConfig:
     server_id = uuid.uuid4()
 
@@ -46,18 +45,50 @@ async def add_server(
     out_db = Server(id=server_id, name=server_config.name)
     out_db.server_config_data = server_config_data
 
-    result, err = server_controller.add_server(out_db)
-    if not result:
+    try:
+        config = await server_controller.add_serverV2(out_db)
+
+    except Exception as err:
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "%s" % err,
+            f"Failed to start server creation: {str(err)}",
         )
 
-    db.add(out_db)
-    db.commit()
-    db.refresh(out_db)
+    return config
 
-    return ServerConfig.model_validate(out_db.server_config_data)
+
+@server_router.post("/{server_id}/cancel")
+async def cancel_server_creation(
+    server_id: UUID4,
+    server_controller: ServerControllerDep,
+) -> dict[str, bool]:
+    cancelled = await server_controller.cancel_creation(server_id)
+    if not cancelled:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "No active creation task found for this server",
+        )
+
+    return {"cancelled": True}
+
+
+@server_router.websocket("/ws/{server_id}/creation")
+async def websocket_server_creation_logs(
+    websocket: WebSocket,
+    server_id: UUID4,
+    creation_manager: ServerCreationManagerDep,
+) -> None:
+    await websocket.accept()
+
+    try:
+        await creation_manager.stream_logs(server_id, websocket)
+
+    except Exception:
+        # client disconnect is normal
+        pass
+
+    finally:
+        await websocket.close()
 
 
 @server_router.patch("/{server_id}")
@@ -65,7 +96,6 @@ async def update_server(
     server_id: UUID4,
     new_server: ServerConfigUpdate,
     db: DbSessionDep,
-    _: ModeratorOrAdminDep,
 ) -> ServerOut:
     model = find_server_by_id(server_id, db)
 
@@ -82,9 +112,17 @@ async def update_server(
 
 @server_router.delete("/{server_id}")
 async def delete_server(
-    server_id: UUID4, db: DbSessionDep, _: ModeratorOrAdminDep
+    server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
 ) -> None:
     model = find_server_by_id(server_id, db)
+
+    result = server_controller.remove_server(model.server_config_data)
+    if not result:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "Failed to delete server",
+        )
+
     db.delete(model)
     db.commit()
 
@@ -94,7 +132,6 @@ async def start_server(
     server_id: UUID4,
     db: DbSessionDep,
     server_controller: ServerControllerDep,
-    # _: ModeratorOrAdminDep
 ) -> None:
     model = find_server_by_id(server_id, db)
 

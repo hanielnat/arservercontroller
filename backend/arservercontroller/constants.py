@@ -138,7 +138,7 @@ class DirectoryManager:
         return ContainerDirectories.create(server_name)
 
 
-directory_manager = DirectoryManager()
+directory_manager: DirectoryManager = DirectoryManager()
 
 
 class ServerStatusEnum(StrEnum):
