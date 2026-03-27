@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Generic, TypeVar
 
@@ -96,10 +98,11 @@ class Result(ABC, Generic[_T, _E]):
 class Ok(Result[_T, _E]):
     """Represents a successful Result with a value."""
 
-    __match_args__: tuple = ("_value",)
+    __slots__ = "_value"  # pyright: ignore[reportUnannotatedClassAttribute]
+    __match_args__ = ("_value",)  # pyright: ignore[reportUnannotatedClassAttribute]
 
     def __init__(self, value: _T) -> None:
-        self._value = value
+        self._value: _T = value
 
     def is_ok(self) -> bool:
         return True
@@ -149,7 +152,8 @@ class Ok(Result[_T, _E]):
 class Err(Result[_T, _E]):
     """Represents a failed Result with an error."""
 
-    __match_args__: tuple = ("_error",)
+    __slots__ = "_error"
+    __match_args__ = ("_error",)
 
     def __init__(self, error: _E) -> None:
         self._error = error
@@ -214,8 +218,8 @@ class Err(Result[_T, _E]):
 
 def do_something(data: str) -> Result[str, Exception]:
     if not data:
-        return Result.fail(RuntimeError("data must not be empty"))
-    return Result.success(data + " test")
+        return Err(RuntimeError("data must not be empty"))
+    return Ok(data + " test")
 
 
 if __name__ == "__main__":
@@ -256,3 +260,13 @@ if __name__ == "__main__":
             print(f"Got value: {value}")
         case Err(_error=error):
             print(f"Got error: {error}")
+        case _:
+            pass
+
+    match _res2:
+        case Ok(_value=value):
+            print(f"Got value: {value}")
+        case Err(_error=error):
+            print(f"Got error: {error}")
+        case _:
+            pass
