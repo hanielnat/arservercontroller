@@ -1,8 +1,12 @@
 {
-    "basedpyright.analysis.stubPath": "${workspaceFolder}/backend/typings",
     "basedpyright.analysis.ignore": [
         "backend/.venv",
         "backend/venv",
         "~/.local/share/uv/python/**"
-    ]
+    ],
+    "python.testing.pytestArgs": [
+        "backend"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }
