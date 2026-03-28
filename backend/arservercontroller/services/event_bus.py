@@ -42,19 +42,22 @@ class ServerEventBus:
                 pass
 
 
+event_bus: ServerEventBus = ServerEventBus()
+
+
 def get_event_bus() -> ServerEventBus:
-    return ServerEventBus()
+    return event_bus
 
 
 ServerEventBusDep = Annotated[ServerEventBus, Depends(get_event_bus)]
 
 
 async def _main() -> None:
-    async def test(data: EventData) -> None:
+    async def test_handler(data: EventData) -> None:
         print(data)
 
     event_bus = get_event_bus()
-    event_bus.subscribe("on_test", test)
+    event_bus.subscribe("on_test", test_handler)
 
     async def test_emitter() -> None:
         await event_bus.emit("on_test", {"test": "emitter"})
