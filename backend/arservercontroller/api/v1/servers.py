@@ -106,7 +106,6 @@ async def update_server(
 
     db.commit()
     db.refresh(model)
-
     return ServerOut.model_validate(model)
 
 
@@ -127,7 +126,7 @@ async def delete_server(
     db.commit()
 
 
-@server_router.post("/{server_id}")
+@server_router.post("/{server_id}/start")
 async def start_server(
     server_id: UUID4,
     db: DbSessionDep,
@@ -138,3 +137,14 @@ async def start_server(
     result, err = server_controller.start(model)
     if not result:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "%s" % err)
+
+
+@server_router.post("/{server_id}/stop")
+async def stop_server(
+    server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
+) -> None:
+    model = find_server_by_id(server_id, db)
+    result = server_controller.stop(model)
+
+    if not result:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)

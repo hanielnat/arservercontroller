@@ -369,12 +369,12 @@ class ServerControllerV2:
             return False, f"{msg}: {e}"
         return True, ""
 
-    def stop(self, model: Server) -> bool:
-        server_config = model.server_config_data
+    def stop(self, server: Server) -> bool:
+        server_config = server.server_config_data
         if not server_config:
             logger.error(
                 "Server '%s' não tem uma instancia de 'ServerConfig', é 'None'."
-                % model.id
+                % server.id
             )
             return False
 
@@ -385,20 +385,27 @@ class ServerControllerV2:
             container = None
             logger.error(
                 "Container '%s' não encontrado. Certifique-se de que o servidor foi criado corretamente."
-                % model.id,
+                % server.id,
             )
             logger.exception(e)
             return False
 
         try:
-            logger.info("Parando container do Server '%s'...", model.id)
+            logger.info("Parando container do Server '%s'...", server.id)
+
             container.stop()
-            self._update_status(model, container)
-            logger.info("Container do Server '%s' parado.", model.id)
+            server.server_config_data = server.server_config_data.model_copy(
+                update={"status": container.status}
+            )
+
+            logger.info("Container do Server '%s' parado.", server.id)
+
         except (docker.errors.APIError, Exception) as e:
             logger.error("Erro ao parar container '%s'" % container_id)
             logger.exception(e)
+
             return False
+
         return True
 
     def restart(self, model: Server) -> bool:
