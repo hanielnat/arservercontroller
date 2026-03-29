@@ -24,7 +24,8 @@ interface AuthResponse {
     user: User
 }
 
-export const useAuthStore = defineStore("auth", () => {
+export const useAuthStore = defineStore("auth", () =>
+{
     const toast = useToast()
 
     const user = ref<User | null>(null)
@@ -37,7 +38,8 @@ export const useAuthStore = defineStore("auth", () => {
     const isAdmin = computed(() => user.value?.role === "admin")
     const isModerator = computed(() => ["admin", "moderator"].includes(user.value?.role ?? ""))
 
-    function setAuth(data: AuthResponse) {
+    function setAuth(data: AuthResponse)
+    {
         token.value = data.access_token
         user.value = data.user
 
@@ -45,34 +47,41 @@ export const useAuthStore = defineStore("auth", () => {
         localStorage.setItem("arserver_user", JSON.stringify(data.user))
     }
 
-    function clearAuth() {
+    function clearAuth()
+    {
         token.value = null
         user.value = null
         localStorage.removeItem("arserver_token")
         localStorage.removeItem("arserver_user")
     }
 
-    function loadStoredAuth() {
+    function loadStoredAuth()
+    {
         const storedToken = localStorage.getItem("arserver_token")
         const storedUser = localStorage.getItem("arserver_user")
 
-        if (storedToken && storedUser) {
-            try {
+        if (storedToken && storedUser)
+        {
+            try
+            {
                 token.value = storedToken
                 user.value = JSON.parse(storedUser)
             }
-            catch (err) {
+            catch (err)
+            {
                 console.warn("Invalid stored auth data → clearing")
                 clearAuth()
             }
         }
     }
 
-    async function login(credentials: LoginCredentials, router: Router) {
+    async function login(credentials: LoginCredentials, router: Router)
+    {
         isLoading.value = true
         error.value = null
 
-        try {
+        try
+        {
             const res = await axios.post<AuthResponse>(
                 "/api/v1/login",
                 credentials
@@ -89,7 +98,8 @@ export const useAuthStore = defineStore("auth", () => {
 
             await router.push("/")
         }
-        catch (err: any) {
+        catch (err: any)
+        {
             error.value = err.response?.data?.detail ?? "Login failed"
             toast.add({
                 severity: "error",
@@ -100,17 +110,21 @@ export const useAuthStore = defineStore("auth", () => {
 
             throw err
         }
-        finally {
+        finally
+        {
             isLoading.value = false
         }
     }
 
-    async function logout(router: Router) {
-        try {
+    async function logout(router: Router)
+    {
+        try
+        {
             // Optional: call logout endpoint if your backend invalidates tokens
             // await axios.post("/api/v1/auth/logout")
         }
-        catch {
+        catch
+        {
         }
 
         clearAuth()
@@ -125,11 +139,13 @@ export const useAuthStore = defineStore("auth", () => {
         await router.push("/login")
     }
 
-    async function fetchCurrentUser() {
+    async function fetchCurrentUser()
+    {
         if (!token.value)
             return
 
-        try {
+        try
+        {
             const res = await axios.get<User>("/api/v1/users/me", {
                 headers: { Authorization: `Bearer ${token.value}` }
             })
@@ -137,7 +153,8 @@ export const useAuthStore = defineStore("auth", () => {
             user.value = res.data
             localStorage.setItem("arserver_user", JSON.stringify(res.data))
         }
-        catch (err) {
+        catch (err)
+        {
             console.warn("Failed to refresh user → logging out")
             await logout(useRouter())
         }
@@ -146,7 +163,8 @@ export const useAuthStore = defineStore("auth", () => {
     loadStoredAuth()
 
     // Auto-refresh user data when token exists but user is missing
-    if (token.value && !user.value) {
+    if (token.value && !user.value)
+    {
         fetchCurrentUser()
     }
 

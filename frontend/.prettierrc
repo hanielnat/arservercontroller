@@ -1,0 +1,20 @@
+{
+    "plugins": [
+        "prettier-plugin-brace-style"
+    ],
+    "braceStyle": "allman",
+    "semi": false,
+    "tabWidth": 4,
+    "quoteProps": "preserve",
+    "overrides": [
+        {
+            "files": [
+                "*.md",
+                "*.mdx"
+            ],
+            "options": {
+                "plugins": []
+            }
+        }
+    ]
+}

@@ -1,8 +1,9 @@
 import js from "@eslint/js"
-import globals from "globals"
 import tseslint from "@typescript-eslint/eslint-plugin"
 import tsparser from "@typescript-eslint/parser"
+import "eslint-plugin-only-warn"
 import vue from "eslint-plugin-vue"
+import globals from "globals"
 
 export default [
     {

@@ -1,6 +1,6 @@
 <script lang="ts">
-import { Button } from 'primevue';
-import { useTheme } from '../stores/useTheme';
+import { Button } from "primevue";
+import { useTheme } from "../stores/useTheme";
 
 const { isDark, toggleTheme } = useTheme()
 </script>

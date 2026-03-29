@@ -60,8 +60,8 @@ const routes: RouteRecordRaw[] = [
     },
     // on 404
     {
-        path: '/:pathMatch(.*)*',
-        redirect: '/'
+        path: "/:pathMatch(.*)*",
+        redirect: "/"
     }
 ]
 
@@ -70,16 +70,19 @@ const router = createRouter({
     routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from, next) => 
+{
     const auth = useAuthStore()
 
-    if (to.meta.requiresAuth && !auth.isAuthenticated) {
-        next({ name: 'login', query: { redirect: to.fullPath } })
+    if (to.meta.requiresAuth && !auth.isAuthenticated) 
+    {
+        next({ name: "login", query: { redirect: to.fullPath } })
         return
     }
 
-    if (to.meta.requiresGuest && auth.isAuthenticated) {
-        const redirect = to.query.redirect as string || '/'
+    if (to.meta.requiresGuest && auth.isAuthenticated) 
+    {
+        const redirect = to.query.redirect as string || "/"
         next(redirect)
         return
     }
