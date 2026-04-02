@@ -1,6 +1,6 @@
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated
 
 import anyio
 import docker
@@ -14,7 +14,7 @@ from fastapi import Depends
 
 from arservercontroller.api.dependencies import DockerClientDep
 from arservercontroller.schemas.server_config import ServerConfig
-from arservercontroller.services.event_bus import EventData, event_bus
+from arservercontroller.services.event_bus import event_bus
 from arservercontroller.services.logger import get_logger
 from arservercontroller.utils.directories import directory_manager
 from arservercontroller.utils.errors import Err, Ok, Result
@@ -67,9 +67,9 @@ class DockerContainerManager:
         config_host_base = Path(
             directory_manager.controller_directories.DS_CONFIGS_DIR / "base.json"
         )
+
         if config.name == "test-server":
             config_host = str(config_host_base)
-
         else:
             config_host_exists = Path(config_host).exists()
             if not config_host_exists:
@@ -82,6 +82,8 @@ class DockerContainerManager:
             profile_host: {"bind": f"/home/{config.name}", "mode": "rw"},
             config_host: {"bind": f"/home/{config.name}/config.json", "mode": "ro"},
         }
+
+        labels: dict[str, str] = {"com.arservercontroller": "true"}
 
         await on_progress(
             {
@@ -97,8 +99,9 @@ class DockerContainerManager:
                 name=name,
                 ports=port_bindings,
                 volumes=volumes,
+                labels=labels,
                 detach=True,
-                environment={},
+                environment=config.environment or {},
                 command=config.command_line or [],
             )
 
