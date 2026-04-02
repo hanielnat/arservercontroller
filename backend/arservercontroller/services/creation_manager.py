@@ -1,10 +1,8 @@
 import asyncio
-import functools
 from asyncio import CancelledError, Queue, Task
-from typing import Annotated, cast
+from typing import Annotated
 from uuid import UUID
 
-import anyio
 from docker.models.containers import Container
 from fastapi import Depends, WebSocket
 
@@ -18,9 +16,8 @@ from arservercontroller.services.docker import (
     OnProgressCb,
     ProgressData,
 )
-from arservercontroller.services.event_bus import EventData, event_bus
+from arservercontroller.services.event_bus import event_bus
 from arservercontroller.services.logger import get_logger
-from arservercontroller.utils.errors import Result
 
 logger = get_logger(__name__)
 
@@ -202,24 +199,15 @@ class ServerCreationManager:
     async def stream_logs(self, server_id: UUID, websocket: WebSocket) -> None:
         """Stream logs to WebSocket until queue is closed or client disconnects."""
         queue = self.get_or_create_queue(server_id)
-        send_stream, read_stream = anyio.create_memory_object_stream[ProgressData]()
 
         try:
-            while not queue.empty():
+            while True:
                 msg = await queue.get()
+                await websocket.send_json(msg)
                 if msg.get("final"):
                     break
 
-                await send_stream.send(await queue.get())
-
-            async for msg in read_stream:
-                await websocket.send_json(msg)
-
         except Exception:
-            pass
-
-        finally:
-            # TODO: cleanup queue
             pass
 
 
