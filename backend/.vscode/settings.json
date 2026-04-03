@@ -1,0 +1,56 @@
+{
+    "python.venvPath": "./.venv",
+    "basedpyright.analysis.useLibraryCodeForTypes": true,
+    "basedpyright.analysis.typeCheckingMode": "recommended",
+    "basedpyright.analysis.autoImportCompletions": true,
+    "basedpyright.analysis.configFilePath": ".",
+    "basedpyright.disableOrganizeImports": true,
+    "basedpyright.analysis.ignore": [
+        "/usr/lib/python3.*/**",
+        "/usr/lib/python3.*/site-packages/**",
+        "/usr/local/lib/python3.*",
+        "/usr/local/lib/python3.*/**",
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.analysis.generateWithTypeAnnotation": true,
+    "python.analysis.useLibraryCodeForTypes": true,
+    "python.analysis.typeCheckingMode": "standard",
+    "python.analysis.languageServerMode": "full",
+    "python.analysis.autoImportCompletions": true,
+    "python.createEnvironment.contentButton": "show",
+    "python.analysis.autoFormatStrings": true,
+    "python.analysis.addHoverSummaries": true,
+    "python.analysis.supportDocstringTemplate": true,
+    "python.analysis.aiCodeActions": {
+        "generateDocstring": true,
+        "generateSymbol": true,
+        "implementAbstractClasses": true
+    },
+    "python.analysis.ignore": [
+        "**/venv",
+        "**/.venv",
+        "/usr/lib/python3.*/**",
+        "/usr/lib/python3.*/site-packages/**",
+        "/usr/local/lib/python3.*",
+        "/usr/local/lib/python3.*/**",
+    ],
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./backend/tests",
+        "test_*.py"
+    ],
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    "[python]": {
+        "diffEditor.ignoreTrimWhitespace": false,
+        "editor.defaultColorDecorators": "auto",
+        "editor.formatOnType": true,
+        "editor.wordBasedSuggestions": "currentDocument",
+        "editor.defaultFormatter": "charliermarsh.ruff",
+    },
+    "explorer.fileNesting.patterns": {
+        "Reforger.Dockerfile": "build-image.sh, entrypoint.sh, update.sh, healthcheck.sh",
+        "pyproject.toml": "*.md, uv.lock, .python-version, alembic.ini, .*ignore"
+    },
+}
