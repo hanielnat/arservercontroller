@@ -1,182 +1,455 @@
 <script lang="ts" setup>
-import { Button, Card, InputNumber, InputText, ProgressBar } from "primevue";
-import { onUnmounted, ref } from "vue";
-import { addServer } from "../services/serverService";
+import { Form, FormField, FormSubmitEvent } from "@primevue/forms"
+import { zodResolver } from "@primevue/forms/resolvers/zod"
+import { useFetch } from "@vueuse/core"
+import { Button, InputText } from "primevue"
+import { onUnmounted, reactive, ref, shallowRef } from "vue"
+import * as z from "zod"
+import ServerCreationLogs from "../components/ServerCreationLogs.vue"
+import { useApi } from "../composables/useApi"
 
-const serverName = ref("");
-const bindPort = ref(2001);
-const bindAddress = ref("0.0.0.0");
-const a2sPort = ref(17777);
-const rconPort = ref(19999);
-const commandLine = ref("");
+const _PORT_MAX = 65535
+const _PORT_MIN = 0
+const _NULL_UUID = "00000000-0000-0000-0000-000000000000"
 
-const currentStage = ref(0); // 0: Configuration, 1: Status, 2: Done
-const logs = ref<string[]>([]);
-const creationProgress = ref(0);
-let logInterval: any = null;
+const serverConfigCreateSchema = z.object({
+    serverName: z.string(),
+    bindPort: z.int().gt(_PORT_MIN).lt(_PORT_MAX),
+    bindAddress: z.ipv4().default("0.0.0.0"),
+    a2sPort: z.nullable(z.int().gt(_PORT_MIN).lt(_PORT_MAX)),
+    rconPort: z.nullable(z.int().gt(_PORT_MIN).lt(_PORT_MAX)),
+    commandLine: z.nullable(z.string()),
+    environment: z.nullable(z.array(z.tuple([z.string(), z.string()]))),
+    extraPorts: z.nullable(z.array(z.tuple([z.string(), z.int()]))),
+})
 
+const serverConfigSchema = serverConfigCreateSchema.extend({
+    id: z.uuidv4(),
+    containerId: z.string(),
+})
+
+type ServerConfigCreate = z.infer<typeof serverConfigCreateSchema>
+type ServerConfig = z.infer<typeof serverConfigSchema>
+
+const defaultCreatedConfig: ServerConfigCreate = {
+    serverName: "test-server",
+    bindPort: 2001,
+    bindAddress: "0.0.0.0",
+    a2sPort: 17777,
+    rconPort: 19999,
+    commandLine: "-logLevel spam",
+    environment: [["KEY", "VALUE"]],
+    extraPorts: [["1234/tcp", 1234]],
+}
+
+const defaultConfig: ServerConfig = {
+    ...defaultCreatedConfig,
+    id: _NULL_UUID,
+    containerId: _NULL_UUID,
+}
+
+enum ServerCreationStage
+{
+    NONE,
+    DONE,
+    PREPARE,
+    IMAGE_PUSH,
+    CREATE_CONTAINER,
+}
+
+const { apiUrl } = useApi()
+const resolver = ref(zodResolver(serverConfigCreateSchema))
+const configInput = reactive(defaultConfig)
+const currentStage = shallowRef(ServerCreationStage.NONE)
+const logs = ref<string[]>([])
+const creationProgress = shallowRef(0)
+const currentServerId = shallowRef<string | null>(_NULL_UUID)
+const configResult = ref<ServerConfig | null>(configInput)
+
+// async function submitForm(event: FormSubmitEvent)
 async function submitForm()
 {
-  currentStage.value = 1;
-  logs.value = ["Initializing server creation...", "Validating configuration..."];
-  creationProgress.value = 10;
+    // console.log(event.values as ServerConfig)
+    console.log("submitForm()")
+    return
 
-  try
-  {
-    const serverConfig = {
-      name: serverName.value,
-      bind_port: bindPort.value,
-      bind_address: bindAddress.value,
-      a2s_port: a2sPort.value,
-      rcon_port: rconPort.value,
-      command_line: commandLine.value || null,
-    };
+    currentStage.value = ServerCreationStage.PREPARE
+    creationProgress.value = 10
 
-    const response = await addServer(serverConfig);
-    logs.value.push("Server creation request sent to backend.");
+    console.log(configInput.serverName)
 
-    // Simulate backend logs
-    const simulatedLogs = [
-      "Downloading server binaries...",
-      "Configuring network rules...",
-      "Setting up RCON interface...",
-      "Starting server instance...",
-      "Waiting for health check...",
-      "Server is now online!"
-    ];
+    const { data, error, response } = useFetch(apiUrl("/servers"), {
+        method: "POST",
+    })
+        .post(JSON.stringify(configInput))
+        .json<ServerConfig>()
 
-    let logIndex = 0;
-    logInterval = setInterval(() =>
+    if (error.value)
     {
-      if (logIndex < simulatedLogs.length)
-      {
-        logs.value.push(simulatedLogs[logIndex]);
-        creationProgress.value += 15;
-        logIndex++;
-      }
-      else
-      {
-        clearInterval(logInterval);
-        creationProgress.value = 100;
-        setTimeout(() => currentStage.value = 2, 1000);
-      }
-    }, 1000);
-  }
-  catch (error)
-  {
-    logs.value.push("Error: Failed to create server.");
-    console.error(error);
-    currentStage.value = 0;
-  }
+        logs.value.push("Error creating server")
+        console.error(error.value)
+        currentStage.value = ServerCreationStage.NONE
+        return
+    }
+
+    console.debug(
+        "Server creation request sent to backend, response:",
+        response.value?.json,
+    )
+
+    currentServerId.value = data.value?.id ?? _NULL_UUID
+    configResult.value = data.value
 }
 
 onUnmounted(() =>
-{
-  if (logInterval)
-    clearInterval(logInterval);
-});
+{})
 </script>
 
 <template>
-  <div class="flex-1 p-3 overflow-x-hidden">
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <Card class="p-6" :class="{ 'opacity-50 pointer-events-none': currentStage !== 0 }">
-        <template #title>
-          <h2 class="text-2xl font-bold mb-4">Add Server</h2>
-        </template>
+    <div class="flex-1 p-3 overflow-x-hidden">
+        <div class="w-auto">
+            <div class="p-6">
+                <Form
+                    v-slot="$form"
+                    v-model="configInput"
+                    :resolver="resolver"
+                    class=""
+                    @submit="
+                        ;(ev: FormSubmitEvent) =>
+                            ev.originalEvent.preventDefault()
+                        submitForm()
+                    "
+                >
+                    <FormField v-slot="$field" name="serverName" class="m-3">
+                        <label for="inputServerName">Server Name</label>
+                        <InputText
+                            name="inputServerName"
+                            placeholder="Enter server name"
+                            required
+                            fluid
+                        />
+                        <Message
+                            v-if="$field?.invalid"
+                            severity="error"
+                            size="small"
+                            variant="simple"
+                        >
+                            {{ $field.error?.message }}
+                        </Message>
+                    </FormField>
 
-        <template #content>
-          <form @submit.prevent="submitForm" class="space-y-4">
-            <div>
-              <label for="server-name" class="block text-sm font-medium mb-1">Server Name</label>
-              <InputText id="server-name" v-model="serverName" placeholder="Enter server name" class="w-full" required />
+                    <FormField v-slot="$field" name="bindPort" class="m-3">
+                        <label for="inputBindPort">Bind Port</label>
+                        <InputText
+                            name="inputBindPort"
+                            placeholder="2001"
+                            fluid
+                        />
+                        <Message
+                            v-if="$field?.invalid"
+                            severity="error"
+                            size="small"
+                            variant="simple"
+                        >
+                            {{ $field.error?.message }}
+                        </Message>
+                    </FormField>
+
+                    <FormField v-slot="$field" name="bindAddress" class="m-3">
+                        <label for="inputBindAddress">Bind Address</label>
+                        <InputText
+                            name="inputBindAddress"
+                            placeholder="0.0.0.0"
+                            fluid
+                        />
+                        <Message
+                            v-if="$field?.invalid"
+                            severity="error"
+                            size="small"
+                            variant="simple"
+                        >
+                            {{ $field.error?.message }}
+                        </Message>
+                    </FormField>
+
+                    <FormField v-slot="$field" name="a2sPort" class="m-3">
+                        <label for="inputA2sPort">A2S Port</label>
+                        <InputText
+                            name="inputA2sPort"
+                            placeholder="17777"
+                            fluid
+                        />
+                        <Message
+                            v-if="$field?.invalid"
+                            severity="error"
+                            size="small"
+                            variant="simple"
+                        >
+                            {{ $field.error?.message }}
+                        </Message>
+                    </FormField>
+
+                    <FormField v-slot="$field" name="rconPort" class="m-3">
+                        <label for="inputRconPort">RCON Port</label>
+                        <InputText
+                            name="inputRconPort"
+                            placeholder="19999"
+                            fluid
+                        />
+                        <Message
+                            v-if="$field?.invalid"
+                            severity="error"
+                            size="small"
+                            variant="simple"
+                        >
+                            {{ $field.error?.message }}
+                        </Message>
+                    </FormField>
+
+                    <FormField v-slot="$field" name="commandLine" class="m-3">
+                        <label for="inputCommandLine">Command Line</label>
+                        <InputText
+                            name="inputCommandLine"
+                            placeholder="-logLevel spam"
+                            fluid
+                        />
+                        <Message
+                            v-if="$field?.invalid"
+                            severity="error"
+                            size="small"
+                            variant="simple"
+                        >
+                            {{ $field.error?.message }}
+                        </Message>
+                    </FormField>
+
+                    <FormField v-slot="$field" name="environment" class="m-3">
+                        <label for="inputEnvironment">Environment</label>
+                        <InputText name="inputEnvironment" fluid />
+                        <Message
+                            v-if="$field?.invalid"
+                            severity="error"
+                            size="small"
+                            variant="simple"
+                        >
+                            {{ $field.error?.message }}
+                        </Message>
+                    </FormField>
+
+                    <FormField v-slot="$field" name="extraPorts" class="m-3">
+                        <label for="inputExtraPorts">Extra Ports</label>
+                        <InputText name="inputExtraPorts" fluid />
+                        <Message
+                            v-if="$field?.invalid"
+                            severity="error"
+                            size="small"
+                            variant="simple"
+                        >
+                            {{ $field.error?.message }}
+                        </Message>
+                    </FormField>
+
+                    <Button
+                        type="submit"
+                        label="Submit"
+                        size="small"
+                        :severity="$form?.valid ? 'primary' : 'secondary'"
+                        :icon="$form?.valid ? 'pi pi-check' : 'pi pi-times'"
+                        :disabled="$form?.valid ? false : true"
+                        class="m-3"
+                        fluid
+                    />
+                </Form>
             </div>
 
-            <div>
-              <label for="bind-port" class="block text-sm font-medium mb-1">Bind Port</label>
-              <InputNumber id="bind-port" v-model="bindPort" placeholder="2001" class="w-full" />
-            </div>
+            <ServerCreationLogs
+                v-if="currentServerId !== _NULL_UUID"
+                :server-id="currentServerId ?? _NULL_UUID"
+            />
 
-            <div>
-              <label for="bind-address" class="block text-sm font-medium mb-1">Bind Address</label>
-              <InputText id="bind-address" v-model="bindAddress" placeholder="0.0.0.0" class="w-full" />
-            </div>
+            <!-- <Card
+                class="p-6"
+                :class="{
+                    'opacity-50 pointer-events-none': currentStage !== 0,
+                }"
+            >
+                <template #title>
+                    <h2 class="text-2xl font-bold mb-4">Add Server</h2>
+                </template>
 
-            <div>
-              <label for="a2s-port" class="block text-sm font-medium mb-1">A2S Port</label>
-              <InputNumber id="a2s-port" v-model="a2sPort" placeholder="17777" class="w-full" />
-            </div>
+                <template #content>
+                    <form @submit.prevent="submitForm" class="space-y-4">
+                        <div>
+                            <label
+                                for="server-name"
+                                class="block text-sm font-medium mb-1"
+                                >Server Name</label
+                            >
+                            <InputText
+                                id="server-name"
+                                v-model="serverName"
+                                placeholder="Enter server name"
+                                class="w-full"
+                                required
+                            />
+                        </div>
 
-            <div>
-              <label for="rcon-port" class="block text-sm font-medium mb-1">RCON Port</label>
-              <InputNumber id="rcon-port" v-model="rconPort" placeholder="19999" class="w-full" />
-            </div>
+                        <div>
+                            <label
+                                for="bind-port"
+                                class="block text-sm font-medium mb-1"
+                                >Bind Port</label
+                            >
+                            <InputNumber
+                                id="bind-port"
+                                v-model="bindPort"
+                                placeholder="2001"
+                                class="w-full"
+                            />
+                        </div>
 
-            <div>
-              <label for="command-line" class="block text-sm font-medium mb-1">Command Line</label>
-              <InputText id="command-line" v-model="commandLine" placeholder="Optional command line" class="w-full" />
-            </div>
+                        <div>
+                            <label
+                                for="bind-address"
+                                class="block text-sm font-medium mb-1"
+                                >Bind Address</label
+                            >
+                            <InputText
+                                id="bind-address"
+                                v-model="bindAddress"
+                                placeholder="0.0.0.0"
+                                class="w-full"
+                            />
+                        </div>
 
-            <Button type="submit" label="Add Server" class="mt-4 w-full" :disabled="currentStage !== 0" />
-          </form>
-        </template>
-      </Card>
+                        <div>
+                            <label
+                                for="a2s-port"
+                                class="block text-sm font-medium mb-1"
+                                >A2S Port</label
+                            >
+                            <InputNumber
+                                id="a2s-port"
+                                v-model="a2sPort"
+                                placeholder="17777"
+                                class="w-full"
+                            />
+                        </div>
 
-      <Card class="p-6">
-        <template #title>
-          <h2 class="text-2xl font-bold mb-4">
-            <span v-if="currentStage === 0">Creation Status</span>
-            <span v-else-if="currentStage === 1">Creating Server...</span>
-            <span v-else>Server Created!</span>
-          </h2>
-        </template>
+                        <div>
+                            <label
+                                for="rcon-port"
+                                class="block text-sm font-medium mb-1"
+                                >RCON Port</label
+                            >
+                            <InputNumber
+                                id="rcon-port"
+                                v-model="rconPort"
+                                placeholder="19999"
+                                class="w-full"
+                            />
+                        </div>
 
-        <template #content>
-          <div v-if="currentStage === 0" class="flex flex-col items-center justify-center h-full text-muted-color">
-            <i class="pi pi-server text-4xl mb-4"></i>
-            <p>Configure your server and click "Add Server" to begin the creation process.</p>
-          </div>
+                        <div>
+                            <label
+                                for="command-line"
+                                class="block text-sm font-medium mb-1"
+                                >Command Line</label
+                            >
+                            <InputText
+                                id="command-line"
+                                v-model="commandLine"
+                                placeholder="Optional command line"
+                                class="w-full"
+                            />
+                        </div>
 
-          <div v-else-if="currentStage === 1" class="space-y-4">
-            <ProgressBar :value="creationProgress"></ProgressBar>
-            <div class="bg-emphasis p-4 rounded-lg font-mono text-sm h-64 overflow-y-auto">
-              <div v-for="(log, index) in logs" :key="index" class="mb-1 text-primary">
-                <span class="opacity-50">[{{ new Date().toLocaleTimeString() }}]</span> {{ log }}
-              </div>
-            </div>
-          </div>
+                        <Button
+                            type="submit"
+                            label="Add Server"
+                            class="mt-4 w-full"
+                            :disabled="currentStage !== 0"
+                        />
+                    </form>
+                </template>
+            </Card> -->
 
-          <div v-else-if="currentStage === 2" class="space-y-6">
-            <div class="flex items-center gap-3 text-green-500 font-bold text-xl">
-              <i class="pi pi-check-circle"></i>
-              Success!
-            </div>
+            <!-- <Card class="p-6">
+                <template #title>
+                    <h2 class="text-2xl font-bold mb-4">
+                        <span v-if="currentStage === 0">Creation Status</span>
+                        <span v-else-if="currentStage === 1"
+                            >Creating Server...</span
+                        >
+                        <span v-else>Server Created!</span>
+                    </h2>
+                </template>
 
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div class="font-semibold">Server Name:</div>
-              <div>{{ serverName }}</div>
+                <template #content>
+                    <div
+                        v-if="currentStage === 0"
+                        class="flex flex-col items-center justify-center h-full text-muted-color"
+                    >
+                        <i class="pi pi-server text-4xl mb-4"></i>
+                        <p>
+                            Configure your server and click "Add Server" to
+                            begin the creation process.
+                        </p>
+                    </div>
 
-              <div class="font-semibold">Bind Port:</div>
-              <div>{{ bindPort }}</div>
+                    <div v-else-if="currentStage === 1" class="space-y-4">
+                        <ProgressBar :value="creationProgress"></ProgressBar>
+                        <div
+                            class="bg-emphasis p-4 rounded-lg font-mono text-sm h-64 overflow-y-auto"
+                        >
+                            <div
+                                v-for="(log, index) in logs"
+                                :key="index"
+                                class="mb-1 text-primary"
+                            >
+                                <span class="opacity-50"
+                                    >[{{
+                                        new Date().toLocaleTimeString()
+                                    }}]</span
+                                >
+                                {{ log }}
+                            </div>
+                        </div>
+                    </div>
 
-              <div class="font-semibold">Bind Address:</div>
-              <div>{{ bindAddress }}</div>
+                    <div v-else-if="currentStage === 2" class="space-y-6">
+                        <div
+                            class="flex items-center gap-3 text-green-500 font-bold text-xl"
+                        >
+                            <i class="pi pi-check-circle"></i>
+                            Success!
+                        </div>
 
-              <div class="font-semibold">A2S Port:</div>
-              <div>{{ a2sPort }}</div>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="font-semibold">Server Name:</div>
+                            <div>{{ serverName }}</div>
 
-              <div class="font-semibold">RCON Port:</div>
-              <div>{{ rconPort }}</div>
-            </div>
+                            <div class="font-semibold">Bind Port:</div>
+                            <div>{{ bindPort }}</div>
 
-            <Button label="Go to Dashboard" class="w-full mt-4" @click="$router.push('/')" />
-          </div>
-        </template>
-      </Card>
+                            <div class="font-semibold">Bind Address:</div>
+                            <div>{{ bindAddress }}</div>
+
+                            <div class="font-semibold">A2S Port:</div>
+                            <div>{{ a2sPort }}</div>
+
+                            <div class="font-semibold">RCON Port:</div>
+                            <div>{{ rconPort }}</div>
+                        </div>
+
+                        <Button
+                            label="Go to Dashboard"
+                            class="w-full mt-4"
+                            @click="$router.push('/')"
+                        />
+                    </div>
+                </template>
+            </Card> -->
+        </div>
     </div>
-  </div>
 </template>
-
-<style scoped>
-/* Add any additional styles here */
-</style>
