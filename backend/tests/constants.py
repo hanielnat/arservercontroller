@@ -1,11 +1,9 @@
 from pathlib import Path
 
-from arservercontroller.constants import BaseDirectories
 from docker import DockerClient
-from docker.constants import DEFAULT_UNIX_SOCKET
 
 
-class TestDirectories(BaseDirectories):
+class TestDirectories:
     TESTS_DIR: Path = Path(__file__).parent  # arservercontroller/tests
 
     CONTROLLER_DIR: str = f"{TESTS_DIR}/test_controller"
@@ -25,4 +23,4 @@ class TestDirectories(BaseDirectories):
 SERVER_NAME: str = "server"
 SERVER_PREFIX: str = "test_arserver_"
 SERVER_PORT: dict[str, int] = {"udp": 3010}
-DOCKER_CLIENT: DockerClient = DockerClient(DEFAULT_UNIX_SOCKET, version="auto")
+DOCKER_CLIENT: DockerClient = DockerClient(version="auto")
