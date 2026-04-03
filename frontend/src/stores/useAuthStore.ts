@@ -1,15 +1,15 @@
-import axios from "axios"
+import { useFetch } from "@vueuse/core"
 import { defineStore } from "pinia"
 import { useToast } from "primevue/usetoast"
 import { computed, ref } from "vue"
-import { Router, useRouter } from "vue-router"
+import { Router } from "vue-router"
+import { useApi } from "../composables/useApi"
 
 interface User
 {
     id: number
-    username: string
-    email?: string
-    name?: string
+    name: string
+    email: string
     role: "admin" | "moderator" | "user"
 }
 
@@ -19,37 +19,39 @@ interface LoginCredentials
     password: string
 }
 
+interface RegisterCredentials
+{
+    name: string
+    email: string
+    password: string
+}
+
 interface AuthResponse
 {
     access_token: string
     token_type: string
-    expires_in: number
-    user: User
 }
 
 export const useAuthStore = defineStore("auth", () =>
 {
-    const toast = useToast()
-
     const user = ref<User | null>(null)
     const token = ref<string | null>(null)
     const isLoading = ref(false)
     const error = ref<string | null>(null)
 
-    // const isAuthenticated = computed(() => !!token.value && !!user.value)
-    const isAuthenticated = true
+    const isAuthenticated = computed(() => !!token.value && !!user.value)
     const isAdmin = computed(() => user.value?.role === "admin")
     const isModerator = computed(() =>
         ["admin", "moderator"].includes(user.value?.role ?? ""),
     )
 
+    const { apiUrl } = useApi()
+
     function setAuth(data: AuthResponse)
     {
         token.value = data.access_token
-        user.value = data.user
 
         localStorage.setItem("arserver_token", data.access_token)
-        localStorage.setItem("arserver_user", JSON.stringify(data.user))
     }
 
     function clearAuth()
@@ -65,55 +67,110 @@ export const useAuthStore = defineStore("auth", () =>
         const storedToken = localStorage.getItem("arserver_token")
         const storedUser = localStorage.getItem("arserver_user")
 
-        if (storedToken && storedUser)
+        if (storedToken)
+        {
+            token.value = storedToken
+        }
+
+        if (storedUser)
         {
             try
             {
-                token.value = storedToken
                 user.value = JSON.parse(storedUser)
             }
             catch (err)
             {
-                console.warn("Invalid stored auth data → clearing")
-                clearAuth()
+                console.warn("Invalid stored user data, clearing")
+                localStorage.removeItem("arserver_user")
             }
         }
     }
 
-    async function login(credentials: LoginCredentials, router: Router)
+    async function login(credentials: LoginCredentials)
     {
         isLoading.value = true
         error.value = null
 
+        const formData = new URLSearchParams()
+        formData.append("username", credentials.username)
+        formData.append("password", credentials.password)
+
+        const response = useFetch(apiUrl("/users/login"), {
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        })
+            .post(formData.toString())
+            .json<AuthResponse>()
+
         try
         {
-            const res = await axios.post<AuthResponse>(
-                "/api/v1/login",
-                credentials,
-            )
+            await response.execute()
 
-            setAuth(res.data)
+            if (!response.response.value?.ok)
+            {
+                error.value = response.error.value?.message || "Login failed"
+                return false
+            }
+            
+            if (response.data.value)
+            {
+                setAuth(response.data.value)
+                await fetchCurrentUser()
 
-            toast.add({
-                severity: "success",
-                summary: "Login successful",
-                detail: `Welcome back, ${user.value?.username}`,
-                life: 4000,
-            })
+                if (!user.value)
+                {
+                    error.value = "Failed to load user profile"
+                    return false
+                }
 
-            await router.push("/")
+                return true
+            }
+
+            return false
         }
         catch (err: any)
         {
-            error.value = err.response?.data?.detail ?? "Login failed"
-            toast.add({
-                severity: "error",
-                summary: "Login error",
-                detail: error.value,
-                life: 6000,
-            })
+            error.value = err.message || "Login failed"
+            return false
+        }
+        finally
+        {
+            isLoading.value = false
+        }
+    }
 
-            throw err
+    async function register(credentials: RegisterCredentials)
+    {
+        isLoading.value = true
+        error.value = null
+
+        const response = useFetch(apiUrl("/users/register"))
+            .post(credentials)
+            .json<User>()
+
+        try
+        {
+            await response.execute()
+
+            if (!response.response.value?.ok)
+            {
+                error.value =
+                    response.error.value?.message || "Registration failed"
+                return false
+            }
+            
+            if (response.data.value)
+            {
+                return true
+            }
+
+            return false
+        }
+        catch (err: any)
+        {
+            error.value = err.message || "Registration failed"
+            return false
         }
         finally
         {
@@ -123,23 +180,7 @@ export const useAuthStore = defineStore("auth", () =>
 
     async function logout(router: Router)
     {
-        try
-        {
-            // Optional: call logout endpoint if your backend invalidates tokens
-            // await axios.post("/api/v1/auth/logout")
-        }
-        catch
-        {}
-
         clearAuth()
-
-        toast.add({
-            severity: "info",
-            summary: "Logged out",
-            detail: "See you soon!",
-            life: 4000,
-        })
-
         await router.push("/login")
     }
 
@@ -147,19 +188,31 @@ export const useAuthStore = defineStore("auth", () =>
     {
         if (!token.value) return
 
+        const response = useFetch<User>(apiUrl("/users/me"), {
+            headers: { Authorization: `Bearer ${token.value}` },
+        })
+
         try
         {
-            const res = await axios.get<User>("/api/v1/users/me", {
-                headers: { Authorization: `Bearer ${token.value}` },
-            })
+            await response.execute()
 
-            user.value = res.data
-            localStorage.setItem("arserver_user", JSON.stringify(res.data))
+            if (response.error.value || !response.response.value?.ok)
+            {
+                console.warn("Failed to refresh user, logging out")
+                // await logout(useRouter())
+                // throw response.error.value
+                return
+            }
+
+            user.value = response.data.value
+            localStorage.setItem(
+                "arserver_user",
+                JSON.stringify(response.data.value),
+            )
         }
         catch (err)
         {
-            console.warn("Failed to refresh user → logging out")
-            await logout(useRouter())
+            console.error("Failed to fetch current user:", err)
         }
     }
 
@@ -168,7 +221,14 @@ export const useAuthStore = defineStore("auth", () =>
     // Auto-refresh user data when token exists but user is missing
     if (token.value && !user.value)
     {
-        fetchCurrentUser()
+        try
+        {
+            fetchCurrentUser()
+        }
+        catch
+        {
+            // Ignore errors during init
+        }
     }
 
     return {
@@ -185,6 +245,7 @@ export const useAuthStore = defineStore("auth", () =>
 
         // actions
         login,
+        register,
         logout,
         fetchCurrentUser,
     }

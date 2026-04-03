@@ -8,17 +8,16 @@ class BaseUser(BaseModel):
 
     name: Annotated[str, Field("", min_length=4, max_length=50)]
     email: Annotated[EmailStr, Field(max_length=255)]
-    role: Annotated[str, Field(default="user", exclude=True)]
 
 
 class UserUpdate(BaseUser):
     # fmt: off
-    name: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
+    name: Annotated[
         Optional[str],
         Field(None, min_length=4, max_length=50)
     ]
 
-    email: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
+    email: Annotated[
         Optional[EmailStr],
         Field(None, max_length=255)
     ]
@@ -28,7 +27,7 @@ class UserUpdate(BaseUser):
         Field(None, min_length=8, max_length=255)
     ]
 
-    role: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
+    role: Annotated[
         Optional[str],
         Field(None)
     ]
@@ -37,7 +36,6 @@ class UserUpdate(BaseUser):
 
 class UserRegister(BaseUser):
     password: Annotated[str, Field(min_length=8, max_length=255)]
-    role: Annotated[str, Field(exclude=True)]
 
 
 class UserLogin(BaseModel):
@@ -47,6 +45,7 @@ class UserLogin(BaseModel):
 
 class UserOut(BaseUser):
     id: int
+    role: str
 
 
 class UserRoleOut(BaseModel):

@@ -16,6 +16,7 @@ from arservercontroller.core.config import get_config
 from arservercontroller.core.security import (
     ALGORITHM,
     create_access_token,
+    get_password_hash,
     verify_password,
 )
 from arservercontroller.db.models.user import User
@@ -108,7 +109,9 @@ class UserService:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "User name already exists")
 
         user_model = User(
-            name=new_user.name, email=new_user.email, hashed_password=new_user.password
+            name=new_user.name,
+            email=new_user.email,
+            hashed_password=get_password_hash(new_user.password),
         )
         self._db.add(user_model)
         self._db.commit()
