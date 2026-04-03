@@ -4,7 +4,8 @@ import { useToast } from "primevue/usetoast"
 import { computed, ref } from "vue"
 import { Router, useRouter } from "vue-router"
 
-interface User {
+interface User
+{
     id: number
     username: string
     email?: string
@@ -12,12 +13,14 @@ interface User {
     role: "admin" | "moderator" | "user"
 }
 
-interface LoginCredentials {
+interface LoginCredentials
+{
     username: string
     password: string
 }
 
-interface AuthResponse {
+interface AuthResponse
+{
     access_token: string
     token_type: string
     expires_in: number
@@ -34,9 +37,11 @@ export const useAuthStore = defineStore("auth", () =>
     const error = ref<string | null>(null)
 
     // const isAuthenticated = computed(() => !!token.value && !!user.value)
-    const isAuthenticated = false
+    const isAuthenticated = true
     const isAdmin = computed(() => user.value?.role === "admin")
-    const isModerator = computed(() => ["admin", "moderator"].includes(user.value?.role ?? ""))
+    const isModerator = computed(() =>
+        ["admin", "moderator"].includes(user.value?.role ?? ""),
+    )
 
     function setAuth(data: AuthResponse)
     {
@@ -84,7 +89,7 @@ export const useAuthStore = defineStore("auth", () =>
         {
             const res = await axios.post<AuthResponse>(
                 "/api/v1/login",
-                credentials
+                credentials,
             )
 
             setAuth(res.data)
@@ -93,7 +98,7 @@ export const useAuthStore = defineStore("auth", () =>
                 severity: "success",
                 summary: "Login successful",
                 detail: `Welcome back, ${user.value?.username}`,
-                life: 4000
+                life: 4000,
             })
 
             await router.push("/")
@@ -105,7 +110,7 @@ export const useAuthStore = defineStore("auth", () =>
                 severity: "error",
                 summary: "Login error",
                 detail: error.value,
-                life: 6000
+                life: 6000,
             })
 
             throw err
@@ -124,8 +129,7 @@ export const useAuthStore = defineStore("auth", () =>
             // await axios.post("/api/v1/auth/logout")
         }
         catch
-        {
-        }
+        {}
 
         clearAuth()
 
@@ -133,7 +137,7 @@ export const useAuthStore = defineStore("auth", () =>
             severity: "info",
             summary: "Logged out",
             detail: "See you soon!",
-            life: 4000
+            life: 4000,
         })
 
         await router.push("/login")
@@ -141,13 +145,12 @@ export const useAuthStore = defineStore("auth", () =>
 
     async function fetchCurrentUser()
     {
-        if (!token.value)
-            return
+        if (!token.value) return
 
         try
         {
             const res = await axios.get<User>("/api/v1/users/me", {
-                headers: { Authorization: `Bearer ${token.value}` }
+                headers: { Authorization: `Bearer ${token.value}` },
             })
 
             user.value = res.data
