@@ -1,14 +1,13 @@
-import js from "@eslint/js"
-import tseslint from "@typescript-eslint/eslint-plugin"
-import tsparser from "@typescript-eslint/parser"
-import "eslint-plugin-only-warn"
-import vue from "eslint-plugin-vue"
-import globals from "globals"
+import js from "@eslint/js";
+import tseslint from "@typescript-eslint/eslint-plugin";
+import tsparser from "@typescript-eslint/parser";
+import vue from "eslint-plugin-vue";
+import globals from "globals";
 
 export default [
     {
         name: "app/files-to-lint",
-        files: ["**/*.{ts,mts,tsx,vue}"],
+        files: ["**/*.{js,ts,mts,tsx,vue}"],
     },
 
     {
@@ -23,6 +22,10 @@ export default [
         name: "app/vue-rules",
         files: ["**/*.vue"],
         languageOptions: {
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+            },
             parserOptions: {
                 parser: tsparser,
                 extraFileExtensions: [".vue"],
@@ -32,7 +35,6 @@ export default [
         },
         rules: {
             quotes: ["warn", "double"],
-            "brace-style": ["warn", "allman", { "allowSingleLine": true }],
         },
     },
 
@@ -41,6 +43,10 @@ export default [
         files: ["**/*.{ts,tsx}"],
         languageOptions: {
             parser: tsparser,
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+            },
         },
         plugins: {
             "@typescript-eslint": tseslint,
@@ -49,7 +55,6 @@ export default [
             ...tseslint.configs.recommended.rules,
             indent: ["warn", 4],
             quotes: ["warn", "double"],
-            "brace-style": ["warn", "allman", { "allowSingleLine": true }],
         },
     },
 
@@ -57,12 +62,14 @@ export default [
         name: "app/javascript-rules",
         files: ["**/*.{js,mjs}"],
         languageOptions: {
-            globals: globals.browser,
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+            },
         },
         rules: {
             indent: ["warn", 4],
             quotes: ["warn", "double"],
-            "brace-style": ["warn", "allman", { "allowSingleLine": true }],
         },
     },
-]
+];
