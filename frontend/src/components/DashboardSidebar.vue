@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { useTheme } from "@/composables/useTheme";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { Badge, Button, Menu, useToast } from "primevue";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { useTheme } from "../composables/useTheme";
-import { useAuthStore } from "../stores/useAuthStore";
 
 const { mode, isDark, toggleTheme } = useTheme()
 const authStore = useAuthStore()

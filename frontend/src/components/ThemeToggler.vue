@@ -1,6 +1,6 @@
-<script lang="ts">
+<script setup lang="ts">
+import { useTheme } from "@/composables/useTheme";
 import { Button } from "primevue";
-import { useTheme } from "../composables/useTheme";
 
 const { isDark, toggleTheme } = useTheme()
 </script>

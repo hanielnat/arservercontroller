@@ -1,9 +1,8 @@
-import { useFetch } from "@vueuse/core"
-import { defineStore } from "pinia"
-import { useToast } from "primevue/usetoast"
-import { computed, ref } from "vue"
-import { Router } from "vue-router"
-import { useApi } from "../composables/useApi"
+import { useApi } from "@/composables/useApi";
+import { useFetch } from "@vueuse/core";
+import { defineStore } from "pinia";
+import { computed, ref } from "vue";
+import { Router } from "vue-router";
 
 interface User
 {

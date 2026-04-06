@@ -1,5 +1,5 @@
-import { usePreferredDark } from "@vueuse/core"
-import { computed, ref, watch } from "vue"
+import { usePreferredDark } from "@vueuse/core";
+import { computed, ref, watch } from "vue";
 
 type ThemeMode = "light" | "dark" | "system"
 const STORAGE_KEY = "arservercontroller-theme"

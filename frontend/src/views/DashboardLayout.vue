@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import DashboardSidebar from "@/components/DashboardSidebar.vue";
 import { Toast } from "primevue";
 import { ref } from "vue";
-import DashboardSidebar from "../components/DashboardSidebar.vue";
 
 const isDark = ref(true)
 const toggleTheme = () =>

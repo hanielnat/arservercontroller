@@ -1,12 +1,21 @@
-<script lang="ts" setup>
-import { Form, FormField, FormSubmitEvent } from "@primevue/forms"
-import { zodResolver } from "@primevue/forms/resolvers/zod"
-import { useFetch } from "@vueuse/core"
-import { Button, InputText } from "primevue"
-import { onUnmounted, reactive, ref, shallowRef } from "vue"
-import * as z from "zod"
-import ServerCreationLogs from "../components/ServerCreationLogs.vue"
-import { useApi } from "../composables/useApi"
+<script setup lang="ts">
+import ServerCreationLogs from "@/components/ServerCreationLogs.vue";
+import { useApi } from "@/composables/useApi";
+import { Form, FormField, FormSubmitEvent } from "@primevue/forms";
+import { zodResolver } from "@primevue/forms/resolvers/zod";
+import { useFetch } from "@vueuse/core";
+import {
+    Button,
+    Fieldset,
+    FloatLabel,
+    InputNumber,
+    InputText,
+    Message,
+    Toast,
+    useToast,
+} from "primevue";
+import { reactive, ref, shallowRef } from "vue";
+import * as z from "zod";
 
 const _PORT_MAX = 65535
 const _PORT_MIN = 0

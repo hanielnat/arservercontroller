@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { useApi } from "@/composables/useApi";
 import { useFetch, useWebSocket } from "@vueuse/core";
 import { Button, ScrollPanel } from "primevue";
 import { onMounted, onUnmounted, ref } from "vue";
-import { useApi } from "../composables/useApi";
 
 const props = defineProps<{
     serverId: string

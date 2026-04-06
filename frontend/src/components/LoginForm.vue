@@ -9,13 +9,14 @@ import {
     // Toast,
     Message,
     Password,
+    Toast,
     useToast,
 } from "primevue"
 import { onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import z from "zod"
-import { useAuthStore } from "../stores/useAuthStore"
-import ThemeToggler from "./ThemeToggler.vue"
+import { useAuthStore } from "@/stores/useAuthStore"
+import ThemeToggler from "@/components/ThemeToggler.vue"
 
 const authStore = useAuthStore()
 const { login } = authStore
