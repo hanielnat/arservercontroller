@@ -20,7 +20,6 @@
             "cwd": "${workspaceFolder}/backend/arservercontroller",
             "type": "debugpy",
             "request": "launch",
-            "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "python": "${command:python.interpreterPath}",
             "module": "uvicorn",
@@ -33,7 +32,6 @@
             "cwd": "${workspaceFolder}/backend/arservercontroller",
             "type": "debugpy",
             "request": "launch",
-            "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "python": "${command:python.interpreterPath}",
             "module": "fastapi",
@@ -41,5 +39,12 @@
                 "dev"
             ]
         },
+        {
+            "name": "Run agent",
+            "type": "go",
+            "request": "launch",
+            "envFile": "${workspaceFolder}/.env",
+            "program": "${workspaceFolder}/backend/agent-service"
+        }
     ]
 }

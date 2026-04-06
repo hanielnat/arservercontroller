@@ -4,7 +4,7 @@ set -e
 
 sudo apt-get update -y && sudo apt-get upgrade -y
 
-sudo usermod -aG docker $USER
+sudo usermod -aG docker "$USER"
 
 if docker run --rm hello-world | grep -q "Hello from Docker!"; then
     echo "Docker is installed and working correctly."
@@ -20,5 +20,5 @@ echo "Installing Python packages into the virtual environment..."
 backend/tasks.sh
 
 echo "Installing pnpm packages..."
-pnpm install -C frontend/
+bun install --cwd frontend/
 echo "Dependency installation and venv creation complete."
