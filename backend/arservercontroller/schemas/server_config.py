@@ -4,6 +4,7 @@ from typing import Annotated
 
 from pydantic import (
     UUID4,
+    AliasGenerator,
     BaseModel,
     ConfigDict,
     Field,
@@ -11,6 +12,7 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
+from pydantic.alias_generators import to_camel, to_snake
 
 from arservercontroller.constants import SERVER_SCHEMA_VERSION, ServerStatusEnum
 
@@ -19,7 +21,13 @@ _PORT_MIN: int = 0
 
 
 class ServerConfigBase(BaseModel):
-    model_config = ConfigDict(use_enum_values=True, str_max_length=255)
+    model_config = ConfigDict(
+        use_enum_values=True,
+        str_max_length=255,
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel, validation_alias=to_snake
+        ),
+    )
 
     # fmt: off
     version: Annotated[
@@ -152,3 +160,7 @@ class ServerConfig(ServerConfigBase):
     @field_serializer("id")
     def id_to_string(self, v: UUID4) -> str:
         return str(v)
+
+    @field_serializer("container_id", when_used="json")
+    def container_id_short(self, container_id: str) -> str:
+        return str(container_id[:12])

@@ -104,14 +104,14 @@ class ServerConfigManagerV2:
                 RuntimeError("Server config must exist in DB to be saved to a file")
             )
 
-        if not model.server_config_data:
+        if not model.serverConfigData:
             return Result.fail(
                 AttributeError(
                     "Server DB model of ID '%s' must have a 'server_config_data' object to be saved to a file, it is 'None'"
                     % model.id
                 )
             )
-        saved = await self._save_config_file(model.server_config_data)
+        saved = await self._save_config_file(model.serverConfigData)
         if not saved.is_ok():
             logger.error("Can't save config file with ID '%s'", model.id)
             logger.exception(saved.error())
@@ -135,7 +135,7 @@ class ServerConfigManagerV2:
             logger.exception(config.error())
             return Result.fail(config.error())
 
-        model.server_config_data = config.value()
+        model.serverConfigData = config.value()
         self._db.refresh(model)
         self._db.commit()
         logger.debug("Sync done for server config with ID '%s'", model.id)

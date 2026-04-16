@@ -1,5 +1,8 @@
 import uuid
 
+from fastapi import APIRouter, HTTPException, WebSocket, status
+from pydantic import UUID4
+
 from arservercontroller.api.dependencies import DbSessionDep, ModeratorOrAdminDep
 from arservercontroller.db.models.server import Server
 from arservercontroller.schemas.server import ServerOut, ServersOut
@@ -10,8 +13,6 @@ from arservercontroller.schemas.server_config import (
 )
 from arservercontroller.services.controller import ServerControllerDep
 from arservercontroller.services.creation_manager import ServerCreationManagerDep
-from fastapi import APIRouter, HTTPException, WebSocket, status
-from pydantic import UUID4
 
 server_router = APIRouter(prefix="/servers", tags=["server"])
 
@@ -43,7 +44,7 @@ async def add_server(
     server_config_data = ServerConfig.model_validate(config_dict)
 
     out_db = Server(id=server_id, name=server_config.name)
-    out_db.server_config_data = server_config_data
+    out_db.serverConfigData = server_config_data
 
     try:
         config = await server_controller.add_serverV2(out_db)
@@ -115,7 +116,7 @@ async def delete_server(
 ) -> None:
     model = find_server_by_id(server_id, db)
 
-    result = server_controller.remove_server(model.server_config_data)
+    result = server_controller.remove_server(model.serverConfigData)
     if not result:
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -145,6 +146,17 @@ async def stop_server(
 ) -> None:
     model = find_server_by_id(server_id, db)
     result = server_controller.stop(model)
+
+    if not result:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@server_router.post("/{server_id}/restart")
+async def restart_server(
+    server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
+) -> None:
+    model = find_server_by_id(server_id, db)
+    result = server_controller.restart(model)
 
     if not result:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)

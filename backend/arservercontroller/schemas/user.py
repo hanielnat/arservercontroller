@@ -1,6 +1,8 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic.alias_generators import to_camel, to_snake
+from pydantic.aliases import AliasGenerator
 
 
 class BaseUser(BaseModel):
@@ -12,23 +14,23 @@ class BaseUser(BaseModel):
 
 class UserUpdate(BaseUser):
     # fmt: off
-    name: Annotated[
-        Optional[str],
+    name: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
+        str | None,
         Field(None, min_length=4, max_length=50)
     ]
 
-    email: Annotated[
-        Optional[EmailStr],
+    email: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
+        EmailStr | None,
         Field(None, max_length=255)
     ]
 
     password: Annotated[
-        Optional[str],
+        str | None,
         Field(None, min_length=8, max_length=255)
     ]
 
     role: Annotated[
-        Optional[str],
+        str | None,
         Field(None)
     ]
     # fmt: on
@@ -64,9 +66,15 @@ class UsersOut(BaseModel):
 
 
 class Token(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel, validation_alias=to_snake
+        )
+    )
+
     access_token: str
     token_type: Annotated[str, Field("bearer")]
 
 
 class TokenData(BaseModel):
-    username: Annotated[Optional[str], Field(None)]
+    username: Annotated[str | None, Field(None)]

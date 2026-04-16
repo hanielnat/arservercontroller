@@ -137,10 +137,10 @@ class ServerControllerV2:
         self,
         server: Server,
     ) -> ServerConfig:
-        if not server.server_config_data:
+        if not server.serverConfigData:
             raise ValueError("Server config data is None")
 
-        config: ServerConfig = server.server_config_data
+        config: ServerConfig = server.serverConfigData
 
         self._db.add(server)
         self._db.commit()
@@ -154,7 +154,7 @@ class ServerControllerV2:
             "Server creation started for '%s' (id: '%s')", config.name, server.id
         )
 
-        out_server = ServerConfig.model_validate(obj=server.server_config_data)
+        out_server = ServerConfig.model_validate(obj=server.serverConfigData)
 
         return out_server
 
@@ -180,10 +180,10 @@ class ServerControllerV2:
     ) -> ControllerResult:
         success: bool = True
 
-        if not server.server_config_data:
+        if not server.serverConfigData:
             return (not success, "Server config data is `None`")
 
-        server_config = server.server_config_data
+        server_config = server.serverConfigData
 
         port_bindings: PortMap = {
             f"{server_config.bind_port}/{PROTOCOL_BIND_PORT}": DEFAULT_BIND_PORT,
@@ -293,7 +293,7 @@ class ServerControllerV2:
 
             success = True
 
-            server.server_config_data = server.server_config_data.model_copy(
+            server.serverConfigData = server.serverConfigData.model_copy(
                 update={"status": container.status, "container_id": container.id}
             )
 
@@ -331,7 +331,7 @@ class ServerControllerV2:
         return True
 
     def start(self, model: Server) -> ControllerResult:
-        server_config: ServerConfig | None = model.server_config_data
+        server_config: ServerConfig | None = model.serverConfigData
         if not server_config:
             msg = (
                 "Server '%s' não tem uma instancia de 'ServerConfig', é 'None'."
@@ -370,7 +370,7 @@ class ServerControllerV2:
         return True, ""
 
     def stop(self, server: Server) -> bool:
-        server_config = server.server_config_data
+        server_config = server.serverConfigData
         if not server_config:
             logger.error(
                 "Server '%s' não tem uma instancia de 'ServerConfig', é 'None'."
@@ -394,7 +394,7 @@ class ServerControllerV2:
             logger.info("Parando container do Server '%s'...", server.id)
 
             container.stop()
-            server.server_config_data = server.server_config_data.model_copy(
+            server.serverConfigData = server.serverConfigData.model_copy(
                 update={"status": container.status}
             )
 
@@ -409,7 +409,7 @@ class ServerControllerV2:
         return True
 
     def restart(self, model: Server) -> bool:
-        server_config = model.server_config_data
+        server_config = model.serverConfigData
         if not server_config:
             logger.error(
                 "Server '%s' não tem uma instancia de 'ServerConfig', é 'None'."

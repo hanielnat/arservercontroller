@@ -1,6 +1,6 @@
 import datetime
 import uuid
-from typing import Any
+from typing import Any, final
 
 from sqlalchemy import JSON, UUID, Connection, String, event
 from sqlalchemy.orm import Mapped, Mapper, mapped_column
@@ -10,6 +10,7 @@ from arservercontroller.db.base import Base
 from arservercontroller.schemas.server_config import ServerConfig
 
 
+@final
 class Server(Base):
     __tablename__ = "servers"
 
@@ -25,17 +26,17 @@ class Server(Base):
     version: Mapped[str] = mapped_column(
         String, nullable=False, default=SERVER_SCHEMA_VERSION
     )
-    created_at: Mapped[int]
-    updated_at: Mapped[int]
+    createdAt: Mapped[int] = mapped_column("created_at")
+    updatedAt: Mapped[int] = mapped_column("updated_at")
 
     data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=True)
 
     @property
-    def server_config_data(self) -> ServerConfig:
+    def serverConfigData(self) -> ServerConfig:
         return ServerConfig.model_validate(self.data)
 
-    @server_config_data.setter
-    def server_config_data(self, value: ServerConfig | dict[str, Any]) -> None:
+    @serverConfigData.setter
+    def serverConfigData(self, value: ServerConfig | dict[str, Any]) -> None:
         if isinstance(value, dict):
             value = ServerConfig.model_validate(value)
 
@@ -45,10 +46,10 @@ class Server(Base):
 @event.listens_for(Server, "before_insert")
 def _set_created_timestamp_event(mapper, connection, target: Server) -> None:
     now = int(datetime.datetime.now().timestamp())
-    target.created_at = now
-    target.updated_at = now
+    target.createdAt = now
+    target.updatedAt = now
 
 
 @event.listens_for(Server, "before_update")
 def _set_updated_timestamp_event(mapper, connection, target: Server) -> None:
-    target.updated_at = int(datetime.datetime.now().timestamp())
+    target.updatedAt = int(datetime.datetime.now().timestamp())

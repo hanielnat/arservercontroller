@@ -80,7 +80,7 @@ class ServerCreationManager:
     ) -> None:
         if container:
             await self.docker._try_cleanup_container(  # pyright: ignore[reportPrivateUsage]
-                str(server.server_config_data.name)
+                str(server.serverConfigData.name)
             )
 
         try:
@@ -121,7 +121,7 @@ class ServerCreationManager:
                     }
                 )
 
-                server.server_config_data = server.server_config_data.model_copy(
+                server.serverConfigData = server.serverConfigData.model_copy(
                     update={"status": ServerStatusEnum.EXITED}
                 )
 
@@ -130,7 +130,7 @@ class ServerCreationManager:
 
             # success path
             container = container_result.value()
-            server.server_config_data = server.server_config_data.model_copy(
+            server.serverConfigData = server.serverConfigData.model_copy(
                 update={
                     "container_id": container.id,
                     "status": container.status,
