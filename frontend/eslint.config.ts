@@ -34,6 +34,7 @@ export default [
             },
         },
         rules: {
+            "no-undef": "off",
             quotes: ["warn", "double"],
         },
     },
@@ -53,6 +54,7 @@ export default [
         },
         rules: {
             ...tseslint.configs.recommended.rules,
+            "no-undef": "off",
             indent: ["warn", 4],
             quotes: ["warn", "double"],
         },
