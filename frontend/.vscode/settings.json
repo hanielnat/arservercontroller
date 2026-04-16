@@ -1,8 +1,10 @@
 {
-    "npm.packageManager": "pnpm",
     "files.associations": {
         "*.css": "tailwindcss"
     },
     "css.validate": false,
     "editor.formatOnSave": true,
+    "npm.packageManager": "bun",
+    "npm.scriptRunner": "bun",
+    "editor.guides.indentation": false
 }
