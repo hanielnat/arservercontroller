@@ -46,6 +46,7 @@ Current flow for creating a server:
 2. The container will automatically run `.devcontainer/install-dependencies.sh`
 
 **Common commands** (run from project root):
+- Source python venv: `source backend/.venv/bin/activate`
 - Backend dev server: `./tasks.py run-dev`
 - Frontend dev server: `cd frontend && bun dev`
 - Run backend tests: `uv run pytest`
@@ -57,6 +58,7 @@ Current flow for creating a server:
 **Backend:**
 - Run specific test: `uv run pytest tests/unit/test_utils_errors.py::test_pattern_matching_ok`
 - Database migrations: `./tasks.py migrate`
+- Running specific alembic commands: `source backend/.venv/bin/activate && cd backend/ && uv run alembic <YOUR_COMMAND>`
 
 **Frontend:**
 - Dev: `cd frontend && bun dev`
@@ -107,7 +109,7 @@ docs/                            # Documents related to the project
 - `backend/arservercontroller/constants.py` → Directory manager & enums
 - `backend/arservercontroller/core/config.py` → App configuration (prod, dev, test, etc.)
 
-## Code Style and Conventions
+## Code Style
 
 **Python**
 - Modern PEP 8 / Ruff compatible
@@ -132,13 +134,6 @@ else {
 - 2-space indent
 - One tag per line (preferred)
 
-**General**
-- Favor clear names over explanatory comments
-- Simple & readable > "future-proof"
-- Comments only for non-obvious logic or important side-effects
-- No Unicode drawing characters in comments, for example "→" or "←"
-- No em-dashes in comments
-
 ## Testing Strategy
 
 - **Unit tests**: Focus on pure logic (Result type, validators, utils)
@@ -162,6 +157,11 @@ Best Practices:
 - Prefer extending existing patterns, over creating new ones.
 - Break large changes into tracked steps, decompose substantial work into manageable subtasks. Track progress to prevent scope creep and missed items. Use TODO list tools to maintain a checklist.
 - Batch multiple edits instead of sequential single edits. Use batch edit tools if available.
+- Simple & readable > "future-proof"
+- Favor clear names over explanatory comments
+- Prefer to not write comments, only do when logic is implicit and important enough given the project goals to be explained
+- No Unicode drawing characters in comments, for example "→" or "←"
+- No em-dashes in comments
 
 Documentation:
 
