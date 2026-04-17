@@ -19,11 +19,6 @@ const routes: RouteRecordRaw[] = [
                 component: import("@/views/AddServerPage.vue"),
             },
             {
-                path: "/server/remove",
-                name: "remove-server",
-                component: import("@/views/RemoveServerPage.vue"),
-            },
-            {
                 path: "/servers/",
                 name: "servers",
                 component: import("@/views/ListServerPage.vue"),
@@ -42,12 +37,6 @@ const routes: RouteRecordRaw[] = [
         path: "/register",
         name: "register",
         component: import("@/views/RegisterPage.vue"),
-        meta: { requiresGuest: true },
-    },
-    {
-        path: "/about",
-        name: "about",
-        component: import("@/views/AboutPage.vue"),
         meta: { requiresGuest: true },
     },
     // on 404
