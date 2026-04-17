@@ -1,100 +1,118 @@
 <script setup lang="ts">
 import { useApi } from "@/composables/useApi";
 import { useFetch, useWebSocket } from "@vueuse/core";
-import { Button, ScrollPanel } from "primevue";
-import { onMounted, onUnmounted, ref } from "vue";
+import { Button, ScrollPanel, useToast } from "primevue";
+import { onUnmounted, ref, watch } from "vue";
 
 const props = defineProps<{
-    serverId: string
-}>()
+    serverId: string;
+    isFetching: boolean;
+}>();
+
+const emit = defineEmits<{
+    finished: [];
+}>();
 
 interface Log {
-    time: string
-    phase: string
-    message: string
+    time: string;
+    phase: string;
+    message: string;
 }
 
-const logs = ref<Log[]>([])
-const isCreating = ref(true)
+const logs = ref<Log[]>([]);
+const isCreating = ref(true);
+const toast = useToast();
 
-const { apiUrl, wsUrl } = useApi()
+const { apiUrl, wsUrl } = useApi();
 
-const ws = useWebSocket(
-    wsUrl(`/servers/ws/${props.serverId}/creation`),
-    {
-        autoReconnect: true,
-        onConnected: () =>
-        {
-            console.log(
-                `Connected to creation logs for server ${props.serverId}`,
-            )
-        },
-        onMessage: (_, event) =>
-        {
-            console.log(`onMessage(_: ${_}, event: ${event})`)
-            try
-            {
-                const msg = JSON.parse(event.data)
-                logs.value.push({
-                    time: new Date().toLocaleTimeString(),
-                    phase: msg.phase || "info",
-                    message: msg.message || JSON.stringify(msg),
-                })
+const ws = useWebSocket(wsUrl(`/servers/ws/${props.serverId}/creation`), {
+    autoReconnect: true,
+    immediate: false,
 
-                if (msg.final === true)
-                {
-                    isCreating.value = false
-                }
-            }
-            catch (e)
-            {
-                console.error("Failed to parse log message", e)
-            }
-        },
-        onDisconnected: () =>
-        {
-            isCreating.value = false
-        },
+    onConnected: () => {
+        console.log(`Connected to creation logs for server ${props.serverId}`);
     },
-)
 
-const getPhaseColor = (phase: string): string =>
-{
-    if (phase === "error" || phase === "fail")
-    {
-        return "text-red-500"
+    onMessage: (_, event) => {
+        console.log(`onMessage(_: ${_}, event: ${event})`);
+
+        try {
+            const msg = JSON.parse(event.data);
+            logs.value.push({
+                time: new Date().toLocaleTimeString(),
+                phase: msg.phase || "info",
+                message: msg.message || JSON.stringify(msg),
+            });
+
+            if (msg.final === true) {
+                isCreating.value = false;
+                emit("finished");
+            }
+        } catch (e) {
+            console.error("Failed to parse log message", e);
+        }
+    },
+
+    onDisconnected: () => {},
+});
+
+watch(
+    () => props.isFetching,
+    (fetching) => {
+        if (!fetching && props.serverId && props.serverId !== "0") {
+            ws.open();
+        }
+    },
+    { immediate: true },
+);
+
+function getPhaseColor(phase: string): string {
+    if (phase === "error" || phase === "fail") {
+        return "text-red-500";
     }
 
-    if (phase === "success")
-    {
-        return "text-green-500"
+    if (phase === "success") {
+        return "text-green-500";
     }
 
-    if (phase === "container")
-    {
-        return "text-blue-500"
+    if (phase === "container") {
+        return "text-blue-500";
     }
 
-    return "text-primary"
+    return "text-primary";
 }
 
-const handleCancel = async () =>
-{
-    const { error, isFetching } = await useFetch(apiUrl(`/servers/${props.serverId}/cancel`)).post()
-    if ( error.value )
-    {
-        console.error("Failed to cancel creation:", error.value)
+async function handleCancel() {
+    const { error, response } = await useFetch(
+        apiUrl(`/servers/${props.serverId}/cancel`),
+    ).post();
+
+    if (!response.value?.ok) {
+        toast.add({
+            severity: "error",
+            summary: "Error cancelling server creation",
+            detail: error.value.message || "Unkown error.",
+        });
+
+        const status = response.value?.status.toString() ?? "";
+        console.error(
+            "Failed to cancel creation:",
+            error.value.message,
+            status,
+        );
+
+        return;
     }
+
+    console.debug(
+        "Server creation cancel request sent to backend, response:",
+        response.value?.status,
+    );
 }
 
-onMounted(() =>
-{
-})
-
-onUnmounted(() =>
-{
-    ws.close()
-})
+onUnmounted(() => {
+    ws.close();
+});
 </script>
 
 <style scoped>

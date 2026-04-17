@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { Form, FormField, FormSubmitEvent } from "@primevue/forms"
-import { zodResolver } from "@primevue/forms/resolvers/zod"
+import { Form, FormField, FormSubmitEvent } from "@primevue/forms";
+import { zodResolver } from "@primevue/forms/resolvers/zod";
 import {
     Button,
     Card,
@@ -9,17 +9,18 @@ import {
     Password,
     Toast,
     useToast,
-} from "primevue"
-import { ref } from "vue"
-import { useRouter } from "vue-router"
-import z from "zod"
-import { useAuthStore } from "@/stores/useAuthStore"
-import ThemeToggler from "@/components/ThemeToggler.vue"
+} from "primevue";
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import z from "zod";
+import { useAuthStore } from "@/stores/useAuthStore";
+import ThemeToggler from "@/components/ThemeToggler.vue";
 
-const authStore = useAuthStore()
-const { register } = authStore
+const toast = useToast();
+const authStore = useAuthStore();
+const { register } = authStore;
 
-const router = useRouter()
+const router = useRouter();
 const resolver = ref(
     zodResolver(
         z
@@ -46,39 +47,35 @@ const resolver = ref(
                 path: ["passwordRepeat"],
             }),
     ),
-)
+);
 
-const onFormSubmit = async (event: FormSubmitEvent) =>
-{
-    if (event.valid)
-    {
-        const { name, email, password } = event.values
-        const success = await register({ name, email, password })
-        if (success)
-        {
+const onFormSubmit = async (event: FormSubmitEvent) => {
+    if (event.valid) {
+        const { name, email, password } = event.values;
+        const success = await register({ name, email, password });
+        if (success) {
             toast.add({
                 severity: "success",
                 summary: "Registration successful",
                 detail: "You can now log in with your credentials",
                 life: 4000,
-            })
-            await router.push("/login")
-        }
-        else
-        {
+            });
+            await router.push("/login");
+        } else {
             toast.add({
                 severity: "error",
                 summary: "Registration error",
                 detail: authStore.error ?? "Failed to register",
                 life: 6000,
-            })
+            });
         }
     }
-}
+};
 </script>
 
 <template>
     <div class="min-h-screen flex items-center justify-center">
+        <Toast />
         <Card class="p-2 w-90">
             <template #header> </template>
 

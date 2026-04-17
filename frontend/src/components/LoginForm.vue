@@ -1,42 +1,39 @@
 <script lang="ts" setup>
-import { Form, FormField, FormSubmitEvent } from "@primevue/forms"
-import { zodResolver } from "@primevue/forms/resolvers/zod"
+import { Form, FormField, FormSubmitEvent } from "@primevue/forms";
+import { zodResolver } from "@primevue/forms/resolvers/zod";
 import {
     Button,
     Card,
     Checkbox,
     InputText,
-    // Toast,
     Message,
     Password,
     Toast,
     useToast,
-} from "primevue"
-import { onMounted, ref } from "vue"
-import { useRouter } from "vue-router"
-import z from "zod"
-import { useAuthStore } from "@/stores/useAuthStore"
-import ThemeToggler from "@/components/ThemeToggler.vue"
+} from "primevue";
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import z from "zod";
+import { useAuthStore } from "@/stores/useAuthStore";
+import ThemeToggler from "@/components/ThemeToggler.vue";
 
-const authStore = useAuthStore()
-const { login } = authStore
+const authStore = useAuthStore();
+const { login } = authStore;
 
-const router = useRouter()
+const router = useRouter();
 
-const toast = useToast()
+const toast = useToast();
 
-const rememberUser = ref(false)
-const initialUsername = ref("")
+const rememberUser = ref(false);
+const initialUsername = ref("");
 
-onMounted(() =>
-{
-    const rememberedName = localStorage.getItem("arserver_remembered_name")
-    if (rememberedName)
-    {
-        initialUsername.value = rememberedName
-        rememberUser.value = true
+onMounted(() => {
+    const rememberedName = localStorage.getItem("arserver_remembered_name");
+    if (rememberedName) {
+        initialUsername.value = rememberedName;
+        rememberUser.value = true;
     }
-})
+});
 
 const resolver = ref(
     zodResolver(
@@ -48,49 +45,45 @@ const resolver = ref(
                 .min(8, { error: "Password must have at least 8 characters" }),
         }),
     ),
-)
+);
 
-const onFormSubmit = async (event: FormSubmitEvent) =>
-{
-    if (event.valid)
-    {
-        const { username } = event.values
+const onFormSubmit = async (event: FormSubmitEvent) => {
+    if (event.valid) {
+        const { username } = event.values;
 
-        if (rememberUser.value)
-        {
-            localStorage.setItem("arserver_remembered_name", username)
-        }
-        else
-        {
-            localStorage.removeItem("arserver_remembered_name")
+        if (rememberUser.value) {
+            localStorage.setItem("arserver_remembered_name", username);
+        } else {
+            localStorage.removeItem("arserver_remembered_name");
         }
 
-        const success = await login(event.values as any)
-        if (success)
-        {
+        const success = await login(event.values as any);
+        console.log("Login result:", success);
+
+        if (success) {
             toast.add({
                 severity: "success",
                 summary: "Login successful",
                 detail: `Welcome back, ${authStore.user?.name}`,
                 life: 4000,
-            })
-            await router.push("/")
-        }
-        else
-        {
+            });
+            console.log("Redirecting to /");
+            await router.push("/");
+        } else {
             toast.add({
                 severity: "error",
                 summary: "Login error",
                 detail: authStore.error ?? "Failed to login",
                 life: 6000,
-            })
+            });
         }
     }
-}
+};
 </script>
 
 <template>
     <div class="min-h-screen flex items-center justify-center">
+        <Toast />
         <Card class="p-2 w-90">
             <template #header> </template>
 

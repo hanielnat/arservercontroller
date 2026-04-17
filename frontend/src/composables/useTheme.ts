@@ -34,21 +34,21 @@ export const useTheme = () => {
 
     function toggleTheme() {
         switch (mode.value) {
-            case "system":
-                setTheme(prefersDarkMode.value ? "light" : "dark");
-                break;
+        case "system":
+            setTheme(prefersDarkMode.value ? "light" : "dark");
+            break;
 
-            case "light":
-                setTheme("dark");
-                break;
+        case "light":
+            setTheme("dark");
+            break;
 
-            case "dark":
-                setTheme("light");
-                break;
+        case "dark":
+            setTheme("light");
+            break;
 
-            default:
-                setTheme("system");
-                break;
+        default:
+            setTheme("system");
+            break;
         }
     }
 
