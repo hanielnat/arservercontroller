@@ -5,6 +5,6 @@ const config = {
 
     APP_NAME: "AR Server Controller",
     VERSION: "0.0.1",
-} as const
+} as const;
 
-export default config
+export default config;

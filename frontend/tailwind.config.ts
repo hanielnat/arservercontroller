@@ -2,12 +2,7 @@
 import PrimeUI from "tailwindcss-primeui";
 
 export default {
-    content: [
-        "./index.html",
-        "./src/**/*.{vue,js,ts,jsx,tsx}",
-    ],
+    content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
     darkMode: "class",
-    plugins: [
-        PrimeUI
-    ],
-}
+    plugins: [PrimeUI],
+};

@@ -2,7 +2,7 @@
 import { useTheme } from "@/composables/useTheme";
 import { Button } from "primevue";
 
-const { isDark, toggleTheme } = useTheme()
+const { isDark, toggleTheme } = useTheme();
 </script>
 
 <template>

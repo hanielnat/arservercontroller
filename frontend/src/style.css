@@ -1,9 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap");
 
 @import "tailwindcss";
 @import "tailwindcss-primeui";
-@import 'primeicons/primeicons.css'
-@tailwind utilities;
+@import "primeicons/primeicons.css" @tailwind utilities;
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -96,7 +95,7 @@
     --color-text-light: oklch(12.47% 0.0108 237.7);
     --color-text-dark: oklch(97.3% 0.014 220.2);
 
-    --font-public-sans: 'Public Sans', system-ui, 'Segoe UI';
+    --font-public-sans: "Public Sans", system-ui, "Segoe UI";
 }
 
 .dark {
@@ -137,27 +136,27 @@
         font-family: var(--font-public-sans);
         min-height: 100vh;
 
-        @apply bg-surface-0 dark:bg-surface-950
+        @apply bg-surface-0 dark:bg-surface-950;
     }
 
-	/* Custom scrollbar styling */
-	::-webkit-scrollbar {
-		width: 0.3125rem;
-	}
+    /* Custom scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 0.3125rem;
+    }
 
-	::-webkit-scrollbar-track {
-		background: transparent;
-	}
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
 
-	::-webkit-scrollbar-thumb {
-		background: hsl(var(--secondary));
-		border-radius: 0.3125rem;
-	}
+    ::-webkit-scrollbar-thumb {
+        background: hsl(var(--secondary));
+        border-radius: 0.3125rem;
+    }
 
-	* {
-		scrollbar-width: thin;
-		scrollbar-color: hsl(var(--secondary)) transparent;
-	}
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(var(--secondary)) transparent;
+    }
 }
 
 @layer base {
