@@ -66,7 +66,7 @@ class ServerConfigBase(BaseModel):
     ]
 
     command_line: Annotated[
-        list[str] | str | None,
+        list[str] | None,
         Field(None)
     ]
 
