@@ -21,10 +21,8 @@ class BaseConfig(BaseSettings):
     VERSION: str = "0.0.1"
     API_V1_STR: str = "/api/v1"
 
-    SERVE_STATIC: bool = False
-    SERVE_STATIC_DIR: str = str(
-        directory_manager.base_directories.ROOT_DIR.parent.resolve()
-        / "frontend/.output/public"
+    FRONTEND_DIST_DIR: str = str(
+        directory_manager.base_directories.ROOT_DIR.parent.resolve() / "frontend/dist"
     )
 
     # Server Settings
