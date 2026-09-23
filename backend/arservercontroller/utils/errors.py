@@ -216,15 +216,15 @@ class Err(Result[_T, _E]):
         return f"Err({self._error!r})"
 
 
-def do_something(data: str) -> Result[str, Exception]:
-    if not data:
-        return Err(RuntimeError("data must not be empty"))
-    return Ok(data + " test")
-
-
 if __name__ == "__main__":
+
+    def _do_something(data: str) -> Result[str, Exception]:
+        if not data:
+            return Err(RuntimeError("data must not be empty"))
+        return Ok(data + " test")
+
     # Success case
-    _res1 = do_something("data")
+    _res1 = _do_something("data")
     print(_res1)
     print(repr(_res1))
 
@@ -232,12 +232,12 @@ if __name__ == "__main__":
         print(f"Value: {_res1.value()}")
 
     # Error case
-    _res2 = do_something("")
+    _res2 = _do_something("")
     print(_res2)
     print(repr(_res2))
 
     # Equality
-    _res3 = do_something("data")
+    _res3 = _do_something("data")
     print(_res1 == _res3)
     print(_res1 == _res2)
 
@@ -270,3 +270,6 @@ if __name__ == "__main__":
             print(f"Got error: {error}")
         case _:
             pass
+
+    # Exception raising
+    raise _res2.error()

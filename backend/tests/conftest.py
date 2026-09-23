@@ -5,26 +5,6 @@ from typing import Any
 import docker
 import pytest
 import pytest_asyncio
-from arservercontroller.api.dependencies import get_docker_client
-from arservercontroller.db.base import Base
-from arservercontroller.db.session import get_db
-from arservercontroller.main import app as fastapi_app
-from arservercontroller.services.controller import (
-    ServerControllerV2,
-    get_server_controller,
-)
-from arservercontroller.services.creation_manager import (
-    ServerCreationManager,
-    get_server_creation_manager,
-)
-from arservercontroller.services.docker import (
-    DockerContainerManager,
-    get_docker_manager,
-)
-from arservercontroller.services.server_config import (
-    ServerConfigManagerV2,
-    get_server_config_manager,
-)
 from docker.client import DockerClient
 from docker.models.containers import Container
 from fastapi.applications import FastAPI
@@ -36,6 +16,22 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.orm import Session, sessionmaker
 
+from arservercontroller.api.dependencies import get_docker_client
+from arservercontroller.db.base import Base
+from arservercontroller.db.session import get_db
+from arservercontroller.main import app as fastapi_app
+from arservercontroller.services.controller import (
+    ServerController,
+    get_server_controller,
+)
+from arservercontroller.services.creation_manager import (
+    ServerCreationManager,
+    get_server_creation_manager,
+)
+from arservercontroller.services.docker import (
+    DockerContainerManager,
+    get_docker_manager,
+)
 from tests.constants import DOCKER_CLIENT, TestDirectories
 from tests.test_utils import TestUtils
 
@@ -212,18 +208,36 @@ async def async_docker_manager(docker_client: docker.DockerClient):
 
 @pytest.fixture
 def server_creation_manager(
-    docker_manager: DockerContainerManager, test_db: Session
+    docker_manager: DockerContainerManager,
+    test_db: Session,
 ) -> Generator[ServerCreationManager, Any, None]:
-    server_creation_manager = ServerCreationManager(docker_manager, test_db)
+    session_factory = sessionmaker(
+        bind=test_db.get_bind(),
+        autocommit=False,
+        autoflush=False,
+        expire_on_commit=True,
+    )
+    server_creation_manager = ServerCreationManager(
+        docker_manager, session_factory=session_factory
+    )
 
     yield server_creation_manager
 
 
 @pytest.fixture
 async def async_server_creation_manager(
-    async_docker_manager: DockerContainerManager, test_db: Session
+    async_docker_manager: DockerContainerManager,
+    test_db: Session,
 ):
-    async_server_creation_manager = ServerCreationManager(async_docker_manager, test_db)
+    session_factory = sessionmaker(
+        bind=test_db.get_bind(),
+        autocommit=False,
+        autoflush=False,
+        expire_on_commit=True,
+    )
+    async_server_creation_manager = ServerCreationManager(
+        async_docker_manager, session_factory=session_factory
+    )
 
     yield async_server_creation_manager
 
@@ -234,9 +248,9 @@ def server_controller(
     docker_client: docker.DockerClient,
     docker_manager: DockerContainerManager,
     server_creation_manager: ServerCreationManager,
-) -> Generator[ServerControllerV2, Any, None]:
+) -> Generator[ServerController, Any, None]:
     """Real `ServerController`."""
-    controller = ServerControllerV2(
+    controller = ServerController(
         db=test_db,
         docker_client=docker_client,
         docker_manager=docker_manager,
@@ -252,9 +266,9 @@ async def async_server_controller(
     docker_client: docker.DockerClient,
     async_docker_manager: DockerContainerManager,
     async_server_creation_manager: ServerCreationManager,
-) -> ServerControllerV2:
+) -> ServerController:
     """Real async `ServerController`."""
-    return ServerControllerV2(
+    return ServerController(
         db=test_db,
         docker_client=docker_client,
         docker_manager=async_docker_manager,
@@ -267,28 +281,10 @@ def mock_server_controller(
     mocker: MockerFixture, test_db: Session, mock_docker_client: Any
 ) -> Any:
     """Mocked `ServerController` for unit tests."""
-    mock_ctrl = mocker.Mock(spec=ServerControllerV2)
+    mock_ctrl = mocker.Mock(spec=ServerController)
 
     # TODO: preconfigure common returns
     return mock_ctrl
-
-
-@pytest.fixture
-def config_manager(test_db: Session) -> ServerConfigManagerV2:
-    """Real `ServerConfigManager`."""
-    return ServerConfigManagerV2(db=test_db)
-
-
-@pytest_asyncio.fixture
-async def async_config_manager(async_test_db) -> ServerConfigManagerV2:
-    """Real async `ServerConfigManager`."""
-    return ServerConfigManagerV2(db=async_test_db)
-
-
-@pytest.fixture
-def mock_config_manager(mocker: MockerFixture, test_db: Session) -> Any:
-    """Mocked `ServerConfigManager`."""
-    return mocker.Mock(spec=ServerConfigManagerV2)
 
 
 # -------------------------------------------------------------------------------
@@ -307,8 +303,7 @@ def test_app(
     docker_client: docker.DockerClient,
     docker_manager: DockerContainerManager,
     server_creation_manager: ServerCreationManager,
-    server_controller: ServerControllerV2,
-    config_manager: ServerConfigManagerV2,
+    server_controller: ServerController,
 ) -> Generator[FastAPI, Any, None]:
     """FastAPI app with all dependencies overridden."""
 
@@ -321,11 +316,8 @@ def test_app(
     def override_server_creation_manager() -> ServerCreationManager:
         return server_creation_manager
 
-    def override_controller() -> ServerControllerV2:
+    def override_controller() -> ServerController:
         return server_controller
-
-    def override_config_manager() -> ServerConfigManagerV2:
-        return config_manager
 
     fastapi_app.dependency_overrides[get_docker_client] = override_docker_client
     fastapi_app.dependency_overrides[get_docker_manager] = override_docker_manager
@@ -334,9 +326,6 @@ def test_app(
     )
 
     fastapi_app.dependency_overrides[get_server_controller] = override_controller
-    fastapi_app.dependency_overrides[get_server_config_manager] = (
-        override_config_manager
-    )
 
     yield fastapi_app
     fastapi_app.dependency_overrides.clear()

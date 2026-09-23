@@ -2,10 +2,10 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from arservercontroller.services.creation_manager import ServerCreationManager
-from arservercontroller.utils.errors import Ok
 from fastapi import status
 from fastapi.testclient import TestClient
+
+from arservercontroller.utils.errors import Ok
 
 
 @pytest.mark.asyncio
@@ -39,6 +39,20 @@ async def test_create_server_and_websocket_logs(client: TestClient, mocker) -> N
     mocker.patch(
         "arservercontroller.services.docker.DockerContainerManager.create_server_container",
         side_effect=side_effect,
+    )
+
+    # Mock asyncio.sleep to avoid waiting 2 seconds during tests
+    mocker.patch("asyncio.sleep", return_value=None)
+
+    # Mock the AgentClient HTTP requests to avoid actual outbound connections during integration test
+    mock_agent_client = MagicMock()
+    mock_agent_client.start_server = AsyncMock(
+        return_value={"status": "started", "pid": 1234}
+    )
+    mock_agent_client.close = AsyncMock()
+    mocker.patch(
+        "arservercontroller.services.agent_client.AgentClient",
+        return_value=mock_agent_client,
     )
 
     payload = {

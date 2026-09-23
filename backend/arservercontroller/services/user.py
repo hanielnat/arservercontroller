@@ -1,16 +1,14 @@
 from datetime import timedelta
-from typing import Annotated, Optional
+from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
 from pydantic import EmailStr, ValidationError
+from sqlalchemy.orm import Session
 
-from arservercontroller.api.dependencies import (
-    DbSessionDep,
-    OAuth2FormDep,
-    OAuth2TokenDep,
-)
+from arservercontroller.api.dependencies import DbSessionDep
 from arservercontroller.constants import RolePermissions, UserRoles
 from arservercontroller.core.config import get_config
 from arservercontroller.core.security import (
@@ -36,11 +34,11 @@ _settings = get_config()
 
 class UserService:
     def __init__(self, db: DbSessionDep):
-        self._db = db
-        self._user_not_found_exception = HTTPException(
+        self._db: Session = db
+        self._user_not_found_exception: HTTPException = HTTPException(
             status.HTTP_404_NOT_FOUND, "User not found"
         )
-        self._unauthorized_exception = HTTPException(
+        self._unauthorized_exception: HTTPException = HTTPException(
             status.HTTP_401_UNAUTHORIZED,
             "Invalid user credentials",
             {"WWW-Authenticate": "Bearer"},
@@ -49,13 +47,13 @@ class UserService:
     def find_all(self, offset: int, limit: int) -> list[User]:
         return self._db.query(User).offset(offset).limit(limit).all()
 
-    def find_by_id(self, id: int) -> Optional[User]:
+    def find_by_id(self, id: int) -> User | None:
         return self._db.get(User, id)
 
-    def find_by_name(self, name: str) -> Optional[User]:
+    def find_by_name(self, name: str) -> User | None:
         return self._db.query(User).filter(User.name == name).first()
 
-    def find_by_email(self, email: EmailStr) -> Optional[User]:
+    def find_by_email(self, email: EmailStr) -> User | None:
         return self._db.query(User).filter(User.email == email).first()
 
     def auth_user(self, user: UserLogin) -> User:
@@ -68,11 +66,11 @@ class UserService:
 
         return model
 
-    def get_current_user(self, token: OAuth2TokenDep) -> UserOut:
+    def get_current_user(self, token: str) -> UserOut:
         try:
             payload = jwt.decode(token, _settings.SECRET_KEY, algorithms=[ALGORITHM])
             token_data = TokenData(**payload)
-        except (InvalidTokenError, ValidationError):
+        except InvalidTokenError, ValidationError:
             raise self._unauthorized_exception
 
         user = self.find_by_name(str(token_data.username))
@@ -119,12 +117,12 @@ class UserService:
 
         return UserOut.model_validate(user_model)
 
-    def login_user(self, form_data: OAuth2FormDep) -> Token:
+    def login_user(self, form_data: OAuth2PasswordRequestForm) -> Token:
         user_form = UserLogin(name=form_data.username, password=form_data.password)
         model = self.auth_user(user_form)
         return self.create_access_token({"username": model.name})
 
-    def create_access_token(self, data: dict) -> Token:
+    def create_access_token(self, data: dict[str, str]) -> Token:
         token_expires_delta = timedelta(minutes=_settings.JWT_EXPIRE_MINUTES)
         token = create_access_token(data, token_expires_delta)
         return Token(access_token=token, token_type="bearer")
@@ -166,4 +164,4 @@ def get_user_service(db: DbSessionDep) -> UserService:
     return UserService(db)
 
 
-UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+type UserServiceDep = Annotated[UserService, Depends(get_user_service)]

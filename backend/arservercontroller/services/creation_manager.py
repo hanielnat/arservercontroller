@@ -1,14 +1,16 @@
 import asyncio
 from asyncio import CancelledError, Queue, Task
+from collections.abc import Callable
 from typing import Annotated
 from uuid import UUID
 
 from docker.models.containers import Container
 from fastapi import Depends, WebSocket
+from sqlalchemy.orm import Session, sessionmaker
 
-from arservercontroller.api.dependencies import DbSessionDep
 from arservercontroller.constants import ServerStatusEnum
 from arservercontroller.db.models.server import Server
+from arservercontroller.db.session import SessionLocal
 from arservercontroller.schemas.server_config import ServerConfig
 from arservercontroller.services.docker import (
     DockerContainerManager,
@@ -33,10 +35,12 @@ class ServerCreationManager:
     def __init__(
         self,
         docker_manager: DockerContainerManager,
-        db: DbSessionDep,
+        session_factory: Callable[[], Session] | sessionmaker[Session] = SessionLocal,
     ):
         self.docker: DockerContainerManager = docker_manager
-        self.db: DbSessionDep = db
+        self._session_factory: Callable[[], Session] | sessionmaker[Session] = (
+            session_factory
+        )
         self._queues: dict[UUID, Queue[ProgressData]] = {}
         self._tasks: dict[UUID, Task[None]] = {}
         self._background_logs: dict[UUID, Task[None]] = {}
@@ -49,11 +53,10 @@ class ServerCreationManager:
         return self._queues[server_id]
 
     async def start_creation(
-        self, server: Server, config: ServerConfig, image_name: str
+        self, server_id: UUID, config: ServerConfig, image_name: str
     ) -> None:
         """Start async creation process for a server."""
 
-        server_id = server.id
         queue = self.get_or_create_queue(server_id)
 
         async def progress(msg: ProgressData) -> None:
@@ -65,7 +68,7 @@ class ServerCreationManager:
         )
 
         task = asyncio.create_task(
-            self._run_creation(server, config, image_name, progress)
+            self._run_creation(server_id, config, image_name, progress)
         )
         self._tasks[server_id] = task
 
@@ -76,22 +79,27 @@ class ServerCreationManager:
         _ = self._tasks.pop(server_id, None)
 
     async def _handle_creation_failed(
-        self, server: Server, container: Container | None
+        self, server_id: UUID, container: Container | None
     ) -> None:
-        if container:
+        if container and container.id:
             await self.docker._try_cleanup_container(  # pyright: ignore[reportPrivateUsage]
-                str(server.serverConfigData.name)
+                container.id
             )
 
         try:
-            self.db.delete(server)
-            self.db.commit()
-        except Exception:
-            pass
+            with self._session_factory() as db:
+                server: Server | None = db.get(Server, server_id)
+                if not server:
+                    return
+
+                db.delete(server)
+                db.commit()
+        except Exception as e:
+            logger.exception(e)
 
     async def _run_creation(
         self,
-        server: Server,
+        server_id: UUID,
         config: ServerConfig,
         image_name: str,
         progress: OnProgressCb,
@@ -121,22 +129,103 @@ class ServerCreationManager:
                     }
                 )
 
-                server.serverConfigData = server.serverConfigData.model_copy(
-                    update={"status": ServerStatusEnum.EXITED}
-                )
+                with self._session_factory() as db:
+                    db_server: Server | None = db.get(Server, server_id)
+                    if db_server and db_server.serverConfigData:
+                        db_server.serverConfigData = (
+                            db_server.serverConfigData.model_copy(
+                                update={"status": ServerStatusEnum.EXITED}
+                            )
+                        )
+                        db.commit()
 
-                self.db.commit()
                 raise container_result.error()
 
             # success path
             container = container_result.value()
-            server.serverConfigData = server.serverConfigData.model_copy(
-                update={
-                    "container_id": container.id,
-                    "status": container.status,
+
+            # get container IP to call the agent `/start` endpoint
+            container.reload()
+
+            ip_address = "127.0.0.1"
+
+            await progress(
+                {
+                    "phase": "manager",
+                    "step": "agent_start",
+                    "message": f"Calling agent /start inside container ({ip_address})",
                 }
             )
-            self.db.commit()
+
+            # start the container first and update it's status to running
+            if container.id:
+                started = await self.docker.start_container(container.id)
+                if not started:
+                    logger.exception(started.error)
+                    raise RuntimeError(f"Cannot start container: {started.error}")
+
+                with self._session_factory() as db:
+                    db_server: Server | None = db.get(Server, server_id)
+                    if db_server and db_server.serverConfigData:
+                        db_server.serverConfigData = (
+                            db_server.serverConfigData.model_copy(
+                                update={"status": ServerStatusEnum.RUNNING}
+                            )
+                        )
+                        db.commit()
+
+            # import AgentClient and ask to start server
+            from arservercontroller.services.agent_client import AgentClient
+
+            agent = AgentClient(ip_address)
+            try:
+                logger.info("Waiting for container agent to be ready...")
+                await asyncio.sleep(5.0)
+
+                if not await agent.is_ready():
+                    logger.fatal(
+                        "Container agent is not present or running, it must be running before starting the server."
+                    )
+
+                # call agent /start with launch options
+                agent_res = await agent.start_server(
+                    launch_options=config.command_line or []
+                )
+                await progress(
+                    {
+                        "phase": "manager",
+                        "step": "agent_started",
+                        "message": f"Agent started server process with PID {agent_res.get('pid')}",
+                    }
+                )
+
+            except Exception as e:
+                logger.error(f"Failed to start server process via agent: {e}")
+                await progress(
+                    {
+                        "phase": "manager",
+                        "step": "agent_error",
+                        "message": f"Failed to start server via agent: {e!s}",
+                        "error": "true",
+                    }
+                )
+                raise
+
+            finally:
+                await agent.close()
+
+            with self._session_factory() as db:
+                server: Server | None = db.get(Server, server_id)
+                if not server or not server.serverConfigData:
+                    raise ValueError(f"Server '{server_id}' not found during creation")
+
+                server.serverConfigData = server.serverConfigData.model_copy(
+                    update={
+                        "container_id": container.id,
+                        "status": container.status,
+                    }
+                )
+                db.commit()
 
             await progress(
                 {
@@ -149,16 +238,8 @@ class ServerCreationManager:
 
             await event_bus.emit(
                 creation_completed_ev,
-                {"server_id": server.id, "container_id": container.id},
+                {"server_id": server_id, "container_id": container.id},
             )
-
-            # show container logs after creation
-            # log_task = asyncio.create_task(
-            #     self.docker.stream_container_logs(
-            #         container, on_log=progress, follow=True
-            #     )
-            # )
-            # self._tasks[server.id] = log_task
 
         except CancelledError:
             await progress(
@@ -170,8 +251,8 @@ class ServerCreationManager:
                 }
             )
 
-            await event_bus.emit(creation_cancelled_ev, {"server_id": server.id})
-            await self._handle_creation_failed(server, container)
+            await event_bus.emit(creation_cancelled_ev, {"server_id": server_id})
+            await self._handle_creation_failed(server_id, container)
 
         except Exception as exc:
             await progress(
@@ -185,9 +266,9 @@ class ServerCreationManager:
             )
 
             await event_bus.emit(
-                creation_failed_ev, {"server_id": server.id, "error": str(exc)}
+                creation_failed_ev, {"server_id": server_id, "error": str(exc)}
             )
-            await self._handle_creation_failed(server, container)
+            await self._handle_creation_failed(server_id, container)
 
     def cancel_creation(self, server_id: UUID) -> bool:
         task = self._tasks.get(server_id)
@@ -211,13 +292,19 @@ class ServerCreationManager:
             pass
 
 
+_server_creation_manager: ServerCreationManager | None = None
+
+
 def get_server_creation_manager(
     docker_manager: DockerContainerManagerDep,
-    db: DbSessionDep,
 ) -> ServerCreationManager:
-    return ServerCreationManager(docker_manager, db)
+    global _server_creation_manager
+    if _server_creation_manager is None:
+        _server_creation_manager = ServerCreationManager(docker_manager)
+
+    return _server_creation_manager
 
 
-ServerCreationManagerDep = Annotated[
+type ServerCreationManagerDep = Annotated[
     ServerCreationManager, Depends(get_server_creation_manager)
 ]

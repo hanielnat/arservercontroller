@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, WebSocket, status
 from pydantic import UUID4
 
-from arservercontroller.api.dependencies import DbSessionDep, ModeratorOrAdminDep
+from arservercontroller.api.dependencies import DbSessionDep
 from arservercontroller.db.models.server import Server
 from arservercontroller.schemas.server import ServerOut, ServersOut
 from arservercontroller.schemas.server_config import (
@@ -47,7 +47,7 @@ async def add_server(
     out_db.serverConfigData = server_config_data
 
     try:
-        config = await server_controller.add_serverV2(out_db)
+        config = await server_controller.add_server(out_db)
 
     except Exception as err:
         raise HTTPException(
@@ -103,8 +103,6 @@ async def update_server(
     update_data = new_server.model_dump(exclude_unset=True)
     update_data.update({"id": server_id, "container_id": model})
 
-    model.name = "test"
-
     db.commit()
     db.refresh(model)
     return ServerOut.model_validate(model)
@@ -116,15 +114,12 @@ async def delete_server(
 ) -> None:
     model = find_server_by_id(server_id, db)
 
-    result = server_controller.remove_server(model.serverConfigData)
+    result, err = await server_controller.remove_server(model)
     if not result:
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "Failed to delete server",
+            f"Failed to delete server: {err}",
         )
-
-    db.delete(model)
-    db.commit()
 
 
 @server_router.post("/{server_id}/start")
@@ -134,10 +129,9 @@ async def start_server(
     server_controller: ServerControllerDep,
 ) -> None:
     model = find_server_by_id(server_id, db)
-
-    result, err = server_controller.start(model)
+    result, err = await server_controller.start(model)
     if not result:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "%s" % err)
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"{err}")
 
 
 @server_router.post("/{server_id}/stop")
@@ -145,10 +139,9 @@ async def stop_server(
     server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
 ) -> None:
     model = find_server_by_id(server_id, db)
-    result = server_controller.stop(model)
-
+    result, err = await server_controller.stop(model)
     if not result:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"{err}")
 
 
 @server_router.post("/{server_id}/restart")
@@ -156,7 +149,6 @@ async def restart_server(
     server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
 ) -> None:
     model = find_server_by_id(server_id, db)
-    result = server_controller.restart(model)
-
+    result, err = await server_controller.restart(model)
     if not result:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"{err}")

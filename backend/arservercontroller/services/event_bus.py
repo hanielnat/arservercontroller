@@ -49,7 +49,7 @@ def get_event_bus() -> ServerEventBus:
     return event_bus
 
 
-ServerEventBusDep = Annotated[ServerEventBus, Depends(get_event_bus)]
+type ServerEventBusDep = Annotated[ServerEventBus, Depends(get_event_bus)]
 
 
 async def _main() -> None:

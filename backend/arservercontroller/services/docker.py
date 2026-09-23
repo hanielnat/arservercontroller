@@ -12,11 +12,13 @@ from docker.models.containers import Container
 from docker.types import CancellableStream
 from fastapi import Depends
 
-from arservercontroller.api.dependencies import DockerClientDep
+from arservercontroller.api.dependencies import (
+    DockerClientDep,
+)
+from arservercontroller.constants import directory_manager
 from arservercontroller.schemas.server_config import ServerConfig
 from arservercontroller.services.event_bus import event_bus
 from arservercontroller.services.logger import get_logger
-from arservercontroller.utils.directories import directory_manager
 from arservercontroller.utils.errors import Err, Ok, Result
 
 logger = get_logger(__name__)
@@ -34,6 +36,53 @@ class DockerContainerManager:
 
     def __init__(self, docker_client: docker.DockerClient):
         self.client: docker.DockerClient = docker_client
+
+    def container_status(self, id: str) -> Result[str, Exception]:
+        try:
+            status = self.client.containers.get(id).status
+            return Ok(status)
+
+        except (docker.errors.NotFound, docker.errors.APIError) as e:
+            logger.error(e)
+            return Err(e)
+
+    def is_container_running(self, id: str) -> bool:
+        try:
+            return self.client.containers.get(id).status == "running"
+        except (docker.errors.NotFound, docker.errors.APIError) as e:
+            logger.error(e)
+            return False
+
+    async def start_container(self, id: str) -> Result[bool, Exception]:
+        try:
+            container = self.client.containers.get(id)
+            container.start()
+            container.reload()
+            return Ok(True)
+
+        except (docker.errors.NotFound, docker.errors.APIError) as e:
+            logger.error(e)
+            return Err(e)
+
+    async def stop_container(self, id: str) -> Result[bool, Exception]:
+        try:
+            container = self.client.containers.get(id)
+            container.stop()
+            return Ok(True)
+
+        except (docker.errors.NotFound, docker.errors.APIError) as e:
+            logger.error(e)
+            return Err(e)
+
+    async def restart_container(self, id: str) -> Result[bool, Exception]:
+        try:
+            container = self.client.containers.get(id)
+            container.restart()
+            return Ok(True)
+
+        except (docker.errors.NotFound, docker.errors.APIError) as e:
+            logger.error(e)
+            return Err(e)
 
     async def create_server_container(
         self, image_name: str, config: ServerConfig, on_progress: OnProgressCb
@@ -53,6 +102,7 @@ class DockerContainerManager:
             f"{config.bind_port}/udp": config.bind_port,
             f"{config.a2s_port}/udp": config.a2s_port,
             f"{config.rcon_port}/tcp": config.rcon_port,
+            "8080/tcp": 8080,  # agent
         }
 
         profile_host = str(
@@ -215,20 +265,31 @@ class DockerContainerManager:
         await self._try_cleanup_container(container_name)
         _ = await event_bus.emit(container_removed_ev, {"name": container_name})
 
+    async def remove_container_by_id(self, container_id: str) -> None:
+        await self._try_cleanup_container(container_id)
+        _ = await event_bus.emit(container_removed_ev, {"id": container_id})
+
     async def _try_cleanup_container(self, container_name: str) -> None:
         """Optimistic cleanup, remove if exists, ignore most errors."""
         try:
             container = self.client.containers.get(container_name)
             container.remove(force=True, v=True)
 
-        except (docker.errors.NotFound, docker.errors.APIError):
+        except docker.errors.NotFound, docker.errors.APIError:
             pass
 
 
+_docker_manager: DockerContainerManager | None = None
+
+
 def get_docker_manager(docker_client: DockerClientDep) -> DockerContainerManager:
-    return DockerContainerManager(docker_client)
+    global _docker_manager
+    if _docker_manager is None:
+        _docker_manager = DockerContainerManager(docker_client)
+
+    return _docker_manager
 
 
-DockerContainerManagerDep = Annotated[
+type DockerContainerManagerDep = Annotated[
     DockerContainerManager, Depends(get_docker_manager)
 ]
