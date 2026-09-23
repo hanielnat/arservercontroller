@@ -1,0 +1,33 @@
+[project]
+name = "sidecar"
+version = "0.1.0"
+description = "Container agent sidecar for managing servers created by arservercontroller."
+readme = "README.md"
+authors = [
+    { name = "hnl", email = "hnl@email.com" }
+]
+requires-python = ">=3.14"
+
+dependencies = [
+    "fastapi[standard]>=0.141.1",
+    "uvicorn>=0.52.4",
+]
+
+[dependency-groups]
+dev = [
+    { include-group = "lint" },
+]
+lint = [
+    "ty>=0.0.76",
+    "ruff>=0.16.6",
+]
+
+[project.scripts]
+sidecar = "sidecar:main"
+
+[tool.fastapi]
+entrypoint = "sidecar:app"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
