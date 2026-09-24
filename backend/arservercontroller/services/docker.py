@@ -9,13 +9,14 @@ from anyio import CancelScope
 from anyio import from_thread as anyio_from_thread
 from anyio import to_thread as anyio_to_thread
 from docker.models.containers import Container
+from docker.models.networks import Network
 from docker.types import CancellableStream
 from fastapi import Depends
 
 from arservercontroller.api.dependencies import (
     DockerClientDep,
 )
-from arservercontroller.constants import directory_manager
+from arservercontroller.constants import AGENT_CONTAINER_NETWORK_NAME, directory_manager
 from arservercontroller.schemas.server_config import ServerConfig
 from arservercontroller.services.event_bus import event_bus
 from arservercontroller.services.logger import get_logger
@@ -84,6 +85,34 @@ class DockerContainerManager:
             logger.error(e)
             return Err(e)
 
+    def get_or_create_agent_network(self) -> Network | None:
+        try:
+            return self.client.networks.get(AGENT_CONTAINER_NETWORK_NAME)
+
+        except docker.errors.NotFound:
+            return self.client.networks.create(
+                name=AGENT_CONTAINER_NETWORK_NAME, driver="bridge", check_duplicate=True
+            )
+
+        except docker.errors.APIError as e:
+            logger.error(e)
+            return None
+
+    def get_container_network_ip(self, id: str) -> str | None:
+        try:
+            container = self.client.containers.get(id)
+            container.reload()
+            networks = container.attrs["NetworkSettings"]["Networks"]
+            agent_net = networks.get(AGENT_CONTAINER_NETWORK_NAME)
+            if not agent_net:
+                return None
+
+            return agent_net.get("IPAddress") or None
+
+        except (docker.errors.NotFound, docker.errors.APIError, KeyError) as e:
+            logger.error(e)
+            return None
+
     async def create_server_container(
         self, image_name: str, config: ServerConfig, on_progress: OnProgressCb
     ) -> Result[Container, Exception]:
@@ -97,12 +126,10 @@ class DockerContainerManager:
             }
         )
 
-        name = f"arserver_{config.name}"
         port_bindings = {
             f"{config.bind_port}/udp": config.bind_port,
             f"{config.a2s_port}/udp": config.a2s_port,
             f"{config.rcon_port}/tcp": config.rcon_port,
-            "8080/tcp": 8080,  # agent
         }
 
         profile_host = str(
@@ -135,24 +162,37 @@ class DockerContainerManager:
 
         labels: dict[str, str] = {"com.arservercontroller": "true"}
 
+        command_line: list[str] = [
+            "-profile",
+            f'"/home/{config.name}"',
+            "-config",
+            f'"/home/{config.name}/config.json"',
+        ]
+        command_line.extend(config.command_line or [])
+
         await on_progress(
             {
                 "phase": "docker",
                 "step": "create",
-                "message": f"Creating container '{name}'",
+                "message": f"Creating container '{config.name}'",
             }
         )
 
         try:
+            agent_net = self.get_or_create_agent_network()
+            if not agent_net:
+                raise RuntimeError("Can't create container with no agent network")
+
             container = self.client.containers.create(
                 image=image_name,
-                name=name,
+                name=config.name,
                 ports=port_bindings,
+                network=agent_net.name,
                 volumes=volumes,
                 labels=labels,
                 detach=True,
                 environment=config.environment or {},
-                command=config.command_line or [],
+                command=command_line,
             )
 
             if container and container.id:
@@ -165,7 +205,7 @@ class DockerContainerManager:
                     {
                         "phase": "docker",
                         "step": "created",
-                        "message": f"Container '{name}' created (id: {container.id[:12]})",
+                        "message": f"Container '{config.name}' created (id={container.id[:12]}...)",
                     }
                 )
 

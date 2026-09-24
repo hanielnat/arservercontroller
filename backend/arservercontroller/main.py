@@ -4,9 +4,11 @@ from logging import Logger
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from arservercontroller.api.dependencies import get_docker_client
 from arservercontroller.api.v1.servers import server_router
 from arservercontroller.api.v1.users import roles_router, users_router
 from arservercontroller.core.config import BaseConfig, DevelopmentConfig, get_config
+from arservercontroller.services.docker import get_docker_manager
 from arservercontroller.services.logger import get_logger
 from arservercontroller.utils.directories import make_directories
 
@@ -24,6 +26,10 @@ make_directories(logger)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    network = get_docker_manager(get_docker_client()).get_or_create_agent_network()
+    if network:
+        logger.info("Created agent network.")
+
     yield
 
 

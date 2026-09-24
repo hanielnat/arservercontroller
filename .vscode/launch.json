@@ -38,13 +38,6 @@
             "args": [
                 "dev"
             ]
-        },
-        {
-            "name": "Run agent",
-            "type": "go",
-            "request": "launch",
-            "envFile": "${workspaceFolder}/.env",
-            "program": "${workspaceFolder}/backend/agent-service"
         }
     ]
 }

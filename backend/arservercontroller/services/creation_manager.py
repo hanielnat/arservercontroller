@@ -143,11 +143,28 @@ class ServerCreationManager:
 
             # success path
             container = container_result.value()
+            container_id: str = container.id or ""
+
+            # start the container first and update it's status to running
+            started = await self.docker.start_container(container_id)
+            if not started:
+                logger.exception(started.error())
+                raise RuntimeError(f"Cannot start container: {started.error()}")
+
+            # reload container state to set new status
+            container.reload()
+            with self._session_factory() as db:
+                db_server: Server | None = db.get(Server, server_id)
+                if db_server and db_server.serverConfigData:
+                    db_server.serverConfigData = db_server.serverConfigData.model_copy(
+                        update={"status": container.status}
+                    )
+                    db.commit()
 
             # get container IP to call the agent `/start` endpoint
-            container.reload()
-
-            ip_address = "127.0.0.1"
+            ip_address: str = self.docker.get_container_network_ip(container_id) or ""
+            if len(ip_address) == 0:
+                logger.error("Container IPAddress is empty, retrieval failed")
 
             await progress(
                 {
@@ -156,23 +173,6 @@ class ServerCreationManager:
                     "message": f"Calling agent /start inside container ({ip_address})",
                 }
             )
-
-            # start the container first and update it's status to running
-            if container.id:
-                started = await self.docker.start_container(container.id)
-                if not started:
-                    logger.exception(started.error)
-                    raise RuntimeError(f"Cannot start container: {started.error}")
-
-                with self._session_factory() as db:
-                    db_server: Server | None = db.get(Server, server_id)
-                    if db_server and db_server.serverConfigData:
-                        db_server.serverConfigData = (
-                            db_server.serverConfigData.model_copy(
-                                update={"status": ServerStatusEnum.RUNNING}
-                            )
-                        )
-                        db.commit()
 
             # import AgentClient and ask to start server
             from arservercontroller.services.agent_client import AgentClient
@@ -188,9 +188,16 @@ class ServerCreationManager:
                     )
 
                 # call agent /start with launch options
-                agent_res = await agent.start_server(
-                    launch_options=config.command_line or []
-                )
+                command_line: list[str] = [
+                    "-profile",
+                    f'"/home/{config.name}"',
+                    "-config",
+                    f'"/home/{config.name}/config.json"',
+                ]
+                command_line.extend(config.command_line or [])
+
+                agent_res = await agent.start_server(command_line)
+
                 await progress(
                     {
                         "phase": "manager",
@@ -220,10 +227,7 @@ class ServerCreationManager:
                     raise ValueError(f"Server '{server_id}' not found during creation")
 
                 server.serverConfigData = server.serverConfigData.model_copy(
-                    update={
-                        "container_id": container.id,
-                        "status": container.status,
-                    }
+                    update={"container_id": container.id}
                 )
                 db.commit()
 
@@ -259,7 +263,7 @@ class ServerCreationManager:
                 {
                     "phase": "manager",
                     "step": "error",
-                    "message": f"Unexpected error during creation: {str(exc)}",
+                    "message": f"Unexpected error during creation: {exc}",
                     "error": "true",
                     "final": "true",
                 }

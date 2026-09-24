@@ -44,7 +44,6 @@ class ServerController:
         self._docker = docker_client
         self.docker_manager = docker_manager
         self.creation_manager = creation_manager
-        self._container_name_prefix = "arserver_"
         self._ping()
 
     def _ping(self):
@@ -122,10 +121,17 @@ class ServerController:
             if not started:
                 raise RuntimeError(started.error())
 
+            # get container IP to call the agent `/start` endpoint
+            ip_address: str = (
+                self.docker_manager.get_container_network_ip(container_id) or ""
+            )
+            if len(ip_address) == 0:
+                logger.error("Container IPAddress is empty, retrieval failed")
+
             # import AgentClient and ask to start server
             from arservercontroller.services.agent_client import AgentClient
 
-            agent = AgentClient("127.0.0.1")
+            agent = AgentClient(ip_address)
             try:
                 logger.info("Waiting for container agent to be ready...")
                 await asyncio.sleep(5.0)
@@ -135,7 +141,15 @@ class ServerController:
                         "Container agent is not present or running, it must be running before starting the server."
                     )
 
-                await agent.start_server(model.serverConfigData.command_line or [])
+                command_line: list[str] = [
+                    "-profile",
+                    f'"/home/{model.serverConfigData.name}"',
+                    "-config",
+                    f'"/home/{model.serverConfigData.name}/config.json"',
+                ]
+                command_line.extend(model.serverConfigData.command_line or [])
+
+                await agent.start_server(command_line)
 
             except Exception as e:
                 msg = "Failed start server process via agent"
@@ -173,10 +187,17 @@ class ServerController:
 
             logger.info(f"Stopping container of server '{model.id}'...")
 
+            # get container IP to call the agent `/stop` endpoint
+            ip_address: str = (
+                self.docker_manager.get_container_network_ip(container_id) or ""
+            )
+            if len(ip_address) == 0:
+                logger.error("Container IPAddress is empty, retrieval failed")
+
             # stop via agent first if container is running
             from arservercontroller.services.agent_client import AgentClient
 
-            agent = AgentClient("127.0.0.1")
+            agent = AgentClient(ip_address)
             try:
                 await agent.stop_server()
             except (
@@ -214,10 +235,16 @@ class ServerController:
         try:
             logger.info(f"Restarting container of Server '{model.id}'...")
 
+            # get container IP to call the agent `/stop` endpoint
+            ip_address: str = (
+                self.docker_manager.get_container_network_ip(container_id) or ""
+            )
+            if len(ip_address) == 0:
+                logger.error("Container IPAddress is empty, retrieval failed")
+
             from arservercontroller.services.agent_client import AgentClient
 
             # stop via agent before restart
-            ip_address = "127.0.0.1"
             try:
                 agent = AgentClient(ip_address)
                 await agent.stop_server()
@@ -229,7 +256,7 @@ class ServerController:
             # actual container restart
             restarted = await self.docker_manager.restart_container(container_id)
             if not restarted:
-                logger.error(restarted.error)
+                logger.error(restarted.error())
                 raise restarted.error()
 
             model.serverConfigData = model.serverConfigData.model_copy(
@@ -250,7 +277,16 @@ class ServerController:
                     logger.error(msg)
                     raise TimeoutError(msg)
 
-                await agent.start_server(model.serverConfigData.command_line or [])
+                command_line: list[str] = [
+                    "-profile",
+                    f'"/home/{model.serverConfigData.name}"',
+                    "-config",
+                    f'"/home/{model.serverConfigData.name}/config.json"',
+                ]
+                command_line.extend(model.serverConfigData.command_line or [])
+
+                await agent.start_server(command_line)
+
             except Exception as e:
                 logger.error(
                     f"Failed to start server via agent after container restart: {e}"

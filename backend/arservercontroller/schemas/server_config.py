@@ -4,7 +4,6 @@ from typing import Annotated
 
 from pydantic import (
     UUID4,
-    AliasGenerator,
     BaseModel,
     ConfigDict,
     Field,
@@ -12,7 +11,7 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
-from pydantic.alias_generators import to_camel, to_snake
+from pydantic.alias_generators import to_camel
 
 from arservercontroller.constants import SERVER_SCHEMA_VERSION, ServerStatusEnum
 
@@ -24,9 +23,8 @@ class ServerConfigBase(BaseModel):
     model_config = ConfigDict(
         use_enum_values=True,
         str_max_length=255,
-        alias_generator=AliasGenerator(
-            serialization_alias=to_camel, validation_alias=to_snake
-        ),
+        populate_by_name=True,
+        alias_generator=to_camel,
     )
 
     # fmt: off
@@ -52,7 +50,14 @@ class ServerConfigBase(BaseModel):
 
     a2s_port: Annotated[
         int | None,
-        Field(17777, gt=_PORT_MIN, lt=_PORT_MAX)
+        Field(
+            17777,
+            gt=_PORT_MIN,
+            lt=_PORT_MAX,
+            validation_alias="a2sPort",
+            serialization_alias="a2sPort",
+            alias_priority=2  # don't let alias generator overwrite with `a2SPort`
+        )
     ]
 
     rcon_port: Annotated[
@@ -79,16 +84,6 @@ class ServerConfigBase(BaseModel):
         list[tuple[str, int]] | None,
         Field(None)
     ]
-
-    arserver_profile_path: Annotated[
-        str | None,
-        Field(None)
-    ]
-
-    arserver_config_path: Annotated[
-        str | None,
-        Field(None)
-    ]
     # fmt: on
 
 
@@ -106,12 +101,12 @@ class ServerConfigUpdate(ServerConfigBase):
         Field(None)
     ] = None
 
-    name: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
+    name: Annotated[
         str | None,
         Field(None, min_length=4, max_length=20)
     ] = None
 
-    bind_port: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
+    bind_port: Annotated[
         int | None,
         Field(None, gt=_PORT_MIN, lt=_PORT_MAX)
     ] = None
@@ -123,7 +118,14 @@ class ServerConfigUpdate(ServerConfigBase):
 
     a2s_port: Annotated[
         int | None,
-        Field(None, gt=_PORT_MIN, lt=_PORT_MAX)
+        Field(
+            17777,
+            gt=_PORT_MIN,
+            lt=_PORT_MAX,
+            validation_alias="a2sPort",
+            serialization_alias="a2sPort",
+            alias_priority=2  # don't let alias generator overwrite with `a2SPort`
+        )
     ] = None
 
     rcon_port: Annotated[
@@ -131,7 +133,7 @@ class ServerConfigUpdate(ServerConfigBase):
         Field(None, gt=_PORT_MIN, lt=_PORT_MAX)
     ] = None
 
-    status: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
+    status: Annotated[
         ServerStatusEnum | None,
         Field(None, exclude=True, validate_default=True)
     ] = None
@@ -147,9 +149,7 @@ class ServerConfig(ServerConfigBase):
     def schema_version(cls, v: str) -> str:
         if v != SERVER_SCHEMA_VERSION:
             raise ValueError(
-                "JSON schema version entered does not match! got: '{}', must be: '{}'".format(
-                    v, SERVER_SCHEMA_VERSION
-                )
+                f"JSON schema version entered does not match! got: '{v}', must be: '{SERVER_SCHEMA_VERSION}'"
             )
         return v
 

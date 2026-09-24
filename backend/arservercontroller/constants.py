@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, IPvAnyAddress
 import arservercontroller
 
 CONTAINER_NAME_PREFIX: str = "arserver_"
+AGENT_CONTAINER_NETWORK_NAME: str = "arserver-net"
 SERVER_SCHEMA_VERSION: str = "0.0.1"
 
 BIND_IP_AUTOMATIC: IPvAnyAddress = IPv4Address("0.0.0.0")

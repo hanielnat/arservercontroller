@@ -12,8 +12,6 @@ from sidecar.logger_util import eprint, log_print
 
 class AgentService:
     REFORGER: str = os.getenv("REFORGER") or "/reforger/ArmaReforgerServer"
-    PROFILE_DIR: str = os.getenv("ProfileDir") or "/home/reforger"
-    CONFIG_PATH: str = os.getenv("ConfigPath") or "/home/reforger/config.json"
     AGENT_DEBUG: bool = int(os.getenv("AGENT_DEBUG") or "0") != 0
     MOCK_SUBPROCESS_CMD: str = (
         os.getenv("MOCK_SUBPROCESS_CMD")
@@ -52,8 +50,6 @@ class AgentService:
                 if self.AGENT_DEBUG
                 else self.REFORGER.split()
             )
-
-            args.extend(["-profile", self.PROFILE_DIR, "-config", self.CONFIG_PATH])
             args.extend(launch_options)
 
             proc = subprocess.Popen(
@@ -124,12 +120,14 @@ class AgentService:
             self.server_pid = -1
             return {"pid": pid, "status": "stopped"}
 
-    def reload_config(self, server_launch_options: list[str], config: dict[str, Any]):
-        with open(self.CONFIG_PATH, "w", encoding="utf-8") as file:
+    def reload_config(
+        self, server_launch_options: list[str], config_path: str, config: dict[str, Any]
+    ):
+        with open(config_path, "w", encoding="utf-8") as file:
             import json
 
             count = file.write(json.dumps(config, indent=4, skipkeys=True))
-            log_print(f"written '{count}' characters to '{self.CONFIG_PATH}'")
+            log_print(f"written '{count}' characters to '{config_path}'")
 
         log_print(f"restarting server with options: {server_launch_options}")
         self.stop_server()
@@ -168,9 +166,12 @@ def make_routes() -> APIRouter:
 
     @router.post("/reload")
     async def reload_config(
-        service: AgentServiceDep, launch_options: list[str], config: dict[str, Any]
+        service: AgentServiceDep,
+        launch_options: list[str],
+        config_path: str,
+        config: dict[str, Any],
     ):
-        return service.reload_config(launch_options, config)
+        return service.reload_config(launch_options, config_path, config)
 
     @router.get("/logs")
     async def get_logs(service: AgentServiceDep, last_n: int = 100):
