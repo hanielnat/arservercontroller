@@ -1,11 +1,12 @@
 import os
 import subprocess
 from contextlib import asynccontextmanager
+from pathlib import Path
 from queue import Queue
 from threading import Lock, Thread
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException
 
 from sidecar.logger_util import eprint, log_print
 
@@ -123,11 +124,23 @@ class AgentService:
     def reload_config(
         self, server_launch_options: list[str], config_path: str, config: dict[str, Any]
     ):
-        with open(config_path, "w", encoding="utf-8") as file:
-            import json
+        try:
+            # prevent creating a config file if passed as relational path, ex: "config.json"
+            path = Path(config_path) if Path(config_path).is_absolute() else None
+            if not path:
+                raise ValueError("Only absolute paths to config file are allowed")
 
-            count = file.write(json.dumps(config, indent=4, skipkeys=True))
-            log_print(f"written '{count}' characters to '{config_path}'")
+            with open(path, "w", encoding="utf-8") as file:
+                import json
+
+                count = file.write(json.dumps(config, indent=4, skipkeys=True))
+                log_print(f"written '{count}' characters to '{config_path}'")
+
+        except FileNotFoundError:
+            return HTTPException(404, f"Config file not found: '{config_path}'")
+
+        except OSError as e:
+            return HTTPException(500, f"Unexpected OSError: {e}")
 
         log_print(f"restarting server with options: {server_launch_options}")
         self.stop_server()
@@ -168,7 +181,7 @@ def make_routes() -> APIRouter:
     async def reload_config(
         service: AgentServiceDep,
         launch_options: list[str],
-        config_path: str,
+        config_path: Annotated[str, Body()],
         config: dict[str, Any],
     ):
         return service.reload_config(launch_options, config_path, config)

@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 import docker
@@ -110,6 +110,46 @@ class ServerController:
             return False
 
         return cancelled
+
+    async def reload_config(
+        self, model: Server, config: dict[str, Any]
+    ) -> ControllerResult:
+        container_id = model.serverConfigData.container_id
+
+        # get container IPAddress to call `/reload` endpoint
+        ip_address: str = (
+            self.docker_manager.get_container_network_ip(container_id) or ""
+        )
+        if len(ip_address) == 0:
+            logger.error("Container IPAddress is empty, retrieval failed")
+
+        # import AgentClient and ask to reload the server with new config and launch options
+        from arservercontroller.services.agent_client import AgentClient
+
+        agent = AgentClient(ip_address)
+        try:
+            # prepare payload
+            config_path = f"/home/{model.serverConfigData.name}/config.json"
+            command_line: list[str] = [
+                "-profile",
+                f"/home/{model.serverConfigData.name}",
+                "-config",
+                config_path,
+            ]
+            command_line.extend(model.serverConfigData.command_line or [])
+
+            await agent.reload_config(command_line, config_path, config)
+
+            logger.info(f"Server config reloaded (server_id='{model.id}')")
+            return True, ""
+
+        except Exception as e:
+            msg = "Failed reload reforger server config via agent"
+            logger.error(f"{msg}: {e}")
+            return False, f"{msg}: {e}"
+
+        finally:
+            await agent.close()
 
     async def start(self, model: Server) -> ControllerResult:
         container_id = model.serverConfigData.container_id

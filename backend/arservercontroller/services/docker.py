@@ -157,7 +157,7 @@ class DockerContainerManager:
 
         volumes = {
             profile_host: {"bind": f"/home/{config.name}", "mode": "rw"},
-            config_host: {"bind": f"/home/{config.name}/config.json", "mode": "ro"},
+            config_host: {"bind": f"/home/{config.name}/config.json", "mode": "rw"},
         }
 
         labels: dict[str, str] = {"com.arservercontroller": "true"}

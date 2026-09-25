@@ -39,14 +39,26 @@ class AgentClient:
         response.raise_for_status()
         return response.json()
 
-    async def restart_server(
-        self, config: dict[str, Any], launch_options: list[str]
+    async def reload_config(
+        self, launch_options: list[str], config_path: str, config: dict[str, Any]
     ) -> dict[str, Any]:
         """Calls /stop and /start endpoint to write new config and restart the game process."""
         url = f"{self.base_url}/reload"
-        payload = {"reforgerConfig": config, "launchOptions": launch_options}
-        logger.info("Calling agent /reload at %s", url)
+
+        payload = {
+            "launch_options": launch_options,
+            "config_path": config_path,
+            "config": config,
+        }
+
+        import json
+
+        logger.debug(
+            f"Calling agent /reload at {url} with payload: {json.dumps(payload)}"
+        )
+
         response = await self.client.post(url, json=payload)
+
         response.raise_for_status()
         return response.json()
 

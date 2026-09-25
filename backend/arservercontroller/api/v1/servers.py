@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, WebSocket, status
 from pydantic import UUID4
@@ -32,7 +33,7 @@ async def get_servers(db: DbSessionDep, offset: int = 0, limit: int = 10) -> Ser
     return ServersOut(data=servers_out, count=len(servers_out))
 
 
-@server_router.post("/")
+@server_router.post("/", status_code=status.HTTP_201_CREATED)
 async def add_server(
     server_config: ServerConfigCreate,
     server_controller: ServerControllerDep,
@@ -150,5 +151,19 @@ async def restart_server(
 ) -> None:
     model = find_server_by_id(server_id, db)
     result, err = await server_controller.restart(model)
+    if not result:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"{err}")
+
+
+@server_router.post("/{server_id}/config")
+async def reload_config(
+    server_id: UUID4,
+    reforger_config: dict[str, Any],
+    db: DbSessionDep,
+    server_controller: ServerControllerDep,
+):
+    model = find_server_by_id(server_id, db)
+    result, err = await server_controller.reload_config(model, reforger_config)
+
     if not result:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"{err}")
