@@ -132,11 +132,11 @@ class DockerContainerManager:
             f"{config.rcon_port}/tcp": config.rcon_port,
         }
 
-        profile_host = str(
+        profile_host = Path(
             directory_manager.controller_directories.DS_PROFILES_DIR / config.name
         )
 
-        config_host = str(
+        config_host = Path(
             directory_manager.controller_directories.DS_CONFIGS_DIR
             / f"{config.name}.json"
         )
@@ -145,19 +145,24 @@ class DockerContainerManager:
             directory_manager.controller_directories.DS_CONFIGS_DIR / "base.json"
         )
 
+        # ensure profile path exists before volume creation
+        profile_host.mkdir(parents=True, exist_ok=True)
+
         if config.name == "test-server":
-            config_host = str(config_host_base)
+            config_source = config_host_base
         else:
-            config_host_exists = Path(config_host).exists()
-            if not config_host_exists:
-                base_config = config_host_base.read_text("utf-8")
-                config_host_path = Path(config_host)
-                config_host_path.touch()
-                _ = config_host_path.write_text(base_config, encoding="utf-8")
+            if not config_host.exists():
+                config_host.write_text(
+                    config_host_base.read_text("utf-8"), encoding="utf-8"
+                )
+            config_source = config_host
+
+        # ovewrite or copy the `config.json` to profile directory
+        profile_config = profile_host / "config.json"
+        profile_config.write_text(config_source.read_text("utf-8"), encoding="utf-8")
 
         volumes = {
-            profile_host: {"bind": f"/home/{config.name}", "mode": "rw"},
-            config_host: {"bind": f"/home/{config.name}/config.json", "mode": "rw"},
+            str(profile_host): {"bind": f"/home/{config.name}", "mode": "rw"},
         }
 
         labels: dict[str, str] = {"com.arservercontroller": "true"}
