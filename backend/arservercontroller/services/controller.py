@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import Queue
 from pathlib import Path
 from typing import Annotated, Any
 from uuid import UUID
@@ -19,6 +20,7 @@ from arservercontroller.services.creation_manager import (
 )
 from arservercontroller.services.docker import (
     DockerContainerManagerDep,
+    OnProgressCb,
 )
 from arservercontroller.services.logger import get_logger
 
@@ -150,6 +152,43 @@ class ServerController:
 
         finally:
             await agent.close()
+
+    async def stream_reforger_logs(self, model: Server):
+        container_id = model.serverConfigData.container_id
+        container = self._docker.containers.get(container_id)
+        raise NotImplementedError
+
+    async def stream_container_logs(
+        self,
+        model: Server,
+        queue: Queue[dict[str, Any] | None],
+        on_log: OnProgressCb,
+        tail: int,
+        follow: bool,
+        show_timestamp: bool,
+    ):
+        container_id = model.serverConfigData.container_id
+        container = self._docker.containers.get(container_id)
+
+        try:
+            await self.docker_manager.stream_container_logs(
+                container,
+                on_log=on_log,
+                tail=tail,
+                follow=follow,
+                show_timestamp=show_timestamp,
+            )
+        except Exception as e:
+            await queue.put(
+                {
+                    "phase": "error",
+                    "step": "logs",
+                    "message": str(e),
+                    "error": "true",
+                }
+            )
+        finally:
+            await queue.put(None)  # sentinel
 
     async def start(self, model: Server) -> ControllerResult:
         container_id = model.serverConfigData.container_id

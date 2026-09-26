@@ -236,6 +236,7 @@ class DockerContainerManager:
         on_log: OnProgressCb,
         tail: int = 100,
         follow: bool = True,
+        show_timestamp: bool = False,
     ) -> None:
         """Stream real container logs using docker-py."""
 
@@ -260,7 +261,7 @@ class DockerContainerManager:
                 tail=tail,
                 follow=follow,
                 stream=True,
-                timestamps=True,
+                timestamps=show_timestamp,
             )
 
             try:
@@ -271,11 +272,11 @@ class DockerContainerManager:
                     buffer += chunk
                     while b"\n" in buffer:
                         line, buffer = buffer.split(b"\n", 1)
-                        _ = anyio_from_thread.run_sync(send_stream.send, line)
+                        _ = anyio_from_thread.run(send_stream.send, line)
 
             finally:
                 log_stream.close()
-                _ = anyio_from_thread.run_sync(send_stream.send, b"")
+                _ = anyio_from_thread.run(send_stream.send, b"")
 
         async with anyio.create_task_group() as task_group:
             with CancelScope() as _:

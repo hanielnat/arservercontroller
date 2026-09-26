@@ -1,7 +1,11 @@
+import asyncio
 import uuid
+from asyncio import Queue
+from collections.abc import AsyncIterable
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, WebSocket, status
+from fastapi import APIRouter, HTTPException, Request, WebSocket, status
+from fastapi.sse import EventSourceResponse, ServerSentEvent
 from pydantic import UUID4
 
 from arservercontroller.api.dependencies import DbSessionDep
@@ -167,3 +171,61 @@ async def reload_config(
 
     if not result:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"{err}")
+
+
+@server_router.get("/{server_id}/logs/stream", response_class=EventSourceResponse)
+async def stream_logs(
+    server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
+) -> AsyncIterable[ServerSentEvent]:
+    model = find_server_by_id(server_id, db)
+    yield server_controller.stream_reforger_logs(model)
+
+
+@server_router.get(
+    "/{server_id}/container/logs/stream", response_class=EventSourceResponse
+)
+async def stream_container_logs(
+    request: Request,
+    server_id: UUID4,
+    db: DbSessionDep,
+    server_controller: ServerControllerDep,
+    tail: int = 100,
+    follow: bool = True,
+    show_timestamp: bool = False,
+) -> AsyncIterable[ServerSentEvent]:
+    model = find_server_by_id(server_id, db)
+    queue: Queue[dict[str, Any] | None] = Queue()
+
+    async def on_log(data: dict[str, Any]) -> None:
+        if await request.is_disconnected():
+            return
+        await queue.put(data)
+
+    task = asyncio.create_task(
+        server_controller.stream_container_logs(
+            model, queue, on_log, tail, follow, show_timestamp
+        )
+    )
+
+    try:
+        while True:
+            if await request.is_disconnected():
+                break
+
+            item = await queue.get()
+            if item is None:
+                break
+
+            message = item.get("message", "")
+            event_name = "error" if item.get("error") else "log"
+
+            yield ServerSentEvent(
+                raw_data=message,
+                event=event_name,
+            )
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
