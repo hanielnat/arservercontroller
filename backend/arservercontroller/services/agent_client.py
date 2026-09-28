@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from http import HTTPStatus
 from typing import Any
 
@@ -68,3 +69,47 @@ class AgentClient:
         response = await self.client.get(url)
         response.raise_for_status()
         return response.json()
+
+    async def stream_logs(self, limit: int, follow: bool) -> AsyncIterator[str]:
+        """Calls /logs/stream endpoint to get logs from a running reforger server process via SSE."""
+        url = f"{self.base_url}/logs/stream"
+
+        logger.debug(
+            f"Calling agent /logs/stream at {url} with params: limit={limit} follow={follow}"
+        )
+
+        params = {"limit": limit, "follow": str(follow).lower()}
+        async with self.client.stream("GET", url, params=params) as stream:
+            event_type = "log"
+            data_lines: list[str] = []
+
+            async for raw in stream.aiter_lines():
+                line = raw.rstrip("\r")
+
+                # end of a SSE event
+                if line == "":
+                    if data_lines:
+                        payload = "\n".join(data_lines)
+
+                        if event_type == "log":
+                            yield payload
+
+                        data_lines.clear()
+                        event_type = "log"
+
+                    continue
+
+                # comment / keep-alive
+                if line.startswith(":"):
+                    continue
+
+                if line.startswith("event:"):
+                    event_type = line[6:].strip()
+                    continue
+
+                if line.startswith("data:"):
+                    data_lines.append(line[5:].lstrip())
+                    continue
+
+                # default case
+                data_lines.append(line)

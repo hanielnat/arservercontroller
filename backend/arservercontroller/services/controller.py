@@ -153,10 +153,25 @@ class ServerController:
         finally:
             await agent.close()
 
-    async def stream_reforger_logs(self, model: Server):
+    async def stream_reforger_logs(
+        self, model: Server, queue: Queue[str | None], limit: int, follow: bool
+    ):
         container_id = model.serverConfigData.container_id
-        container = self._docker.containers.get(container_id)
-        raise NotImplementedError
+
+        ip_address = self.docker_manager.get_container_network_ip(container_id)
+        if not ip_address:
+            await queue.put("[error] container IP not found")
+            return
+
+        from arservercontroller.services.agent_client import AgentClient
+
+        agent = AgentClient(ip_address)
+        try:
+            async for i in agent.stream_logs(limit, follow):
+                await queue.put(i)
+
+        finally:
+            await agent.close()
 
     async def stream_container_logs(
         self,

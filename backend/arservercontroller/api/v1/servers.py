@@ -175,10 +175,42 @@ async def reload_config(
 
 @server_router.get("/{server_id}/logs/stream", response_class=EventSourceResponse)
 async def stream_logs(
-    server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
+    request: Request,
+    server_id: UUID4,
+    db: DbSessionDep,
+    server_controller: ServerControllerDep,
+    limit: int = 100,
+    follow: bool = True,
 ) -> AsyncIterable[ServerSentEvent]:
     model = find_server_by_id(server_id, db)
-    yield server_controller.stream_reforger_logs(model)
+    queue: Queue[str | None] = Queue()
+
+    async def producer() -> None:
+        try:
+            await server_controller.stream_reforger_logs(model, queue, limit, follow)
+        except Exception as e:
+            await queue.put(f"[error] {e}")
+        finally:
+            await queue.put(None)  # sentinel
+
+    task = asyncio.create_task(producer())
+
+    try:
+        while True:
+            if await request.is_disconnected():
+                break
+
+            line = await queue.get()
+            if line is None:
+                break
+
+            yield ServerSentEvent(raw_data=line, event="log")
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 
 @server_router.get(

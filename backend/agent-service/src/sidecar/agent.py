@@ -1,12 +1,15 @@
+import asyncio
 import os
 import subprocess
+from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from queue import Queue
+from queue import Empty, Queue
 from threading import Lock, Thread
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException, Request
+from fastapi.sse import EventSourceResponse, ServerSentEvent
 
 from sidecar.logger_util import eprint, log_print
 
@@ -146,8 +149,30 @@ class AgentService:
         self.stop_server()
         self.start_server(server_launch_options)
 
-    def get_logs(self, last_n: int = 100) -> list[str]:
-        return self._stdout_contents[-last_n:]
+    async def stream_logs(
+        self, limit: int = 100, follow: bool = True
+    ) -> AsyncIterator[str]:
+        history = self._stdout_contents[-limit:] if limit > 0 else []
+        for line in history:
+            yield line
+
+        if not follow:
+            return
+
+        while True:
+            try:
+                # queue.get with short timeout under a thread pool to not block the loop
+                line = await asyncio.to_thread(self._stdout_queue.get, timeout=0.5)
+            except Empty:
+                # timeout -> check if process exists
+                if self.server_proc is None or self.server_proc.poll() is not None:
+                    break
+                continue
+
+            if line is None:  # got sentinel, means process terminated
+                break
+
+            yield line
 
 
 _agent_service: AgentService | None = None
@@ -186,9 +211,17 @@ def make_routes() -> APIRouter:
     ):
         return service.reload_config(launch_options, config_path, config)
 
-    @router.get("/logs")
-    async def get_logs(service: AgentServiceDep, last_n: int = 100):
-        return {"lines": service.get_logs(last_n)}
+    @router.get("/logs/stream", response_class=EventSourceResponse)
+    async def stream_logs(
+        request: Request,
+        service: AgentServiceDep,
+        limit: int = 100,
+        follow: bool = True,
+    ) -> AsyncIterable[ServerSentEvent]:
+        async for line in service.stream_logs(limit, follow):
+            if await request.is_disconnected():
+                break
+            yield ServerSentEvent(raw_data=line.rstrip("\n"), event="log")
 
     @router.get("/status")
     async def status(service: AgentServiceDep):
