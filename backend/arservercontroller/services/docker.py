@@ -136,30 +136,11 @@ class DockerContainerManager:
             directory_manager.controller_directories.DS_PROFILES_DIR / config.name
         )
 
-        config_host = Path(
-            directory_manager.controller_directories.DS_CONFIGS_DIR
-            / f"{config.name}.json"
-        )
-
-        config_host_base = Path(
-            directory_manager.controller_directories.DS_CONFIGS_DIR / "base.json"
-        )
-
         # ensure profile path exists before volume creation
         profile_host.mkdir(parents=True, exist_ok=True)
 
-        if config.name == "test-server":
-            config_source = config_host_base
-        else:
-            if not config_host.exists():
-                config_host.write_text(
-                    config_host_base.read_text("utf-8"), encoding="utf-8"
-                )
-            config_source = config_host
-
-        # ovewrite or copy the `config.json` to profile directory
         profile_config = profile_host / "config.json"
-        profile_config.write_text(config_source.read_text("utf-8"), encoding="utf-8")
+        profile_config.write_text('{"placeholder": "config"}', encoding="utf-8")
 
         volumes = {
             str(profile_host): {"bind": f"/home/{config.name}", "mode": "rw"},

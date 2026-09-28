@@ -55,7 +55,6 @@ class ControllerDirectories(BaseDirectories):
     """Directories for controller-specific paths on the host system."""
 
     CONTROLLER_DIR: Path  # ../data/controller
-    DS_CONFIGS_DIR: Path  # ../data/controller/ds_configs
     DS_PROFILES_DIR: Path  # ../data/controller/profiles
     CONTAINER_VOLUMES_DIR: Path  # ../data/controller/volumes
     CONTAINER_IMAGES_DIR: Path  # ../data/controller/dockerfiles
@@ -64,14 +63,12 @@ class ControllerDirectories(BaseDirectories):
     def create_from_base(cls, base: BaseDirectories) -> "ControllerDirectories":
         """Factory method to create ControllerDirectories using base directories."""
         controller_dir = base.DATA_DIR / "controller"
-        ds_configs_dir = controller_dir / "ds_configs"
         ds_profiles_dir = controller_dir / "profiles"
         container_volumes_dir = controller_dir / "volumes"
         container_images_dir = controller_dir / "dockerfiles"
         return cls(
             **base.model_dump(),
             CONTROLLER_DIR=controller_dir,
-            DS_CONFIGS_DIR=ds_configs_dir,
             DS_PROFILES_DIR=ds_profiles_dir,
             CONTAINER_VOLUMES_DIR=container_volumes_dir,
             CONTAINER_IMAGES_DIR=container_images_dir,
