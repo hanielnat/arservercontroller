@@ -129,7 +129,7 @@ class DockerContainerManager:
         port_bindings = {
             f"{config.bind_port}/udp": config.bind_port,
             f"{config.a2s_port}/udp": config.a2s_port,
-            f"{config.rcon_port}/tcp": config.rcon_port,
+            f"{config.rcon_port}/udp": config.rcon_port,
         }
 
         profile_host = Path(
