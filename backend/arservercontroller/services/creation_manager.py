@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import CancelledError, Queue, Task
 from collections.abc import Callable
+from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
@@ -8,7 +9,7 @@ from docker.models.containers import Container
 from fastapi import Depends, WebSocket
 from sqlalchemy.orm import Session, sessionmaker
 
-from arservercontroller.constants import ServerStatusEnum
+from arservercontroller.constants import ServerStatusEnum, directory_manager
 from arservercontroller.db.models.server import Server
 from arservercontroller.db.session import SessionLocal
 from arservercontroller.schemas.server_config import ServerConfig
@@ -114,6 +115,22 @@ class ServerCreationManager:
 
         container: Container | None = None
         try:
+            profile_host = Path(
+                directory_manager.controller_directories.DS_PROFILES_DIR / config.name
+            )
+
+            # ensure profile path exists before volume creation
+            profile_host.mkdir(parents=True, exist_ok=True)
+
+            profile_config = profile_host / "config.json"
+
+            import json
+
+            profile_config.write_text(
+                json.dumps(config.reforger_config, skipkeys=True, indent=4),
+                encoding="utf-8",
+            )
+
             container_result = await self.docker.create_server_container(
                 image_name, config, progress
             )

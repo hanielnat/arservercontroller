@@ -136,12 +136,6 @@ class DockerContainerManager:
             directory_manager.controller_directories.DS_PROFILES_DIR / config.name
         )
 
-        # ensure profile path exists before volume creation
-        profile_host.mkdir(parents=True, exist_ok=True)
-
-        profile_config = profile_host / "config.json"
-        profile_config.write_text('{"placeholder": "config"}', encoding="utf-8")
-
         volumes = {
             str(profile_host): {"bind": f"/home/{config.name}", "mode": "rw"},
         }

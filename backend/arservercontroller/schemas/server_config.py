@@ -1,6 +1,6 @@
 import uuid
 from ipaddress import IPv4Address
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import (
     UUID4,
@@ -84,6 +84,8 @@ class ServerConfigBase(BaseModel):
         list[tuple[str, int]] | None,
         Field(None)
     ]
+
+    reforger_config: dict[str, Any]
     # fmt: on
 
 
@@ -137,6 +139,8 @@ class ServerConfigUpdate(ServerConfigBase):
         ServerStatusEnum | None,
         Field(None, exclude=True, validate_default=True)
     ] = None
+
+    reforger_config: dict[str, Any]
     # fmt: on
 
 
