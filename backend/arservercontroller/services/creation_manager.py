@@ -179,9 +179,14 @@ class ServerCreationManager:
                     db.commit()
 
             # get container IP to call the agent `/start` endpoint
-            ip_address: str = self.docker.get_container_network_ip(container_id) or ""
-            if len(ip_address) == 0:
-                logger.error("Container IPAddress is empty, retrieval failed")
+            await asyncio.sleep(1.0)
+
+            ip_result = self.docker.get_container_network_ip(container_id)
+            if ip_result.is_err():
+                logger.error(f"Container IP retrieval failed: {ip_result.error()}")
+                raise ip_result.error()
+
+            ip_address: str = ip_result.value()
 
             await progress(
                 {

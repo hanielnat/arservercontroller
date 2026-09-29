@@ -119,11 +119,12 @@ class ServerController:
         container_id = model.serverConfigData.container_id
 
         # get container IPAddress to call `/reload` endpoint
-        ip_address: str = (
-            self.docker_manager.get_container_network_ip(container_id) or ""
-        )
-        if len(ip_address) == 0:
-            logger.error("Container IPAddress is empty, retrieval failed")
+        ip_result = self.docker_manager.get_container_network_ip(container_id)
+        if ip_result.is_err():
+            logger.error(f"Container IP retrieval failed: {ip_result.error()}")
+            raise ip_result.error()
+
+        ip_address: str = ip_result.value()
 
         # import AgentClient and ask to reload the server with new config and launch options
         from arservercontroller.services.agent_client import AgentClient
@@ -158,10 +159,12 @@ class ServerController:
     ):
         container_id = model.serverConfigData.container_id
 
-        ip_address = self.docker_manager.get_container_network_ip(container_id)
-        if not ip_address:
-            await queue.put("[error] container IP not found")
+        ip_result = self.docker_manager.get_container_network_ip(container_id)
+        if ip_result.is_err():
+            await queue.put(f"[error] container IP not found: {ip_result.error()}")
             return
+
+        ip_address: str = ip_result.value()
 
         from arservercontroller.services.agent_client import AgentClient
 
@@ -221,11 +224,12 @@ class ServerController:
                 raise RuntimeError(started.error())
 
             # get container IP to call the agent `/start` endpoint
-            ip_address: str = (
-                self.docker_manager.get_container_network_ip(container_id) or ""
-            )
-            if len(ip_address) == 0:
-                logger.error("Container IPAddress is empty, retrieval failed")
+            ip_result = self.docker_manager.get_container_network_ip(container_id)
+            if ip_result.is_err():
+                logger.error(f"Container IP retrieval failed: {ip_result.error()}")
+                raise ip_result.error()
+
+            ip_address: str = ip_result.value()
 
             # import AgentClient and ask to start server
             from arservercontroller.services.agent_client import AgentClient
@@ -287,11 +291,12 @@ class ServerController:
             logger.info(f"Stopping container of server '{model.id}'...")
 
             # get container IP to call the agent `/stop` endpoint
-            ip_address: str = (
-                self.docker_manager.get_container_network_ip(container_id) or ""
-            )
-            if len(ip_address) == 0:
-                logger.error("Container IPAddress is empty, retrieval failed")
+            ip_result = self.docker_manager.get_container_network_ip(container_id)
+            if ip_result.is_err():
+                logger.error(f"Container IP retrieval failed: {ip_result.error()}")
+                raise ip_result.error()
+
+            ip_address: str = ip_result.value()
 
             # stop via agent first if container is running
             from arservercontroller.services.agent_client import AgentClient
@@ -335,11 +340,12 @@ class ServerController:
             logger.info(f"Restarting container of Server '{model.id}'...")
 
             # get container IP to call the agent `/stop` endpoint
-            ip_address: str = (
-                self.docker_manager.get_container_network_ip(container_id) or ""
-            )
-            if len(ip_address) == 0:
-                logger.error("Container IPAddress is empty, retrieval failed")
+            ip_result = self.docker_manager.get_container_network_ip(container_id)
+            if ip_result.is_err():
+                logger.error(f"Container IP retrieval failed: {ip_result.error()}")
+                raise ip_result.error()
+
+            ip_address: str = ip_result.value()
 
             from arservercontroller.services.agent_client import AgentClient
 

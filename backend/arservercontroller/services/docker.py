@@ -1,6 +1,6 @@
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import anyio
 import docker
@@ -98,20 +98,53 @@ class DockerContainerManager:
             logger.error(e)
             return None
 
-    def get_container_network_ip(self, id: str) -> str | None:
+    def get_container_network_ip(self, id: str) -> Result[str, Exception]:
         try:
+            if not self.is_container_running(id):
+                return Err(
+                    RuntimeError("Container must be running to get it's IP address")
+                )
+
             container = self.client.containers.get(id)
             container.reload()
-            networks = container.attrs["NetworkSettings"]["Networks"]
+
+            try:
+                networks: dict[str, Any] = container.attrs["NetworkSettings"][
+                    "Networks"
+                ]
+            except KeyError as e:
+                return Err(
+                    RuntimeError(
+                        f"Invalid NetworkSettings for container '{id[:16]}...': {e}"
+                    )
+                )
+
             agent_net = networks.get(AGENT_CONTAINER_NETWORK_NAME)
+
             if not agent_net:
-                return None
+                return Err(
+                    ValueError("Agent network is missing in container attributes")
+                )
 
-            return agent_net.get("IPAddress") or None
+            ip: str | None = agent_net.get("IPAddress")
+            if not ip:  # retry
+                container.reload()
+                agent_net = (
+                    container.attrs["NetworkSettings"]["Networks"].get(
+                        AGENT_CONTAINER_NETWORK_NAME
+                    )
+                    or {}
+                )
+                ip = agent_net.get("IPAddress")
 
-        except (docker.errors.NotFound, docker.errors.APIError, KeyError) as e:
+            if not ip:
+                return Err(ValueError("Container has no IPAddress field"))
+
+            return Ok(ip)
+
+        except (docker.errors.NotFound, docker.errors.APIError) as e:
             logger.error(e)
-            return None
+            return Err(e)
 
     async def create_server_container(
         self, image_name: str, config: ServerConfig, on_progress: OnProgressCb
