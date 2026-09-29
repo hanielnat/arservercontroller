@@ -56,6 +56,14 @@ class ServerController:
                 "Error initializing docker client. Operations with container will fail beyond this point."
             )
 
+    def is_server_running(self, model: Server) -> bool:
+        return (
+            self.docker_manager.is_container_running(
+                model.serverConfigData.container_id
+            )
+            and model.serverConfigData.status == ServerStatusEnum.RUNNING
+        )
+
     async def add_server(
         self,
         server: Server,
