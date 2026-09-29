@@ -56,6 +56,18 @@ class ServerController:
                 "Error initializing docker client. Operations with container will fail beyond this point."
             )
 
+    def _remove_server_data(self, model: Server):
+        server_profile = (
+            directory_manager.controller_directories.DS_PROFILES_DIR / f"{model.name}"
+        )
+
+        import shutil
+
+        shutil.rmtree(server_profile, ignore_errors=True)
+
+        self._db.delete(model)
+        self._db.commit()
+
     def is_server_running(self, model: Server) -> bool:
         return (
             self.docker_manager.is_container_running(
@@ -89,7 +101,7 @@ class ServerController:
 
         return out_server
 
-    async def remove_server(self, model: Server) -> ControllerResult:
+    async def remove_server(self, model: Server, force: bool) -> ControllerResult:
         container_id = model.serverConfigData.container_id
         try:
             await self.stop(model)
@@ -98,15 +110,18 @@ class ServerController:
             await self.docker_manager.remove_container_by_id(container_id)
             logger.info("Container removed")
 
-            self._db.delete(model)
-            self._db.commit()
-
+            self._remove_server_data(model)
             logger.info(f"Server removed (id='{model.id}')")
             return True, ""
 
         except Exception as e:
             msg = f"Error removing server (id='{model.id}')"
             logger.error(f"{msg}: {e}")
+
+            if force:
+                self._remove_server_data(model)
+                return True, ""
+
             return False, f"{msg}"
 
     async def cancel_creation(self, server_id: UUID) -> bool:

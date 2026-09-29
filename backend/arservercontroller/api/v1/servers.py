@@ -115,11 +115,14 @@ async def update_server(
 
 @server_router.delete("/{server_id}")
 async def delete_server(
-    server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
+    server_id: UUID4,
+    db: DbSessionDep,
+    server_controller: ServerControllerDep,
+    force: bool = False,
 ) -> None:
     model = find_server_by_id(server_id, db)
 
-    result, err = await server_controller.remove_server(model)
+    result, err = await server_controller.remove_server(model, force)
     if not result:
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,

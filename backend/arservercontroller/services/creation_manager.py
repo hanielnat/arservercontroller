@@ -82,19 +82,27 @@ class ServerCreationManager:
     async def _handle_creation_failed(
         self, server_id: UUID, container: Container | None
     ) -> None:
-        if container and container.id:
-            await self.docker._try_cleanup_container(  # pyright: ignore[reportPrivateUsage]
-                container.id
-            )
-
         try:
             with self._session_factory() as db:
                 server: Server | None = db.get(Server, server_id)
                 if not server:
                     return
 
+                if container and container.id:
+                    profile_host = Path(
+                        directory_manager.controller_directories.DS_PROFILES_DIR
+                        / server.name
+                    )
+
+                    import shutil
+
+                    shutil.rmtree(profile_host, ignore_errors=True)
+
+                    await self.docker.remove_container_by_id(container.id)
+
                 db.delete(server)
                 db.commit()
+
         except Exception as e:
             logger.exception(e)
 
