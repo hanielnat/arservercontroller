@@ -142,14 +142,6 @@ class DockerContainerManager:
 
         labels: dict[str, str] = {"com.arservercontroller": "true"}
 
-        command_line: list[str] = [
-            "-profile",
-            f'"/home/{config.name}"',
-            "-config",
-            f'"/home/{config.name}/config.json"',
-        ]
-        command_line.extend(config.command_line or [])
-
         await on_progress(
             {
                 "phase": "docker",
@@ -172,7 +164,6 @@ class DockerContainerManager:
                 labels=labels,
                 detach=True,
                 environment=config.environment or {},
-                command=command_line,
             )
 
             if container and container.id:
