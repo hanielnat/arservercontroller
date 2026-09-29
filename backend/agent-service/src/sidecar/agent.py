@@ -18,8 +18,7 @@ class AgentService:
     REFORGER: str = os.getenv("REFORGER") or "/reforger/ArmaReforgerServer"
     AGENT_DEBUG: bool = int(os.getenv("AGENT_DEBUG") or "0") != 0
     MOCK_SUBPROCESS_CMD: str = (
-        os.getenv("MOCK_SUBPROCESS_CMD")
-        or "uv run python src/sidecar/mock_subprogram.py"
+        os.getenv("MOCK_SUBPROCESS_CMD") or "python src/sidecar/mock_subprogram.py"
     )
 
     def __init__(self):
