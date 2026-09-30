@@ -21,6 +21,7 @@ from arservercontroller.services.docker import (
 )
 from arservercontroller.services.event_bus import event_bus
 from arservercontroller.services.logger import get_logger
+from arservercontroller.utils.servers import make_command_line
 
 logger = get_logger(__name__)
 
@@ -218,15 +219,14 @@ class ServerCreationManager:
                     )
 
                 # call agent /start with launch options
-                command_line: list[str] = [
-                    "-profile",
-                    f'"/home/{config.name}"',
-                    "-config",
-                    f'"/home/{config.name}/config.json"',
-                ]
-                command_line.extend(config.command_line or [])
-
-                agent_res = await agent.start_server(command_line)
+                agent_res = await agent.start_server(
+                    make_command_line(
+                        config.name,
+                        config.bind_port,
+                        config.a2s_port,
+                        config.command_line,
+                    )
+                )
 
                 await progress(
                     {

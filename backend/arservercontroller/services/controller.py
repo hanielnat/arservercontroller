@@ -23,6 +23,7 @@ from arservercontroller.services.docker import (
     OnProgressCb,
 )
 from arservercontroller.services.logger import get_logger
+from arservercontroller.utils.servers import make_command_line
 
 logger = get_logger(__name__)
 
@@ -156,13 +157,12 @@ class ServerController:
         try:
             # prepare payload
             config_path = f"/home/{model.serverConfigData.name}/config.json"
-            command_line: list[str] = [
-                "-profile",
-                f"/home/{model.serverConfigData.name}",
-                "-config",
-                config_path,
-            ]
-            command_line.extend(model.serverConfigData.command_line or [])
+            command_line = make_command_line(
+                model.serverConfigData.name,
+                model.serverConfigData.bind_port,
+                model.serverConfigData.a2s_port,
+                model.serverConfigData.command_line,
+            )
 
             await agent.reload_config(command_line, config_path, config)
 
@@ -267,15 +267,14 @@ class ServerController:
                         "Container agent is not present or running, it must be running before starting the server."
                     )
 
-                command_line: list[str] = [
-                    "-profile",
-                    f'"/home/{model.serverConfigData.name}"',
-                    "-config",
-                    f'"/home/{model.serverConfigData.name}/config.json"',
-                ]
-                command_line.extend(model.serverConfigData.command_line or [])
-
-                await agent.start_server(command_line)
+                await agent.start_server(
+                    make_command_line(
+                        model.serverConfigData.name,
+                        model.serverConfigData.bind_port,
+                        model.serverConfigData.a2s_port,
+                        model.serverConfigData.command_line,
+                    )
+                )
 
             except Exception as e:
                 msg = "Failed start server process via agent"
@@ -405,15 +404,14 @@ class ServerController:
                     logger.error(msg)
                     raise TimeoutError(msg)
 
-                command_line: list[str] = [
-                    "-profile",
-                    f'"/home/{model.serverConfigData.name}"',
-                    "-config",
-                    f'"/home/{model.serverConfigData.name}/config.json"',
-                ]
-                command_line.extend(model.serverConfigData.command_line or [])
-
-                await agent.start_server(command_line)
+                await agent.start_server(
+                    make_command_line(
+                        model.serverConfigData.name,
+                        model.serverConfigData.bind_port,
+                        model.serverConfigData.a2s_port,
+                        model.serverConfigData.command_line,
+                    )
+                )
 
             except Exception as e:
                 logger.error(
