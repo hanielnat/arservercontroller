@@ -15,6 +15,7 @@ from sidecar.logger_util import eprint, log_print
 
 
 class AgentService:
+    REFORGER_DIR: str = os.getenv("REFORGER_DIR") or "/reforger"
     REFORGER: str = os.getenv("REFORGER") or "/reforger/ArmaReforgerServer"
     AGENT_DEBUG: bool = int(os.getenv("AGENT_DEBUG") or "0") != 0
     MOCK_SUBPROCESS_CMD: str = (
@@ -57,6 +58,7 @@ class AgentService:
 
             proc = subprocess.Popen(
                 args,
+                cwd=self.REFORGER_DIR,
                 text=True,
                 bufsize=1,
                 stdout=subprocess.PIPE,
