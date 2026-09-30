@@ -1,0 +1,14 @@
+services:
+  api:
+    container_name: arservercontroller
+    image: arservercontroller:latest
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - arservercontroller-data:/app/data
+
+volumes:
+  arservercontroller-data:
