@@ -9,8 +9,14 @@ from fastapi.sse import EventSourceResponse, ServerSentEvent
 from pydantic import UUID4
 
 from arservercontroller.api.dependencies import DbSessionDep
+from arservercontroller.constants import ServerStatusEnum
 from arservercontroller.db.models.server import Server
-from arservercontroller.schemas.server import ServerOut, ServersOut
+from arservercontroller.schemas.server import (
+    ReforgerProcessStatusOut,
+    ServerOut,
+    ServersOut,
+    ServerStatusOut,
+)
 from arservercontroller.schemas.server_config import (
     ServerConfig,
     ServerConfigCreate,
@@ -174,6 +180,36 @@ async def reload_config(
 
     if not result:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"{err}")
+
+
+@server_router.get("/status/")
+async def server_process_status(
+    server_id: UUID4, db: DbSessionDep, server_controller: ServerControllerDep
+) -> ServerStatusOut:
+    model = find_server_by_id(server_id, db)
+
+    container = (
+        ServerStatusEnum.RUNNING
+        if server_controller.is_server_running(model)
+        else ServerStatusEnum.DEAD
+    )
+
+    agent = (
+        ServerStatusEnum.RUNNING
+        if await server_controller.is_agent_running(model)
+        else ServerStatusEnum.DEAD
+    )
+
+    reforger = ReforgerProcessStatusOut(
+        pid=await server_controller.get_reforger_pid(model),
+        status=(
+            ServerStatusEnum.RUNNING
+            if await server_controller.is_reforger_process_running(model)
+            else ServerStatusEnum.DEAD
+        ),
+    )
+
+    return ServerStatusOut(container=container, reforger=reforger, agent=agent)
 
 
 @server_router.get("/{server_id}/logs/stream", response_class=EventSourceResponse)

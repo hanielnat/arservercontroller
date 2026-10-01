@@ -1,21 +1,16 @@
 from pydantic import (
-    AliasGenerator,
     BaseModel,
     ConfigDict,
 )
 from pydantic.alias_generators import to_camel
 
-from arservercontroller.schemas.server_config import (
-    ServerConfig,
-)
+from arservercontroller.constants import ServerStatusEnum
+from arservercontroller.schemas.server_config import ServerConfig
 
 
 class BaseServer(BaseModel):
     model_config = ConfigDict(
-        from_attributes=True,
-        alias_generator=AliasGenerator(
-            serialization_alias=to_camel, validation_alias=to_camel
-        ),
+        from_attributes=True, populate_by_name=True, alias_generator=to_camel
     )
 
 
@@ -28,3 +23,18 @@ class ServerOut(BaseServer):
 class ServersOut(BaseServer):
     data: list[ServerOut]
     count: int
+
+
+class ReforgerProcessStatusOut(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True, populate_by_name=True, alias_generator=to_camel
+    )
+
+    pid: int | None
+    status: ServerStatusEnum
+
+
+class ServerStatusOut(BaseServer):
+    container: ServerStatusEnum
+    agent: ServerStatusEnum
+    reforger: ReforgerProcessStatusOut

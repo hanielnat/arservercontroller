@@ -7,6 +7,7 @@ from uuid import UUID
 import docker
 import docker.errors
 from fastapi import Depends
+from httpx import HTTPStatusError
 
 from arservercontroller.api.dependencies import DbSessionDep, DockerClientDep
 from arservercontroller.constants import (
@@ -69,6 +70,33 @@ class ServerController:
         self._db.delete(model)
         self._db.commit()
 
+    async def _get_reforger_process_status(
+        self, model: Server
+    ) -> tuple[int | None, bool]:
+        container_id = model.serverConfigData.container_id
+        ip_result = self.docker_manager.get_container_network_ip(container_id)
+        result: tuple[int | None, bool] = (None, False)
+
+        if ip_result.is_err():
+            return result
+
+        from arservercontroller.services.agent_client import AgentClient
+
+        agent = AgentClient(ip_result.value())
+        try:
+            reforger_status = await agent.get_status()
+            pid: int | None = reforger_status["pid"]
+            running: bool = reforger_status["running"]
+
+            result = (pid, running)
+            return result
+
+        except HTTPStatusError:
+            return result
+
+        finally:
+            await agent.close()
+
     def is_server_running(self, model: Server) -> bool:
         return (
             self.docker_manager.is_container_running(
@@ -76,6 +104,35 @@ class ServerController:
             )
             and model.serverConfigData.status == ServerStatusEnum.RUNNING
         )
+
+    async def is_agent_running(self, model: Server) -> bool:
+        container_id = model.serverConfigData.container_id
+        ip_result = self.docker_manager.get_container_network_ip(container_id)
+        result: bool = False
+
+        if ip_result.is_err():
+            return result
+
+        from arservercontroller.services.agent_client import AgentClient
+
+        agent = AgentClient(ip_result.value())
+        try:
+            result = await agent.is_ready()
+            return result
+
+        except HTTPStatusError:
+            return result
+
+        finally:
+            await agent.close()
+
+    async def is_reforger_process_running(self, model: Server) -> bool:
+        pid, running = await self._get_reforger_process_status(model)
+        return running and (pid is not None and pid > 0)
+
+    async def get_reforger_pid(self, model: Server) -> int | None:
+        pid, _ = await self._get_reforger_process_status(model)
+        return pid
 
     async def add_server(
         self,
