@@ -10,10 +10,9 @@ from arservercontroller.constants import directory_manager
 class BaseConfig(BaseSettings):
     """Base application configuration class with common settings."""
 
-    model_config = SettingsConfigDict(
-        case_sensitive=False, env_file=".env", env_file_encoding="utf-8"
-    )
+    model_config = SettingsConfigDict(case_sensitive=False, env_ignore_empty=True)
 
+    ENVIRONMENT: str
     SECRET_KEY: str = Field(default="secretkey")
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
 
@@ -54,9 +53,7 @@ class BaseConfig(BaseSettings):
     }
 
     # CORS
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:5173",
-    ]
+    CORS_ORIGINS: list[str]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
     CORS_ALLOW_CREDS: bool = False
@@ -68,6 +65,8 @@ class DevelopmentConfig(BaseConfig):
     DEBUG: bool = True
     SQLALCHEMY_ECHO: bool = True  # Enable SQL logging in development
     DB_NAME: str = "arservercontroller_devel.db"
+
+    CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
 
 class ProductionConfig(BaseConfig):
@@ -83,6 +82,8 @@ class ProductionConfig(BaseConfig):
         "max_overflow": 10,
         "connect_args": {"timeout": 30, "check_same_thread": False},
     }
+
+    CORS_ORIGINS: list[str] = ["http://127.0.0.1:8000", "http://localhost:8000"]
 
 
 class TestingConfig(BaseConfig):
