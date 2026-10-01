@@ -73,6 +73,12 @@ app.add_middleware(
 if not is_dev:
     app.frontend("/", directory=config.FRONTEND_DIST_DIR)
 
+
+@app.get("/health")
+async def healthcheck() -> str:
+    return "OK"
+
+
 app.include_router(router=server_router, prefix=config.API_V1_STR)
 app.include_router(router=users_router, prefix=config.API_V1_STR)
 app.include_router(router=roles_router, prefix=config.API_V1_STR)
