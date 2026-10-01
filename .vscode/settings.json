@@ -1,19 +1,37 @@
 {
-    "basedpyright.analysis.ignore": [
-        "backend/.venv",
-        "backend/venv",
-        "~/.local/share/uv/python/**"
-    ],
-    "python.testing.pytestArgs": [
-        "backend"
-    ],
+    "files.associations": {
+        "*.css": "tailwindcss"
+    },
+    "css.validate": false,
+    "editor.formatOnSave": true,
+    "npm.packageManager": "bun",
+    "npm.scriptRunner": "bun",
+    "editor.guides.indentation": false,
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+    "python.createEnvironment.contentButton": "show",
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./backend/tests",
+        "test_*.py"
+    ],
+    "[python]": {
+        "diffEditor.ignoreTrimWhitespace": false,
+        "editor.defaultColorDecorators": "auto",
+        "editor.formatOnType": true,
+        "editor.wordBasedSuggestions": "currentDocument",
+        "editor.defaultFormatter": "charliermarsh.ruff",
+    },
+    "explorer.fileNesting.patterns": {
+        "Reforger.Dockerfile": "build-image.sh, entrypoint.sh, update.sh, healthcheck.sh",
+        "pyproject.toml": "*.md, uv.lock, .python-version, alembic.ini, .*ignore"
+    },
     "python-envs.pythonProjects": [
         {
             "path": ".",
             "envManager": "ms-python.python:venv",
             "packageManager": "ms-python.python:pip"
         }
-    ]
+    ],
 }
