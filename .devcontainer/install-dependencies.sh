@@ -12,13 +12,13 @@ else
     echo "Docker installation failed or is not working correctly."
 fi
 
-chmod +x backend/tasks.sh
+chmod +x apps/server/tasks.sh
 echo "Creating Python virtual environment..."
-backend/tasks.sh venv
+apps/server/tasks.sh venv
 
 echo "Installing Python packages into the virtual environment..."
-backend/tasks.sh
+apps/server/tasks.sh
 
 echo "Installing pnpm packages..."
-bun install --cwd frontend/
+bun install --cwd apps/web/
 echo "Dependency installation and venv creation complete."

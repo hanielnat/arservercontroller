@@ -20,7 +20,7 @@
             "cwd": "${workspaceFolder}/backend",
             "type": "debugpy",
             "request": "launch",
-            "envFile": "${workspaceFolder}/backend/.env",
+            "envFile": "${workspaceFolder}/apps/server/.env",
             "python": "${command:python.interpreterPath}",
             "module": "uvicorn",
             "args": [
@@ -32,7 +32,7 @@
             "cwd": "${workspaceFolder}/backend",
             "type": "debugpy",
             "request": "launch",
-            "envFile": "${workspaceFolder}/backend/.env",
+            "envFile": "${workspaceFolder}/apps/server/.env",
             "python": "${command:python.interpreterPath}",
             "module": "fastapi",
             "args": [

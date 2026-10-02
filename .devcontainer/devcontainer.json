@@ -3,7 +3,7 @@
     "customizations": {
         "vscode": {
             "settings": {
-                "python.defaultInterpreterPath": "backend/.venv/bin/python"
+                "python.defaultInterpreterPath": "apps/server/.venv/bin/python"
             },
             "extensions": [
                 "chneau.resource-monitor",

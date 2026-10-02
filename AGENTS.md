@@ -16,18 +16,18 @@ It targets **small private groups** (typically 3–20 servers) and is explicitly
 - Focus on real usability for private Arma Reforger communities
 
 Backend tech stack:
-- See `backend/pyproject.toml`. Uses uv (v0.10.12)
-- See `backend/agent-service/go.mod` for Go related tooling
+- See `apps/server/pyproject.toml`. Uses uv (v0.10.12)
+- See `apps/server/agent-service/go.mod` for Go related tooling
 
 Frontend tech stack:
-- See `frontend/package.json`. Uses Bun (1.3.0)
+- See `apps/web/package.json`. Uses Bun (1.3.0)
 
 Current main features:
 - Docker-based server management (`ServerControllerV2`)
 - Docker container layer management (`DockerContainerManager`)
 - Creation of servers in background jobs (`ServerCreationManager`)
 - Basic event bus (`ServerEventBus`)
-- Container agent sidecar-like program to manage dedicated servers (`backend/agent-service`)
+- Container agent sidecar-like program to manage dedicated servers (`apps/server/agent-service`)
 - Server config synchronization between JSON files and DB (`ServerConfigManagerV2`)
 - Basic auth + role system (admin / moderator / user)
 
@@ -38,15 +38,15 @@ Current flow for creating a server:
 ## Setup and Development Environment
 
 **Recommended workflow:**
-1. Run `backend/tasks.py install` to install backend dependencies and setup the virtual environment, if the command fails make the script executable by calling `chmod +x backend/tasks.py`
-2. Run `bun i --cwd frontend/` to install frontend dependencies.
+1. Run `apps/server/tasks.py install` to install backend dependencies and setup the virtual environment, if the command fails make the script executable by calling `chmod +x apps/server/tasks.py`
+2. Run `bun i --cwd apps/web/` to install frontend dependencies.
 
 **Devcontainer**:
 1. Open the repository in VS Code with the Dev Container extension
 2. The container will automatically run `.devcontainer/install-dependencies.sh`
 
 **Common commands** (run from project root):
-- Source python venv: `source backend/.venv/bin/activate`
+- Source python venv: `source apps/server/.venv/bin/activate`
 - Backend dev server: `./tasks.py run-dev`
 - Frontend dev server: `cd frontend && bun dev`
 - Run backend tests: `uv run pytest`
@@ -58,7 +58,7 @@ Current flow for creating a server:
 **Backend:**
 - Run specific test: `uv run pytest tests/unit/test_utils_errors.py::test_pattern_matching_ok`
 - Database migrations: `./tasks.py migrate`
-- Running specific alembic commands: `source backend/.venv/bin/activate && cd backend/ && uv run alembic <YOUR_COMMAND>`
+- Running specific alembic commands: `source apps/server/.venv/bin/activate && cd apps/server/ && uv run alembic <YOUR_COMMAND>`
 
 **Frontend:**
 - Dev: `cd frontend && bun dev`
@@ -68,7 +68,7 @@ Current flow for creating a server:
 ## Project Structure
 
 ```
-backend/
+apps/server/
 ├── agent-service/               # Container agent sidecar
 │   ├── cmd/                     # Agent entrypoint
 │   └── internal/                # Internal agent logic
@@ -85,7 +85,7 @@ backend/
 ├── alembic/                     # Database migrations
 └── tasks.py                     # Project task runner (like Makefile)
 
-frontend/
+apps/web/
 ├── src/
 │   ├── components/
 │   ├── composables/             # Vue composables
@@ -101,13 +101,13 @@ docs/                            # Documents related to the project
 ```
 
 **Important files:**
-- `backend/arservercontroller/services/docker.py` → `DockerContainerManager` (main Docker logic)
-- `backend/arservercontroller/services/controller.py` → `ServerControllerV2` (main server logic)
-- `backend/arservercontroller/services/server_config.py` → `ServerConfigManagerV2`
-- `backend/agent-service/cmd/agent/main.go` → Agent sidecar entrypoint
-- `backend/arservercontroller/main.py` → FastAPI app entrypoint
-- `backend/arservercontroller/constants.py` → Directory manager & enums
-- `backend/arservercontroller/core/config.py` → App configuration (prod, dev, test, etc.)
+- `apps/server/arservercontroller/services/docker.py` → `DockerContainerManager` (main Docker logic)
+- `apps/server/arservercontroller/services/controller.py` → `ServerControllerV2` (main server logic)
+- `apps/server/arservercontroller/services/server_config.py` → `ServerConfigManagerV2`
+- `apps/server/agent-service/cmd/agent/main.go` → Agent sidecar entrypoint
+- `apps/server/arservercontroller/main.py` → FastAPI app entrypoint
+- `apps/server/arservercontroller/constants.py` → Directory manager & enums
+- `apps/server/arservercontroller/core/config.py` → App configuration (prod, dev, test, etc.)
 
 ## Code Style
 
