@@ -2,7 +2,7 @@ from logging import Logger
 from pathlib import Path
 from typing import cast
 
-from arservercontroller.constants import directory_manager
+from arservercontroller.core.config import get_directories
 
 
 def _mkdir(directories: list[Path], logger: Logger):
@@ -19,7 +19,5 @@ def _mkdir(directories: list[Path], logger: Logger):
 
 
 def make_directories(logger: Logger):
-    base_dirs = directory_manager.base_directories.model_dump()
-    controller_dirs = directory_manager.controller_directories.model_dump()
+    base_dirs = get_directories().model_dump()
     _mkdir(cast(list[Path], base_dirs.values()), logger)
-    _mkdir(cast(list[Path], controller_dirs.values()), logger)

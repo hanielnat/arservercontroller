@@ -7,7 +7,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.theme import Theme
 
-from arservercontroller.constants import directory_manager
+from arservercontroller.core.config import get_directories
 
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
@@ -22,7 +22,7 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     logger.propagate = False
     logger.setLevel(logging.DEBUG)
 
-    logs_dir = directory_manager.base_directories.LOGS_DIR
+    logs_dir = get_directories().LOGS_DIR
     log_file_path = logs_dir / "arservercontroller.log"
 
     if not logs_dir.exists():

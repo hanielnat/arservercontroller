@@ -1,6 +1,5 @@
 import asyncio
 from asyncio import Queue
-from pathlib import Path
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -10,19 +9,12 @@ from fastapi import Depends
 from httpx import HTTPStatusError
 
 from arservercontroller.api.dependencies import DbSessionDep, DockerClientDep
-from arservercontroller.constants import (
-    ServerStatusEnum,
-    directory_manager,
-)
+from arservercontroller.constants import ServerStatusEnum
+from arservercontroller.core.config import get_config, get_directories
 from arservercontroller.db.models.server import Server
 from arservercontroller.schemas.server_config import ServerConfig
-from arservercontroller.services.creation_manager import (
-    ServerCreationManagerDep,
-)
-from arservercontroller.services.docker import (
-    DockerContainerManagerDep,
-    OnProgressCb,
-)
+from arservercontroller.services.creation_manager import ServerCreationManagerDep
+from arservercontroller.services.docker import DockerContainerManagerDep, OnProgressCb
 from arservercontroller.services.logger import get_logger
 from arservercontroller.utils.servers import make_command_line
 
@@ -39,11 +31,6 @@ class ServerController:
         docker_manager: DockerContainerManagerDep,
         creation_manager: ServerCreationManagerDep,
     ) -> None:
-        self.DEFAULT_CONTAINER_IMAGE_DIR: Path = (
-            directory_manager.base_directories.ROOT_DIR / "Reforger.Dockerfile"
-        )
-        self.DEFAULT_CONTAINER_IMAGE_NAME: str = "arserver-mock:latest"
-
         self._db = db
         self._docker = docker_client
         self.docker_manager = docker_manager
@@ -59,9 +46,7 @@ class ServerController:
             )
 
     def _remove_server_data(self, model: Server):
-        server_profile = (
-            directory_manager.controller_directories.DS_PROFILES_DIR / f"{model.name}"
-        )
+        server_profile = get_directories().DS_PROFILES_DIR / f"{model.name}"
 
         import shutil
 
@@ -148,7 +133,7 @@ class ServerController:
         self._db.refresh(server)
 
         await self.creation_manager.start_creation(
-            server.id, config, self.DEFAULT_CONTAINER_IMAGE_NAME
+            server.id, config, get_config().CONTAINER_IMAGE_NAME
         )
 
         logger.info(

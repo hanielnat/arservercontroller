@@ -1,16 +1,113 @@
 import os
 from functools import lru_cache
+from pathlib import Path
+from typing import Self
 
-from pydantic import Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from arservercontroller.constants import directory_manager
+import arservercontroller
+from arservercontroller.constants import (
+    DEFAULT_CONTAINER_IMAGE_NAME,
+    DEFAULT_TEST_CONTAINER_IMAGE_NAME,
+)
+
+
+class Directories(BaseModel):
+    """Base directories for the ARServerController module on the host system."""
+
+    model_config = ConfigDict(frozen=True)
+
+    ROOT_DIR: Path  # ../
+    APPS_DIR: Path  # ../apps
+    CLIENT_DIST_DIR: Path  # ../apps/web/dist
+    DATA_DIR: Path  # ../data
+    LOGS_DIR: Path  # ../data/logs
+    DB_DIR: Path  # ../data/db
+
+    CONTROLLER_DIR: Path  # ../data/controller
+    DS_PROFILES_DIR: Path  # ../data/controller/profiles
+
+    @classmethod
+    def create(cls) -> Self:
+        root_dir = Path(
+            arservercontroller.__file__
+        ).parent.parent.parent.parent.resolve()
+
+        apps_dir = root_dir / "apps"
+        client_dist_dir = apps_dir / "web" / "dist"
+        data_dir = root_dir / "data"
+        logs_dir = data_dir / "logs"
+        db_dir = data_dir / "db"
+
+        controller_dir = data_dir / "controller"
+        ds_profiles_dir = controller_dir / "profiles"
+
+        return cls(
+            ROOT_DIR=root_dir,
+            APPS_DIR=apps_dir,
+            CLIENT_DIST_DIR=client_dist_dir,
+            DATA_DIR=data_dir,
+            LOGS_DIR=logs_dir,
+            DB_DIR=db_dir,
+            CONTROLLER_DIR=controller_dir,
+            DS_PROFILES_DIR=ds_profiles_dir,
+        )
+
+
+class DirectoriesDockerized(BaseModel):
+    """Base directories for the ARServerController module under a docker container."""
+
+    model_config = ConfigDict(frozen=True)
+
+    ROOT_DIR: Path  # apps/
+    CLIENT_DIST_DIR: Path  # ../web/dist
+    DATA_DIR: Path  # ../data
+    LOGS_DIR: Path  # ../data/logs
+    DB_DIR: Path  # ../data/db
+
+    CONTROLLER_DIR: Path  # ../data/controller
+    DS_PROFILES_DIR: Path  # ../data/controller/profiles
+
+    @classmethod
+    def create(cls) -> Self:
+        root_dir = Path(arservercontroller.__file__).parent.parent.parent.resolve()
+
+        client_dist_dir = root_dir / "web" / "dist"
+        data_dir = root_dir / "data"
+        logs_dir = data_dir / "logs"
+        db_dir = data_dir / "db"
+
+        controller_dir = data_dir / "controller"
+        ds_profiles_dir = controller_dir / "profiles"
+
+        return cls(
+            ROOT_DIR=root_dir,
+            CLIENT_DIST_DIR=client_dist_dir,
+            DATA_DIR=data_dir,
+            LOGS_DIR=logs_dir,
+            DB_DIR=db_dir,
+            CONTROLLER_DIR=controller_dir,
+            DS_PROFILES_DIR=ds_profiles_dir,
+        )
+
+
+@lru_cache
+def get_directories() -> Directories | DirectoriesDockerized:
+    if (os.getenv("IS_RUNNING_DOCKERIZED") or "0") == "1":
+        return DirectoriesDockerized.create()
+
+    return Directories.create()
 
 
 class BaseConfig(BaseSettings):
     """Base application configuration class with common settings."""
 
-    model_config = SettingsConfigDict(case_sensitive=False, env_ignore_empty=True)
+    model_config = SettingsConfigDict(
+        case_sensitive=False,
+        env_ignore_empty=True,
+        env_file=Path(get_directories().ROOT_DIR / ".env").resolve(),
+    )
 
     ENVIRONMENT: str
     SECRET_KEY: str = Field(default="secretkey")
@@ -20,9 +117,7 @@ class BaseConfig(BaseSettings):
     VERSION: str = "0.0.1"
     API_V1_STR: str = "/api/v1"
 
-    FRONTEND_DIST_DIR: str = str(
-        directory_manager.base_directories.ROOT_DIR.parent.resolve() / "frontend/dist"
-    )
+    FRONTEND_DIST_DIR: str = str(get_directories().CLIENT_DIST_DIR)
 
     # Server Settings
     HOST: str = "127.0.0.1"
@@ -37,7 +132,7 @@ class BaseConfig(BaseSettings):
     @computed_field
     @property
     def DB_URL(self) -> str:
-        return f"sqlite:///{directory_manager.base_directories.DB_DIR}/{self.DB_NAME}"
+        return f"sqlite:///{get_directories().DB_DIR}/{self.DB_NAME}"
 
     # SQLAlchemy Settings
     SQLALCHEMY_ECHO: bool = False
@@ -58,6 +153,9 @@ class BaseConfig(BaseSettings):
     CORS_HEADERS: list[str] = ["*"]
     CORS_ALLOW_CREDS: bool = False
 
+    IS_RUNNING_DOCKERIZED: bool = False
+    CONTAINER_IMAGE_NAME: str = DEFAULT_CONTAINER_IMAGE_NAME
+
 
 class DevelopmentConfig(BaseConfig):
     """Development environment configuration."""
@@ -67,6 +165,8 @@ class DevelopmentConfig(BaseConfig):
     DB_NAME: str = "arservercontroller_devel.db"
 
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+
+    CONTAINER_IMAGE_NAME: str = DEFAULT_TEST_CONTAINER_IMAGE_NAME
 
 
 class ProductionConfig(BaseConfig):
@@ -98,6 +198,8 @@ class TestingConfig(BaseConfig):
     @property
     def DB_URL(self) -> str:
         return "sqlite:///:memory:"
+
+    CONTAINER_IMAGE_NAME: str = DEFAULT_TEST_CONTAINER_IMAGE_NAME
 
 
 # Configuration mapping

@@ -16,7 +16,8 @@ from fastapi import Depends
 from arservercontroller.api.dependencies import (
     DockerClientDep,
 )
-from arservercontroller.constants import AGENT_CONTAINER_NETWORK_NAME, directory_manager
+from arservercontroller.constants import AGENT_CONTAINER_NETWORK_NAME
+from arservercontroller.core.config import get_directories
 from arservercontroller.schemas.server_config import ServerConfig
 from arservercontroller.services.event_bus import event_bus
 from arservercontroller.services.logger import get_logger
@@ -165,9 +166,7 @@ class DockerContainerManager:
             f"{config.rcon_port}/udp": config.rcon_port,
         }
 
-        profile_host = Path(
-            directory_manager.controller_directories.DS_PROFILES_DIR / config.name
-        )
+        profile_host = Path(get_directories().DS_PROFILES_DIR) / config.name
 
         volumes = {
             str(profile_host): {"bind": f"/home/{config.name}", "mode": "rw"},

@@ -9,7 +9,8 @@ from docker.models.containers import Container
 from fastapi import Depends, WebSocket
 from sqlalchemy.orm import Session, sessionmaker
 
-from arservercontroller.constants import ServerStatusEnum, directory_manager
+from arservercontroller.constants import ServerStatusEnum
+from arservercontroller.core.config import get_directories
 from arservercontroller.db.models.server import Server
 from arservercontroller.db.session import SessionLocal
 from arservercontroller.schemas.server_config import ServerConfig
@@ -90,10 +91,7 @@ class ServerCreationManager:
                     return
 
                 if container and container.id:
-                    profile_host = Path(
-                        directory_manager.controller_directories.DS_PROFILES_DIR
-                        / server.name
-                    )
+                    profile_host = Path(get_directories().DS_PROFILES_DIR / server.name)
 
                     import shutil
 
@@ -124,9 +122,7 @@ class ServerCreationManager:
 
         container: Container | None = None
         try:
-            profile_host = Path(
-                directory_manager.controller_directories.DS_PROFILES_DIR / config.name
-            )
+            profile_host = Path(get_directories().DS_PROFILES_DIR / config.name)
 
             # ensure profile path exists before volume creation
             profile_host.mkdir(parents=True, exist_ok=True)
