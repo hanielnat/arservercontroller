@@ -3,7 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 import arservercontroller
@@ -23,7 +23,6 @@ class Directories(BaseModel):
     CLIENT_DIST_DIR: Path  # ../apps/web/dist
     DATA_DIR: Path  # ../data
     LOGS_DIR: Path  # ../data/logs
-    DB_DIR: Path  # ../data/db
 
     CONTROLLER_DIR: Path  # ../data/controller
     DS_PROFILES_DIR: Path  # ../data/controller/profiles
@@ -38,7 +37,6 @@ class Directories(BaseModel):
         client_dist_dir = apps_dir / "web" / "dist"
         data_dir = root_dir / "data"
         logs_dir = data_dir / "logs"
-        db_dir = data_dir / "db"
 
         controller_dir = data_dir / "controller"
         ds_profiles_dir = controller_dir / "profiles"
@@ -49,54 +47,12 @@ class Directories(BaseModel):
             CLIENT_DIST_DIR=client_dist_dir,
             DATA_DIR=data_dir,
             LOGS_DIR=logs_dir,
-            DB_DIR=db_dir,
             CONTROLLER_DIR=controller_dir,
             DS_PROFILES_DIR=ds_profiles_dir,
         )
 
 
-class DirectoriesDockerized(BaseModel):
-    """Base directories for the ARServerController module under a docker container."""
-
-    model_config = ConfigDict(frozen=True)
-
-    ROOT_DIR: Path  # apps/
-    CLIENT_DIST_DIR: Path  # ../web/dist
-    DATA_DIR: Path  # ../data
-    LOGS_DIR: Path  # ../data/logs
-    DB_DIR: Path  # ../data/db
-
-    CONTROLLER_DIR: Path  # ../data/controller
-    DS_PROFILES_DIR: Path  # ../data/controller/profiles
-
-    @classmethod
-    def create(cls) -> Self:
-        root_dir = Path(arservercontroller.__file__).parent.parent.parent.resolve()
-
-        client_dist_dir = root_dir / "web" / "dist"
-        data_dir = root_dir / "data"
-        logs_dir = data_dir / "logs"
-        db_dir = data_dir / "db"
-
-        controller_dir = data_dir / "controller"
-        ds_profiles_dir = controller_dir / "profiles"
-
-        return cls(
-            ROOT_DIR=root_dir,
-            CLIENT_DIST_DIR=client_dist_dir,
-            DATA_DIR=data_dir,
-            LOGS_DIR=logs_dir,
-            DB_DIR=db_dir,
-            CONTROLLER_DIR=controller_dir,
-            DS_PROFILES_DIR=ds_profiles_dir,
-        )
-
-
-@lru_cache
-def get_directories() -> Directories | DirectoriesDockerized:
-    if (os.getenv("IS_RUNNING_DOCKERIZED") or "0") == "1":
-        return DirectoriesDockerized.create()
-
+def get_directories() -> Directories:
     return Directories.create()
 
 
@@ -124,15 +80,10 @@ class BaseConfig(BaseSettings):
     PORT: int = 8000
 
     # Database Settings
-    DB_NAME: str = "arservercontroller.db"
+    DB_URL: str = f"sqlite:///{get_directories().DATA_DIR}/.db"
     DB_CONNECT_TIMEOUT: int = 30
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 10
-
-    @computed_field
-    @property
-    def DB_URL(self) -> str:
-        return f"sqlite:///{get_directories().DB_DIR}/{self.DB_NAME}"
 
     # SQLAlchemy Settings
     SQLALCHEMY_ECHO: bool = False
@@ -162,7 +113,6 @@ class DevelopmentConfig(BaseConfig):
 
     DEBUG: bool = True
     SQLALCHEMY_ECHO: bool = True  # Enable SQL logging in development
-    DB_NAME: str = "arservercontroller_devel.db"
 
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
@@ -173,7 +123,6 @@ class ProductionConfig(BaseConfig):
     """Production environment configuration."""
 
     DEBUG: bool = False
-    DB_NAME: str = "arservercontroller_prod.db"
     # Override SQLAlchemy engine options for production
     SQLALCHEMY_ENGINE_OPTIONS: dict = {
         "pool_pre_ping": True,
@@ -191,13 +140,9 @@ class TestingConfig(BaseConfig):
 
     DEBUG: bool = True
     TESTING: bool = True
-    DB_NAME: str = "arservercontroller_test.db"
 
     # Use in-memory database for testing
-    @computed_field
-    @property
-    def DB_URL(self) -> str:
-        return "sqlite:///:memory:"
+    DB_URL: str = "sqlite:///:memory:"
 
     CONTAINER_IMAGE_NAME: str = DEFAULT_TEST_CONTAINER_IMAGE_NAME
 
