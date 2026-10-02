@@ -80,6 +80,15 @@
             "detail": ""
         },
         {
+            "label": "Run migrations",
+            "type": "shell",
+            "command": "uv run alembic upgrade head",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/server"
+            },
+            "detail": ""
+        },
+        {
             "label": "Test",
             "type": "shell",
             "command": "./tasks.sh test",
