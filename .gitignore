@@ -55,8 +55,8 @@ venv.bak/
 Thumbs.db
 
 # Project-specific
-backend/tests/test_controller
-backend/data
+apps/server/tests/test_controller
+data/
 .env
 *.env
 env.*
