@@ -3,24 +3,24 @@
     "configurations": [
         {
             "name": "Run module tests",
-            "cwd": "${workspaceFolder}/backend",
+            "cwd": "${workspaceFolder}/apps/server",
             "type": "debugpy",
             "request": "launch",
             "module": "tests"
         },
         {
             "name": "Run module main",
-            "cwd": "${workspaceFolder}/backend",
+            "cwd": "${workspaceFolder}/apps/server",
             "type": "debugpy",
             "request": "launch",
             "module": "arservercontroller.main"
         },
         {
             "name": "Run with uvicorn",
-            "cwd": "${workspaceFolder}/backend",
+            "cwd": "${workspaceFolder}/apps/server",
             "type": "debugpy",
             "request": "launch",
-            "envFile": "${workspaceFolder}/apps/server/.env",
+            "envFile": "${workspaceFolder}/.env",
             "python": "${command:python.interpreterPath}",
             "module": "uvicorn",
             "args": [
@@ -29,10 +29,10 @@
         },
         {
             "name": "Run with fastapi",
-            "cwd": "${workspaceFolder}/backend",
+            "cwd": "${workspaceFolder}/apps/server",
             "type": "debugpy",
             "request": "launch",
-            "envFile": "${workspaceFolder}/apps/server/.env",
+            "envFile": "${workspaceFolder}/.env",
             "python": "${command:python.interpreterPath}",
             "module": "fastapi",
             "args": [
