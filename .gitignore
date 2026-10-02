@@ -63,6 +63,7 @@ env.*
 **/.env
 **/*.env
 **/env.*
+!**/env.py
 .opencode
 
 # Logs
