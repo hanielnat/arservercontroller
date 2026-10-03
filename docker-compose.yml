@@ -1,0 +1,24 @@
+services:
+  api:
+    container_name: arservercontroller
+    image: arservercontroller:latest
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - arservercontroller-data:/arservercontroller/data
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  arservercontroller-data:

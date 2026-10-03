@@ -104,7 +104,6 @@ class BaseConfig(BaseSettings):
     CORS_HEADERS: list[str] = ["*"]
     CORS_ALLOW_CREDS: bool = False
 
-    IS_RUNNING_DOCKERIZED: bool = False
     CONTAINER_IMAGE_NAME: str = DEFAULT_CONTAINER_IMAGE_NAME
 
 

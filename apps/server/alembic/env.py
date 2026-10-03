@@ -1,7 +1,6 @@
 from logging.config import fileConfig
 
 from alembic import context
-from arservercontroller.core.config import get_config
 from arservercontroller.db.base import Base
 from sqlalchemy import engine_from_config, pool
 
@@ -38,7 +37,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = get_config().DB_URL
+    url = config.get_section(config.config_ini_section, {})["sqlalchemy.url"]
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -57,11 +56,8 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    ini = config.get_section(config.config_ini_section, {})
-    ini["sqlalchemy.url"] = get_config().DB_URL
-
     connectable = engine_from_config(
-        ini,
+        config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
