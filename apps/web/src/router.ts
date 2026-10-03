@@ -1,27 +1,26 @@
-import { useAuthStore } from "@/stores/useAuthStore";
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
     // private
     {
         path: "/",
-        component: import("@/views/DashboardLayout.vue"),
+        component: () => import("@/views/DashboardLayout.vue"),
         meta: { requiresAuth: true },
         children: [
             {
                 path: "",
                 name: "dashboard-home",
-                component: import("@/components/DashboardHome.vue"),
+                component: () => import("@/components/DashboardHome.vue"),
             },
             {
                 path: "/server/add",
                 name: "add-server",
-                component: import("@/views/AddServerPage.vue"),
+                component: () => import("@/views/AddServerPage.vue"),
             },
             {
                 path: "/servers/",
                 name: "servers",
-                component: import("@/views/ListServerPage.vue"),
+                component: () => import("@/views/ListServerPage.vue"),
             },
         ],
     },
@@ -30,13 +29,13 @@ const routes: RouteRecordRaw[] = [
     {
         path: "/login",
         name: "login",
-        component: import("@/views/LoginPage.vue"),
+        component: () => import("@/views/LoginPage.vue"),
         meta: { requiresGuest: true },
     },
     {
         path: "/register",
         name: "register",
-        component: import("@/views/RegisterPage.vue"),
+        component: () => import("@/views/RegisterPage.vue"),
         meta: { requiresGuest: true },
     },
     // on 404
@@ -52,6 +51,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _, next) => {
+    /*
     const auth = useAuthStore();
 
     if (to.meta.requiresAuth && !auth.isAuthenticated) {
@@ -64,6 +64,7 @@ router.beforeEach((to, _, next) => {
         next(redirect);
         return;
     }
+    */
 
     next();
 });

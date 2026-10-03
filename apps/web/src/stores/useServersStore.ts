@@ -189,12 +189,10 @@ export const useServersStore = defineStore("servers", () => {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async function connectServerCreationLogs(id: string) {
         throw new Error("Not implemented");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async function cancelServerCreation(id: string) {
         throw new Error("Not implemented");
     }
