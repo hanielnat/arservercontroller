@@ -1,24 +1,19 @@
 import tailwindcss from "@tailwindcss/vite";
-import { DevTools } from "@vitejs/devtools";
-import vue from "@vitejs/plugin-vue";
+import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { defineConfig } from "vite";
-import VueDevTools from "vite-plugin-vue-devtools";
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [VueDevTools(), vue(), DevTools(), tailwindcss()],
-    appType: "spa",
-    dev: { sourcemap: true },
+    plugins: [react(), tailwindcss()],
     resolve: {
         alias: {
-            "@": path.resolve("./src"),
+            "@": path.resolve(__dirname, "src")
+        }
+    },
+    server: {
+        proxy: {
+            "/api/v1": "http://localhost:8080",
         },
     },
-    build: {
-        sourcemap: true,
-        rolldownOptions: {
-            devtools: {},
-        },
-    },
-});
+})

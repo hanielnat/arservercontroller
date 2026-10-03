@@ -1,0 +1,8 @@
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    "ignorePatterns": ["dist/*", "node_modules/*", "*.gen.ts"],
+    "semi": false,
+    "tabWidth": 4,
+    "sortTailwindcss": true,
+    "sortImports": true
+}
