@@ -3,17 +3,26 @@ import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/providers/theme-provider";
-import { queryClient, router } from "./router";
+import { queryClient, router } from "@/router";
 
-import "./index.css";
+import "@/index.css";
 
-createRoot(document.getElementById("root")!).render(
-    <StrictMode>
+export default function App() {
+  return (
+    <>
+      <StrictMode>
         <QueryClientProvider client={queryClient}>
-            <ThemeProvider defaultTheme="dark" storageKey="dark-mode">
-                <RouterProvider router={router} />
-            </ThemeProvider>
+          <ThemeProvider defaultTheme="dark" storageKey="dark-mode">
+            <TooltipProvider>
+              <RouterProvider router={router} />
+            </TooltipProvider>
+          </ThemeProvider>
         </QueryClientProvider>
-    </StrictMode>,
-)
+      </StrictMode>
+    </>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(<App />);

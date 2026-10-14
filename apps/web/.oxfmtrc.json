@@ -1,7 +1,14 @@
 {
     "$schema": "./node_modules/oxfmt/configuration_schema.json",
     "ignorePatterns": ["dist/*", "node_modules/*", "*.gen.ts"],
-    "semi": false,
+    "overrides": [
+        {
+            "files": ["*.tsx", "*.jsx"],
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ],
     "tabWidth": 4,
     "sortTailwindcss": true,
     "sortImports": true
