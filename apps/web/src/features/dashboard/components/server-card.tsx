@@ -30,10 +30,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
-import type { MockServer } from "@/features/dashboard/overview";
+import type { ServerOut } from "@/types/server";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
-  server: MockServer;
+  server: ServerOut;
 };
 
 export default function ServerCard(props: ServerCardProps) {
@@ -80,16 +80,16 @@ export default function ServerCard(props: ServerCardProps) {
 
   return (
     <Card
-      className={cn("hover:ring hover:ring-foreground", "transition-colors", className)}
+      className={cn("hover:ring hover:ring-card-foreground", "transition-all", className)}
       {...rest}
     >
       <CardHeader>
         <CardTitle>
           <div className="flex flex-row">
-            <h1>{server.name}</h1>
+            <h1>{server.serverConfigData.name}</h1>
 
             <div className="ml-auto">
-              <span>{server.ip}</span>
+              <span>{server.serverConfigData.bindAddress}</span>
 
               <Button className="ml-2" variant={"ghost"}>
                 <CopyIcon />
@@ -128,15 +128,15 @@ export default function ServerCard(props: ServerCardProps) {
         </CardTitle>
 
         <CardDescription>
-          {server.browserName} • {server.id.split("-")[0]}...
+          {server.serverConfigData.name} • {server.serverConfigData.id?.split("-")[0]}...
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         <div className="flex justify-between gap-2">
-          <div>{server.cpu}%</div>
-          <div>{server.ram}%</div>
-          <div>{server.players}</div>
+          <div>{Math.random()}%</div>
+          <div>{Math.random()}%</div>
+          <div>{Math.random()}</div>
         </div>
       </CardContent>
 
@@ -146,12 +146,12 @@ export default function ServerCard(props: ServerCardProps) {
             className={cn(
               "items-center",
               "text-center",
-              server.status === "healthy"
+              server.serverConfigData.status === "running"
                 ? "bg-green-900 text-green-200"
                 : "bg-red-900 text-red-200",
             )}
           >
-            {server.status} • {server.uptime}
+            {server.serverConfigData.status} • {Math.random()}
           </Badge>
 
           <ButtonGroup className={cn("transition-all", "ml-auto")}>

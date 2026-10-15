@@ -5,15 +5,14 @@ import { Button } from "@/components/ui/button";
 import { CodeTextArea } from "@/components/ui/code-textarea";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/toast";
-import { ServerCreateSchema, type ServerCreateFormvalues } from "@/types/server.schema";
+import { formValuesToCreatePayload, type ServerCreateFormValues } from "@/types/server";
+import { ServerCreateFormSchema } from "@/types/server.schema";
 
 type CreateServerFormProps = {
   children?: (state: { canSubmit: boolean; isSubmitting: boolean }) => React.ReactNode;
 };
 
-const defaultValues: ServerCreateFormvalues = {
-  version: "0.0.1",
+const defaultValues: ServerCreateFormValues = {
   name: "",
   bindPort: 2001,
   bindAddress: "0.0.0.0",
@@ -64,20 +63,11 @@ export function CreateServerForm({ children }: CreateServerFormProps) {
     defaultValues,
 
     validators: {
-      onSubmit: ServerCreateSchema,
+      onSubmit: ServerCreateFormSchema,
     },
 
     onSubmit: async ({ value }) => {
-      const payload = {
-        ...value,
-        reforgerConfig: JSON.parse(value.reforgerConfig),
-      };
-
-      toast.add({
-        type: "success",
-        title: "Form submitted successfully",
-        description: `${value.name} - ${value.bindPort}`,
-      });
+      const payload = formValuesToCreatePayload(value);
       console.log("payload:", payload);
     },
   });
@@ -274,7 +264,6 @@ export function CreateServerForm({ children }: CreateServerFormProps) {
             children={(field) => {
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
-              // normaliza para objeto (caso venha como array de string)
               const record: Record<string, unknown> = Array.isArray(field.state.value)
                 ? Object.fromEntries(
                     (field.state.value as string[]).map((v, i) => [`ITEM_${i}`, v]),
@@ -376,7 +365,7 @@ export function CreateServerForm({ children }: CreateServerFormProps) {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => field.pushValue({ "": 0 })}
+                      onClick={() => field.pushValue({ key: "", value: 0 })}
                     >
                       <Plus className="size-4" />
                       Add
@@ -384,43 +373,45 @@ export function CreateServerForm({ children }: CreateServerFormProps) {
                   </div>
 
                   <div className="space-y-2">
-                    {(field.state.value ?? []).map((item, index) => {
-                      const [portKey = "", portValue = 0] = Object.entries(item ?? {})[0] ?? [];
+                    {(field.state.value ?? []).map((item, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={item?.key ?? ""}
+                          onChange={(e) => {
+                            field.replaceValue(index, {
+                              key: e.target.value,
+                              value: item?.value ?? 0,
+                            });
+                          }}
+                          placeholder="protocol"
+                          className="w-[40%]"
+                          autoComplete="off"
+                        />
 
-                      const update = (key: string, value: number) => {
-                        field.replaceValue(index, { [key]: value });
-                      };
+                        <Input
+                          type="number"
+                          value={item?.value === 0 && !item?.key ? "" : (item?.value ?? "")}
+                          onChange={(e) =>
+                            field.replaceValue(index, {
+                              key: item?.key ?? "",
+                              value: e.target.valueAsNumber || 0,
+                            })
+                          }
+                          placeholder="port"
+                          className="flex-1"
+                          autoComplete="off"
+                        />
 
-                      return (
-                        <div key={index} className="flex gap-2">
-                          <Input
-                            value={portKey}
-                            onChange={(e) => update(e.target.value, Number(portValue) || 0)}
-                            placeholder="protocol"
-                            className="w-[40%]"
-                            autoComplete="off"
-                          />
-
-                          <Input
-                            type="number"
-                            value={portValue === 0 && portKey === "" ? "" : portValue}
-                            onChange={(e) => update(portKey, e.target.valueAsNumber || 0)}
-                            placeholder="port"
-                            className="flex-1"
-                            autoComplete="off"
-                          />
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => field.removeValue(index)}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-                      );
-                    })}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => field.removeValue(index)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
 
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}

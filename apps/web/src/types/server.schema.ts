@@ -1,84 +1,98 @@
 import * as z from "zod";
 
-export const ServerStatusSchema = z.enum(["running", "stopped", "dead"]);
+import { PORT_MAX, PORT_MIN } from "@/lib/consts";
 
-export const ServerConfigDataSchema = z.object({
-    version: z.string(),
-    name: z.string(),
-    bindPort: z.number(),
+export const ServerStatusEnumSchema = z.enum([
+    "running",
+    "created",
+    "exited",
+    "paused",
+    "restarting",
+    "removing",
+    "dead",
+]);
 
-    bindAddress: z.ipv4().optional(),
-    a2sPort: z.number().optional(),
-    rconPort: z.number().optional(),
-    status: ServerStatusSchema.optional(),
-    commandLine: z.array(z.string()).optional(),
-    environment: z.union([z.record(z.string(), z.any()), z.array(z.string())]).optional(),
-    extraPorts: z.array(z.record(z.string(), z.number())).optional(),
-    reforgerConfig: z
-        .string()
-        .min(1, "Reforger config is obrigatory")
-        .transform((str, ctx) => {
-            try {
-                return JSON.parse(str);
-            } catch {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Invalid JSON",
-                });
-                return z.NEVER;
-            }
-        })
-        .pipe(z.json()),
+const versionSchema = z.string().min(3).default("0.1");
+
+const nameSchema = z.string().min(4).max(20).trim();
+
+const portSchema = z.int().gt(PORT_MIN).lt(PORT_MAX);
+
+/** extraPorts list[tuple[str, int]] */
+export const ExtraPortSchema = z.tuple([z.string(), z.int().positive()]);
+
+/** environment: dict[str, str] | list[str] */
+export const EnvironmentSchema = z.union([z.record(z.string(), z.string()), z.array(z.string())]);
+
+export const ReforgerProcessStatusOutSchema = z.object({
+    pid: z.int().positive().nullable(),
+    status: ServerStatusEnumSchema,
+});
+
+export const ServerStatusOutSchema = z.object({
+    container: ServerStatusEnumSchema,
+    agent: ServerStatusEnumSchema,
+    reforger: ReforgerProcessStatusOutSchema,
+});
+
+export const ServerConfigSchema = z.object({
+    version: versionSchema,
+    id: z.uuid().optional(),
+    containerId: z.string().optional(),
+
+    name: nameSchema,
+    bindPort: portSchema,
+    bindAddress: z.ipv4().optional().nullable(),
+    a2sPort: portSchema.optional().nullable(),
+    rconPort: portSchema.optional().nullable(),
+
+    status: ServerStatusEnumSchema.optional(),
+
+    commandLine: z.array(z.string()).optional().nullable(),
+    environment: EnvironmentSchema.optional().nullable(),
+    extraPorts: z.array(ExtraPortSchema).optional().nullable(),
+    reforgerConfig: z.record(z.string(), z.unknown()),
 });
 
 export const ServerSchema = z.object({
     id: z.uuid(),
-    name: z.string().trim(),
-    version: z.string(),
+    name: nameSchema,
+    version: versionSchema,
     createdAt: z.number(),
     updatedAt: z.number(),
-    serverConfigData: z.object(ServerConfigDataSchema),
+    serverConfigData: ServerConfigSchema,
 });
 
 export const ServerOutSchema = z.object({
-    createdAt: z.number(),
-    updatedAt: z.number(),
-    serverConfigData: ServerConfigDataSchema,
+    createdAt: z.int(),
+    updatedAt: z.int(),
+    serverConfigData: ServerConfigSchema,
 });
 
 export const ServersOutSchema = z.object({
     data: z.array(ServerOutSchema),
-    count: z.number(),
-});
-
-export const ReforgerProcessStatusOutSchema = z.object({
-    pid: z.number().optional(),
-    status: ServerStatusSchema,
-});
-
-export const ServerStatusOutSchema = z.object({
-    container: ServerStatusSchema,
-    agent: ServerStatusSchema,
-    reforger: ReforgerProcessStatusOutSchema,
+    count: z.int(),
 });
 
 // #region Forms
 
-export const ServerCreateSchema = z.object({
-    version: z.string().min(1),
-    name: z.string().min(1),
-    bindPort: z.number().int().positive(),
+export const ExtraPortFormItemSchema = z.object({
+    key: z.string().min(1),
+    value: z.int().gt(PORT_MIN).lt(PORT_MAX),
+});
 
+export const ServerCreateFormSchema = z.object({
+    name: nameSchema,
+    bindPort: portSchema,
     bindAddress: z.string().optional(),
-    a2sPort: z.number().int().positive().optional(),
-    rconPort: z.number().int().positive().optional(),
-    status: ServerStatusSchema.optional(),
+    a2sPort: portSchema.optional(),
+    rconPort: portSchema.optional(),
+
+    status: ServerStatusEnumSchema.optional(),
 
     commandLine: z.array(z.string()).optional(),
     environment: z.union([z.record(z.string(), z.any()), z.array(z.string())]).optional(),
-    extraPorts: z.array(z.record(z.string(), z.number())).optional(),
-
-    // string no form → objeto JSON validado no submit
+    extraPorts: z.array(ExtraPortFormItemSchema).optional(),
     reforgerConfig: z
         .string()
         .min(1, "Reforger config is obrigatory")
@@ -86,14 +100,33 @@ export const ServerCreateSchema = z.object({
             try {
                 JSON.parse(str);
             } catch {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Invalid JSON",
-                });
+                ctx.addIssue({ code: "custom", message: "Invalid JSON" });
             }
         }),
 });
-// export const ServerCreateSchema = ServerConfigDataSchema.omit({ version: true, status: true })
-export type ServerCreateFormvalues = z.infer<typeof ServerCreateSchema>;
+
+// #endregion
+
+// #region ApiClient
+
+export const ServerConfigCreateSchema = z.object({
+    version: versionSchema,
+
+    name: nameSchema,
+    bindPort: portSchema,
+    bindAddress: z.ipv4().optional().nullable(),
+    a2sPort: portSchema.optional().nullable(),
+    rconPort: portSchema.optional().nullable(),
+
+    commandLine: z.array(z.string()).optional().nullable(),
+    environment: EnvironmentSchema.optional().nullable(),
+    extraPorts: z.array(ExtraPortSchema).optional().nullable(),
+    reforgerConfig: z.record(z.string(), z.unknown()),
+});
+
+export const ServerConfigUpdateSchema = ServerConfigCreateSchema.partial().extend({
+    containerId: z.string().optional().nullable(),
+    reforgerConfig: z.record(z.string(), z.unknown()),
+});
 
 // #endregion
