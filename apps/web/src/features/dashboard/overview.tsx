@@ -1,11 +1,11 @@
 import {
-  ContainerIcon,
-  LayoutDashboardIcon,
-  LayoutListIcon,
-  PlusIcon,
-  RefreshCwIcon,
-  SearchIcon,
-  ServerIcon,
+    ContainerIcon,
+    LayoutDashboardIcon,
+    LayoutListIcon,
+    PlusIcon,
+    RefreshCwIcon,
+    SearchIcon,
+    ServerIcon,
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -13,127 +13,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
 } from "@/components/ui/empty";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { CrateServerDialog } from "@/features/dashboard/components/create-server-dialog";
 import ServerCard from "@/features/dashboard/components/server-card";
 import { ServerTable } from "@/features/dashboard/components/server-table";
-import { SCHEMA_VERSION } from "@/lib/consts";
-import type { ServerOut } from "@/types/server";
-
-let servers: ServerOut[] = [
-  {
-    createdAt: new Date().valueOf(),
-    updatedAt: new Date().valueOf(),
-    serverConfigData: {
-      version: SCHEMA_VERSION,
-      name: "Test",
-      bindPort: 2001,
-      a2sPort: 19999,
-      rconPort: 17777,
-      bindAddress: "0.0.0.0",
-      commandLine: ["-logLevel", "spam"],
-      environment: {
-        AGENT_DEBUG: "1",
-      },
-      extraPorts: undefined,
-      status: "running",
-      reforgerConfig: {
-        test: "test",
-      },
-    },
-  },
-  {
-    createdAt: new Date().valueOf(),
-    updatedAt: new Date().valueOf(),
-    serverConfigData: {
-      version: SCHEMA_VERSION,
-      name: "Test",
-      bindPort: 2001,
-      a2sPort: 19999,
-      rconPort: 17777,
-      bindAddress: "0.0.0.0",
-      commandLine: ["-logLevel", "spam"],
-      environment: {
-        AGENT_DEBUG: "1",
-      },
-      extraPorts: undefined,
-      status: "running",
-      reforgerConfig: {
-        test: "test",
-      },
-    },
-  },
-  {
-    createdAt: new Date().valueOf(),
-    updatedAt: new Date().valueOf(),
-    serverConfigData: {
-      version: SCHEMA_VERSION,
-      name: "Test",
-      bindPort: 2001,
-      a2sPort: 19999,
-      rconPort: 17777,
-      bindAddress: "0.0.0.0",
-      commandLine: ["-logLevel", "spam"],
-      environment: {
-        AGENT_DEBUG: "1",
-      },
-      extraPorts: undefined,
-      status: "running",
-      reforgerConfig: {
-        test: "test",
-      },
-    },
-  },
-  {
-    createdAt: new Date().valueOf(),
-    updatedAt: new Date().valueOf(),
-    serverConfigData: {
-      version: SCHEMA_VERSION,
-      name: "Test",
-      bindPort: 2001,
-      a2sPort: 19999,
-      rconPort: 17777,
-      bindAddress: "0.0.0.0",
-      commandLine: ["-logLevel", "spam"],
-      environment: {
-        AGENT_DEBUG: "1",
-      },
-      extraPorts: undefined,
-      status: "running",
-      reforgerConfig: {
-        test: "test",
-      },
-    },
-  },
-  {
-    createdAt: new Date().valueOf(),
-    updatedAt: new Date().valueOf(),
-    serverConfigData: {
-      version: SCHEMA_VERSION,
-      name: "Test",
-      bindPort: 2001,
-      a2sPort: 19999,
-      rconPort: 17777,
-      bindAddress: "0.0.0.0",
-      commandLine: ["-logLevel", "spam"],
-      environment: {
-        AGENT_DEBUG: "1",
-      },
-      extraPorts: undefined,
-      status: "running",
-      reforgerConfig: {
-        test: "test",
-      },
-    },
-  },
-];
+import { useServersStore } from "@/stores/server";
 
 function EmptyOverview() {
   return (
@@ -163,10 +54,17 @@ function EmptyOverview() {
 }
 
 function TableLayoutOverview() {
-  return <ServerTable servers={servers} />;
+  const servers = useServersStore((state) => state.servers)
+  const remove = useServersStore((state) => state.remove)
+
+  return <ServerTable servers={servers} onEdit={(server) => {
+    console.log("edit", server.serverConfigData.id)
+  }} onDelete={(server) => remove(server)} />;
 }
 
 function GridLayoutOverview() {
+  const servers = useServersStore((state) => state.servers)
+
   return (
     <div className="my-4 grid grid-cols-1 gap-4 md:grid-cols-3">
       {servers.map((server) => (
@@ -183,6 +81,8 @@ function DashboardOverviewHeader({
   isGridLayout: boolean;
   setIsGridLayout: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  const servers = useServersStore((state) => state.servers)
+
   return (
     <div className="mb-2 align-middle">
       <div className="flex items-center gap-2">
@@ -229,6 +129,7 @@ function DashboardOverviewHeader({
 
 export default function DashboardOverview() {
   const [isGridLayout, setIsGridLayout] = useState(true);
+  const servers = useServersStore((state) => state.servers)
 
   return (
     <div className="h-full">
