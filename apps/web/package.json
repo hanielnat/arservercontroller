@@ -8,6 +8,7 @@
         "dev": "vite && bun run generate-route-tree --watch",
         "generate-route-tree": "bunx @tanstack/router-cli generate",
         "build": "tsc -b && vite build",
+        "test": "vitest",
         "fmt": "oxfmt",
         "lint": "oxlint",
         "preview": "vite preview"
@@ -47,7 +48,8 @@
         "oxlint": "^1.86.0",
         "simple-git-hooks": "^2.14.0",
         "typescript": "~6.0.2",
-        "vite": "^8.2.2"
+        "vite": "^8.2.2",
+        "vitest": "^5.0.5"
     },
     "simple-git-hooks": {
         "pre-commit": "bun run fmt"
