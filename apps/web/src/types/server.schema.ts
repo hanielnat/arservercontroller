@@ -37,7 +37,7 @@ export const ServerStatusOutSchema = z.object({
 
 export const ServerConfigSchema = z.object({
     version: versionSchema,
-    id: z.uuid().optional(),
+    id: z.uuid(),
     containerId: z.string().optional(),
 
     name: nameSchema,

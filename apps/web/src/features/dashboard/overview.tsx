@@ -1,30 +1,38 @@
 import {
-    ContainerIcon,
-    LayoutDashboardIcon,
-    LayoutListIcon,
-    PlusIcon,
-    RefreshCwIcon,
-    SearchIcon,
-    ServerIcon,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryObserverResult,
+} from "@tanstack/react-query";
+import {
+  ContainerIcon,
+  LayoutDashboardIcon,
+  LayoutListIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SearchIcon,
+  ServerIcon,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
-    Empty,
-    EmptyContent,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
 } from "@/components/ui/empty";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { CrateServerDialog } from "@/features/dashboard/components/create-server-dialog";
 import ServerCard from "@/features/dashboard/components/server-card";
 import { ServerTable } from "@/features/dashboard/components/server-table";
-import { useServersStore } from "@/stores/server";
+import type { ServerOut } from "@/types/server";
+
+import { mockServer } from "./utils/servers";
 
 function EmptyOverview() {
   return (
@@ -53,47 +61,40 @@ function EmptyOverview() {
   );
 }
 
-function TableLayoutOverview() {
-  const servers = useServersStore((state) => state.servers)
-  const remove = useServersStore((state) => state.remove)
-
-  return <ServerTable servers={servers} onEdit={(server) => {
-    console.log("edit", server.serverConfigData.id)
-  }} onDelete={(server) => remove(server)} />;
-}
-
-function GridLayoutOverview() {
-  const servers = useServersStore((state) => state.servers)
-
-  return (
-    <div className="my-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-      {servers.map((server) => (
-        <ServerCard className="max-w-full" key={server.serverConfigData.id} server={server} />
-      ))}
-    </div>
-  );
+interface DashboardOverviewHeaderProps {
+  isGridLayout: boolean;
+  totalCount: number;
+  search: string;
+  refetchPending: boolean;
+  refetch: () => Promise<QueryObserverResult<ServerOut[]>>;
+  onSearchChange: (value: string) => void;
+  setIsGridLayout: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function DashboardOverviewHeader({
   isGridLayout,
+  totalCount,
+  search,
+  refetchPending,
+  refetch,
+  onSearchChange,
   setIsGridLayout,
-}: {
-  isGridLayout: boolean;
-  setIsGridLayout: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-  const servers = useServersStore((state) => state.servers)
-
+}: DashboardOverviewHeaderProps) {
   return (
     <div className="mb-2 align-middle">
       <div className="flex items-center gap-2">
         <ServerIcon />
         <h1 className="text-2xl">Servers</h1>
-        <Badge variant={"outline"}>{servers.length}</Badge>
+        <Badge variant={"outline"}>{totalCount}</Badge>
       </div>
 
       <div className="flex items-center justify-end">
         <InputGroup className="mr-2 ml-auto max-w-50">
-          <InputGroupInput placeholder="Search" />
+          <InputGroupInput
+            placeholder="Search"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
 
           <InputGroupAddon>
             <SearchIcon />
@@ -109,7 +110,12 @@ function DashboardOverviewHeader({
             {isGridLayout ? <LayoutDashboardIcon /> : <LayoutListIcon />}
           </Button>
 
-          <Button size={"lg"} variant={"secondary"}>
+          <Button
+            size={"lg"}
+            variant={"secondary"}
+            disabled={refetchPending}
+            onClick={() => refetch()}
+          >
             <RefreshCwIcon />
           </Button>
 
@@ -129,23 +135,76 @@ function DashboardOverviewHeader({
 
 export default function DashboardOverview() {
   const [isGridLayout, setIsGridLayout] = useState(true);
-  const servers = useServersStore((state) => state.servers)
+  const [search, setSearch] = useState("");
+
+  const {
+    data: servers,
+    isPending,
+    refetch,
+  } = useQuery({
+    queryKey: ["servers"],
+    queryFn: async () => mockServer.getServers(10),
+    refetchOnMount: true,
+  });
+
+  const queryClient = useQueryClient();
+  const deleteServer = useMutation({
+    mutationFn: (id: string) => {
+      mockServer.deleteServer(id);
+      return Promise.resolve(id);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["servers"] }),
+  });
+
+  const filteredServers = useMemo(() => {
+    const q = search.trim().toLocaleLowerCase();
+    if (!q) {
+      return servers;
+    }
+
+    return servers?.filter((s) => {
+      const cfg = s.serverConfigData;
+      return (
+        cfg.name.toLocaleLowerCase().includes(q) ||
+        cfg.id?.toLocaleLowerCase().includes(q) ||
+        (cfg.bindAddress ?? "").includes(q) ||
+        String(cfg.bindPort).includes(q) ||
+        (cfg.status ?? "").includes(q)
+      );
+    });
+  }, [servers, search]);
 
   return (
     <div className="h-full">
-      {servers.length > 0 && (
-        <DashboardOverviewHeader isGridLayout={isGridLayout} setIsGridLayout={setIsGridLayout} />
+      {(servers?.length ?? 0) > 0 && (
+        <DashboardOverviewHeader
+          isGridLayout={isGridLayout}
+          setIsGridLayout={setIsGridLayout}
+          search={search}
+          refetchPending={isPending}
+          refetch={refetch}
+          onSearchChange={setSearch}
+          totalCount={servers?.length ?? 0}
+        />
       )}
-      {servers.length === 0 ? (
+      {servers?.length === 0 ? (
         <EmptyOverview />
       ) : isGridLayout ? (
-        <>
-          <GridLayoutOverview />
-        </>
+        <div className="my-4 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredServers?.map((server) => (
+            <ServerCard className="max-w-full" key={server.serverConfigData.id} server={server} />
+          ))}
+        </div>
       ) : (
-        <>
-          <TableLayoutOverview />
-        </>
+        <ServerTable
+          servers={servers ?? []}
+          search={search}
+          onSearchChange={setSearch}
+          onEdit={(server) => {
+            console.log("edit", server.serverConfigData.id);
+          }}
+          onDelete={(server) => deleteServer.mutate(server.serverConfigData.id ?? "")}
+        />
       )}
     </div>
   );

@@ -19,9 +19,10 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   ChevronsUpDownIcon,
+  LogsIcon,
   MoreHorizontal,
-  Pencil,
-  Trash2,
+  PencilIcon,
+  Trash2Icon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -30,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -66,18 +68,26 @@ const features = tableFeatures({
 
 interface ServerTableProps {
   servers: ServerOut[];
+  search?: string;
+  onSearchChange?: (value: string) => void;
   onEdit?: (server: ServerOut) => void;
+  onShowLogs?: (server: ServerOut) => void;
   onDelete?: (server: ServerOut) => void;
 }
 
 export function ServerTable({
   servers,
+  search,
+  onSearchChange,
   onEdit,
+  onShowLogs,
   onDelete,
   className,
   ...props
 }: ServerTableProps & React.ComponentProps<"div">) {
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [internalFilter, setInternalFilter] = useState("");
+  const globalFilter = search ?? internalFilter;
+  const setGlobalFilter = onSearchChange ?? setInternalFilter;
 
   const columns = useMemo<Array<ColumnDef<typeof features, ServerOut>>>(
     () => [
@@ -149,18 +159,29 @@ export function ServerTable({
                     <span className="sr-only">Open menu</span>
                   </Button>
                 }
-              ></DropdownMenuTrigger>
+              />
+
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onEdit?.(server)}>
-                  <Pencil className="size-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onClick={() => onDelete?.(server)}>
-                  <Trash2 className="size-4" />
-                  Delete
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={() => onEdit?.(server)}>
+                    <PencilIcon className="size-4" />
+                    Edit
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => onShowLogs?.(server)}>
+                    <LogsIcon />
+                    Logs
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem variant="destructive" onClick={() => onDelete?.(server)}>
+                    <Trash2Icon className="size-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -194,17 +215,19 @@ export function ServerTable({
 
   return (
     <div className={cn("space-y-4", className)} {...props}>
-      <div className="flex items-center justify-between gap-2">
-        <Input
-          placeholder="Filter servers..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
+      {search === undefined && (
+        <div className="flex items-center justify-between gap-2">
+          <Input
+            placeholder="Filter servers..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-md border">
-        <Table>
+        <Table className="border-separate border-spacing-y-2">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -245,7 +268,10 @@ export function ServerTable({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="bg-card hover:bg-accent/40 rounded-md border shadow-sm"
+                >
                   {row.getAllCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

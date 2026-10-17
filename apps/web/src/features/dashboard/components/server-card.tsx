@@ -1,8 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import {
   CopyIcon,
   LogsIcon,
   MenuIcon,
+  PencilIcon,
   PlayIcon,
   PowerIcon,
   RotateCcwIcon,
@@ -26,18 +28,33 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
 import type { ServerOut } from "@/types/server";
 
+import { mockServer } from "../utils/servers";
+
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;
 };
 
 export default function ServerCard(props: ServerCardProps) {
-  const { server, className, ...rest } = props;
+  const { className, ...rest } = props;
+
+  const { data: server, isPending } = useQuery<ServerOut>({
+    queryKey: ["servers", props.server.serverConfigData.id],
+    queryFn: ({ queryKey }) => Promise.resolve(mockServer.getServer(queryKey[1] as string)),
+  });
+
+  const queryClient = useQueryClient();
+  const deleteServer = useMutation({
+    mutationFn: (id: string) => Promise.resolve(mockServer.deleteServer(id)),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["servers", props.server.serverConfigData.id] }),
+  });
 
   const handleStart = async () => {
     toast.promise(
@@ -78,6 +95,18 @@ export default function ServerCard(props: ServerCardProps) {
     );
   };
 
+  const handleOpenInfo = (id: string) => {};
+
+  const handleOpenLogs = (id: string) => {};
+
+  const handleDelete = async (id: string) => {
+    toast.add({
+      title: `Deleting server ${id}`,
+    });
+
+    deleteServer.mutate(id);
+  };
+
   return (
     <Card
       className={cn("hover:ring hover:ring-card-foreground", "transition-all", className)}
@@ -86,10 +115,10 @@ export default function ServerCard(props: ServerCardProps) {
       <CardHeader>
         <CardTitle>
           <div className="flex flex-row">
-            <h1>{server.serverConfigData.name}</h1>
+            <h1>{server?.serverConfigData.name}</h1>
 
             <div className="ml-auto">
-              <span>{server.serverConfigData.bindAddress}</span>
+              <span>{server?.serverConfigData.bindAddress}</span>
 
               <Button className="ml-2" variant={"ghost"}>
                 <CopyIcon />
@@ -102,12 +131,18 @@ export default function ServerCard(props: ServerCardProps) {
 
                 <DropdownMenuContent>
                   <DropdownMenuGroup>
-                    <DropdownMenuItem>
-                      <MenuIcon />
-                      Details
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                    <DropdownMenuItem
+                      onClick={() => handleOpenInfo(server?.serverConfigData.id ?? "")}
+                    >
+                      <PencilIcon />
+                      Edit
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleOpenInfo(server?.serverConfigData.id ?? "")}
+                    >
                       <LogsIcon />
                       Logs
                     </DropdownMenuItem>
@@ -116,7 +151,10 @@ export default function ServerCard(props: ServerCardProps) {
                   <DropdownMenuSeparator />
 
                   <DropdownMenuGroup>
-                    <DropdownMenuItem variant="destructive">
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => handleDelete(server?.serverConfigData.id ?? "")}
+                    >
                       <Trash2Icon />
                       Delete
                     </DropdownMenuItem>
@@ -128,15 +166,15 @@ export default function ServerCard(props: ServerCardProps) {
         </CardTitle>
 
         <CardDescription>
-          {server.serverConfigData.name} • {server.serverConfigData.id?.split("-")[0]}...
+          {server?.serverConfigData.name} • {server?.serverConfigData.id?.split("-")[0]}...
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         <div className="flex justify-between gap-2">
-          <div>{Math.random()}%</div>
-          <div>{Math.random()}%</div>
-          <div>{Math.random()}</div>
+          <div>{Math.floor(Math.random() * 100)}%</div>
+          <div>{Math.floor(Math.random() * 100)}%</div>
+          <div>{Math.floor(Math.random() * 128)}</div>
         </div>
       </CardContent>
 
@@ -146,12 +184,12 @@ export default function ServerCard(props: ServerCardProps) {
             className={cn(
               "items-center",
               "text-center",
-              server.serverConfigData.status === "running"
+              server?.serverConfigData.status === "running"
                 ? "bg-green-900 text-green-200"
                 : "bg-red-900 text-red-200",
             )}
           >
-            {server.serverConfigData.status} • {Math.random()}
+            {server?.serverConfigData.status} • {Math.floor(Math.random() * 24)}
           </Badge>
 
           <ButtonGroup className={cn("transition-all", "ml-auto")}>

@@ -49,5 +49,5 @@
     "Reforger.Dockerfile": "build-image.sh, entrypoint.sh, update.sh, healthcheck.sh",
     "pyproject.toml": "*.md, uv.lock, .python-version, alembic.ini, .*ignore"
   },
-  "editor.formatOnSaveMode": "modificationsIfAvailable"
+  "editor.formatOnSaveMode": "file"
 }
