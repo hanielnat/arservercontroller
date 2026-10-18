@@ -7,6 +7,8 @@ export default defineConfig((configEnv) =>
         viteConfig(configEnv),
         defineConfig({
             test: {
+                environment: "node",
+                setupFiles: ["./tests/__setup.ts"],
                 globals: false,
             },
         }),
