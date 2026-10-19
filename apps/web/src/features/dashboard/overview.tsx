@@ -1,9 +1,4 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type QueryObserverResult,
-} from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ContainerIcon,
   LayoutDashboardIcon,
@@ -15,6 +10,7 @@ import {
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 
+import { serverKeys } from "@/api/servers.keys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -30,9 +26,8 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { CrateServerDialog } from "@/features/dashboard/components/create-server-dialog";
 import ServerCard from "@/features/dashboard/components/server-card";
 import { ServerTable } from "@/features/dashboard/components/server-table";
-import type { ServerOut } from "@/types/server";
-
-import { mockServer } from "./utils/servers";
+import { useMockRemoveServer } from "@/hooks/use-server-mutation";
+import { useMockServers } from "@/hooks/use-servers";
 
 function EmptyOverview() {
   return (
@@ -66,7 +61,7 @@ interface DashboardOverviewHeaderProps {
   totalCount: number;
   search: string;
   refetchPending: boolean;
-  refetch: () => Promise<QueryObserverResult<ServerOut[]>>;
+  refetch: () => void;
   onSearchChange: (value: string) => void;
   setIsGridLayout: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -137,24 +132,16 @@ export default function DashboardOverview() {
   const [isGridLayout, setIsGridLayout] = useState(true);
   const [search, setSearch] = useState("");
 
-  const {
-    data: servers,
-    isPending,
-    refetch,
-  } = useQuery({
-    queryKey: ["servers"],
-    queryFn: async () => mockServer.getServers(10),
-    refetchOnMount: true,
-  });
+  const { data, isPending, isError, error, refetch: refreshServers } = useMockServers();
+  const servers = data?.data;
 
-  const queryClient = useQueryClient();
-  const deleteServer = useMutation({
-    mutationFn: (id: string) => {
-      mockServer.deleteServer(id);
-      return Promise.resolve(id);
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["servers"] }),
-  });
+  const deleteServer = useMockRemoveServer();
+
+  const qc = useQueryClient();
+  const refetch = (offset = 0, limit = 10): void => {
+    refreshServers();
+    qc.invalidateQueries({ queryKey: [serverKeys.list(offset, limit)] });
+  };
 
   const filteredServers = useMemo(() => {
     const q = search.trim().toLocaleLowerCase();
@@ -176,7 +163,7 @@ export default function DashboardOverview() {
 
   return (
     <div className="h-full">
-      {(servers?.length ?? 0) > 0 && (
+      {(data?.count ?? 0) > 0 && (
         <DashboardOverviewHeader
           isGridLayout={isGridLayout}
           setIsGridLayout={setIsGridLayout}
@@ -184,11 +171,16 @@ export default function DashboardOverview() {
           refetchPending={isPending}
           refetch={refetch}
           onSearchChange={setSearch}
-          totalCount={servers?.length ?? 0}
+          totalCount={data?.count ?? 0}
         />
       )}
-      {servers?.length === 0 ? (
+
+      {data?.count === 0 ? (
         <EmptyOverview />
+      ) : isPending ? (
+        <div>Loading</div>
+      ) : isError ? (
+        <div>Error {error.message}</div>
       ) : isGridLayout ? (
         <div className="my-4 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredServers?.map((server) => (
@@ -203,7 +195,9 @@ export default function DashboardOverview() {
           onEdit={(server) => {
             console.log("edit", server.serverConfigData.id);
           }}
-          onDelete={(server) => deleteServer.mutate(server.serverConfigData.id ?? "")}
+          onDelete={(server) =>
+            deleteServer.mutate({ id: server.serverConfigData.id, force: true })
+          }
         />
       )}
     </div>

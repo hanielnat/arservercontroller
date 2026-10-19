@@ -1,5 +1,10 @@
 import { PORT_MAX, PORT_MIN, SCHEMA_VERSION } from "@/lib/consts";
-import type { ServerOut } from "@/types/server";
+import type { ServerConfigCreate, ServerConfigUpdate, ServerOut, ServersOut } from "@/types/server";
+
+const withDelay = async <T>(value: T, ms = 300): Promise<T> =>
+    new Promise((resolve) => setTimeout(() => resolve(value), ms));
+
+const delay = (ms = 300): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 const uuid = () =>
     "xxxxyxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -50,46 +55,115 @@ const ipRand = (): string => {
 };
 
 let servers: ServerOut[] = [];
-const getServers = (count: number = 20): ServerOut[] => {
+const list = async (count: number = 20): Promise<ServersOut> => {
     const times = Math.min(count, 20);
 
-    for (let i = 0; i < times; ++i) {
-        servers.push({
-            createdAt: new Date().valueOf(),
-            updatedAt: new Date().valueOf(),
-            serverConfigData: {
-                version: SCHEMA_VERSION,
-                id: uuid(),
-                containerId: uuid(),
-                name: randomName(),
-                bindPort: portRand(),
-                a2sPort: portRand(),
-                rconPort: portRand(),
-                bindAddress: ipRand(),
-                commandLine: ["-logLevel", "spam"],
-                environment: {
-                    AGENT_DEBUG: "1",
+    if (servers.length === 0) {
+        for (let i = 0; i < times; ++i) {
+            servers.push({
+                createdAt: new Date().valueOf(),
+                updatedAt: new Date().valueOf(),
+                serverConfigData: {
+                    version: SCHEMA_VERSION,
+                    id: uuid(),
+                    containerId: uuid(),
+                    name: randomName(),
+                    bindPort: portRand(),
+                    a2sPort: portRand(),
+                    rconPort: portRand(),
+                    bindAddress: ipRand(),
+                    commandLine: ["-logLevel", "spam"],
+                    environment: {
+                        AGENT_DEBUG: "1",
+                    },
+                    extraPorts: [[i % 2 === 0 ? "tcp" : "udp", Math.floor(Math.random() * 10)]],
+                    status: i % 2 === 0 ? "running" : i % 3 === 0 ? "created" : "dead",
+                    reforgerConfig: {
+                        place: "holder",
+                    },
                 },
-                extraPorts: [[i % 2 === 0 ? "tcp" : "udp", Math.floor(Math.random() * 10)]],
-                status: i % 2 === 0 ? "running" : i % 3 === 0 ? "created" : "dead",
-                reforgerConfig: {
-                    place: "holder",
-                },
-            },
-        });
+            });
+        }
     }
 
-    return servers;
+    return withDelay({
+        count: servers.length,
+        data: servers,
+    });
 };
 
-const getServer = (id: string): ServerOut => servers.filter((s) => s.serverConfigData.id === id)[0];
+const get = async (id: string): Promise<ServerOut> =>
+    withDelay(servers.filter((s) => s.serverConfigData.id === id)[0]);
 
-const addServer = (sv: ServerOut): void => {
-    servers = [...servers, sv];
+const add = async (server: ServerConfigCreate): Promise<void> => {
+    const created: ServerOut = {
+        createdAt: new Date().valueOf(),
+        updatedAt: new Date().valueOf(),
+        serverConfigData: {
+            ...server,
+            id: uuid(),
+            containerId: uuid(),
+        },
+    };
+    servers = [...servers, created];
+    return withDelay(undefined);
 };
 
-const deleteServer = (id: string): void => {
-    servers.filter((s) => s.serverConfigData.id !== id);
+const remove = async (id: string): Promise<void> => {
+    servers = servers.filter((s) => s.serverConfigData.id !== id);
+    return withDelay(undefined);
+};
+
+const update = async (id: string, toUpdate: ServerConfigUpdate): Promise<boolean> => {
+    const sv = servers.find((s) => s.serverConfigData.id === id);
+    if (!sv) return false;
+
+    const updated: ServerOut = {
+        ...sv,
+        updatedAt: new Date().valueOf(),
+        serverConfigData: {
+            ...sv.serverConfigData,
+            ...toUpdate,
+            containerId: !toUpdate.containerId ? undefined : toUpdate.containerId,
+        },
+    };
+
+    servers = servers.map((s) => (s.serverConfigData.id === id ? updated : s));
+    return withDelay(true);
+};
+
+const action = async (
+    id: string,
+    action: "start" | "stop" | "restart" | "reloadConfig",
+): Promise<boolean> => {
+    const sv = servers.find((s) => s.serverConfigData.id === id);
+    if (!sv) return false;
+
+    switch (action) {
+        case "start":
+            sv.serverConfigData.status = "running";
+            await delay(1 * 1000);
+            break;
+
+        case "stop":
+            sv.serverConfigData.status = "exited";
+            await delay(1 * 1000);
+            break;
+
+        case "restart":
+            sv.serverConfigData.status = "restarting";
+            await delay(2 * 1000);
+            sv.serverConfigData.status = "running";
+            break;
+
+        case "reloadConfig":
+            sv.serverConfigData.status = "restarting";
+            await delay(2 * 1000);
+            sv.serverConfigData.status = "running";
+            break;
+    }
+
+    return withDelay(true);
 };
 
 export const mockServer = {
@@ -98,8 +172,10 @@ export const mockServer = {
     randomPort: portRand,
     randomIpv4: ipRand,
 
-    getServers,
-    getServer,
-    addServer,
-    deleteServer,
+    list,
+    get,
+    add,
+    remove,
+    update,
+    action,
 };

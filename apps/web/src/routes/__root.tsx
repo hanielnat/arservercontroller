@@ -1,5 +1,6 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { tableDevtoolsPlugin } from "@tanstack/react-table-devtools";
@@ -24,6 +25,7 @@ function RootLayout() {
         config={{ hideUntilHover: true }}
         plugins={[formDevtoolsPlugin(), tableDevtoolsPlugin()]}
       />
+      <ReactQueryDevtools initialIsOpen={false} />
       <TanStackRouterDevtools />
     </>
   );

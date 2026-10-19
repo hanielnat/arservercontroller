@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import {
   CopyIcon,
@@ -33,79 +32,87 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
+import { useMockRemoveServer, useMockServerAction } from "@/hooks/use-server-mutation";
 import type { ServerOut } from "@/types/server";
-
-import { mockServer } from "../utils/servers";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;
 };
 
 export default function ServerCard(props: ServerCardProps) {
-  const { className, ...rest } = props;
+  const { server, className, ...rest } = props;
 
-  const { data: server, isPending } = useQuery<ServerOut>({
-    queryKey: ["servers", props.server.serverConfigData.id],
-    queryFn: ({ queryKey }) => Promise.resolve(mockServer.getServer(queryKey[1] as string)),
-  });
-
-  const queryClient = useQueryClient();
-  const deleteServer = useMutation({
-    mutationFn: (id: string) => Promise.resolve(mockServer.deleteServer(id)),
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: ["servers", props.server.serverConfigData.id] }),
-  });
+  const action = useMockServerAction();
+  const removeServer = useMockRemoveServer();
 
   const handleStart = async () => {
-    toast.promise(
-      new Promise((resolve) => {
-        setTimeout(() => resolve("server"), 2000);
-      }),
+    action.mutate(
+      { id: server.serverConfigData.id, action: "start" },
       {
-        loading: "Starting server...",
-        success: () => "Server started",
-        error: () => "Error starting server",
+        onSuccess: (data) => {
+          toast.add({ data, title: "Server started" });
+        },
+        onError: (error) => {
+          toast.add({ data: error, title: "Server failed to start", description: error.message });
+        },
       },
     );
   };
 
   const handleStop = async () => {
-    toast.promise(
-      new Promise((resolve) => {
-        setTimeout(() => resolve("server"), 2000);
-      }),
+    action.mutate(
+      { id: server.serverConfigData.id, action: "stop" },
       {
-        loading: "Stopping server...",
-        success: () => "Server stopped",
-        error: () => "Error stopping server",
+        onSuccess: (data) => {
+          toast.add({ data, title: "Server stopped" });
+        },
+        onError: (error) => {
+          toast.add({ data: error, title: "Server failed to stop", description: error.message });
+        },
       },
     );
   };
 
   const handleRestart = async () => {
-    toast.promise(
-      new Promise((resolve) => {
-        setTimeout(() => resolve("server"), 2000);
-      }),
+    action.mutate(
+      { id: server.serverConfigData.id, action: "restart" },
       {
-        loading: "Restarting server...",
-        success: () => "Server restarted",
-        error: () => "Error restarting server",
+        onSuccess: (data) => {
+          toast.add({ data, title: "Server restarted" });
+        },
+        onError: (error) => {
+          toast.add({ data: error, title: "Server failed to restart", description: error.message });
+        },
       },
     );
   };
 
-  const handleOpenInfo = (id: string) => {};
+  const handleRemove = async (force = true) => {
+    let toastId: string;
+    if (removeServer.isPending) {
+      toastId = toast.add({ title: "Removing server" });
+    }
 
-  const handleOpenLogs = (id: string) => {};
-
-  const handleDelete = async (id: string) => {
-    toast.add({
-      title: `Deleting server ${id}`,
-    });
-
-    deleteServer.mutate(id);
+    removeServer.mutate(
+      { id: server.serverConfigData.id, force },
+      {
+        onSuccess: (data) => {
+          toast.add({ data, title: "Server removed" });
+        },
+        onError: (error) => {
+          toast.update(toastId, {
+            data: error,
+            title: "Server failed to be removed",
+            description: error.message,
+          });
+        },
+      },
+    );
   };
+
+  const handleOpenInfo = () => {};
+
+  const handleOpenLogs = () => {};
 
   return (
     <Card
@@ -133,16 +140,12 @@ export default function ServerCard(props: ServerCardProps) {
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                    <DropdownMenuItem
-                      onClick={() => handleOpenInfo(server?.serverConfigData.id ?? "")}
-                    >
+                    <DropdownMenuItem onClick={() => handleOpenInfo()}>
                       <PencilIcon />
                       Edit
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem
-                      onClick={() => handleOpenInfo(server?.serverConfigData.id ?? "")}
-                    >
+                    <DropdownMenuItem onClick={() => handleOpenLogs()}>
                       <LogsIcon />
                       Logs
                     </DropdownMenuItem>
@@ -153,7 +156,7 @@ export default function ServerCard(props: ServerCardProps) {
                   <DropdownMenuGroup>
                     <DropdownMenuItem
                       variant="destructive"
-                      onClick={() => handleDelete(server?.serverConfigData.id ?? "")}
+                      onClick={async () => await handleRemove()}
                     >
                       <Trash2Icon />
                       Delete
