@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { CodeTextArea } from "@/components/ui/code-textarea";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toast";
+import { useMockAddServer } from "@/hooks/use-server-mutation";
 import { formValuesToCreatePayload, type ServerCreateFormValues } from "@/types/server";
 import { ServerCreateFormSchema } from "@/types/server.schema";
 
@@ -59,6 +61,8 @@ const defaultValues: ServerCreateFormValues = {
 };
 
 export function CreateServerForm({ children }: CreateServerFormProps) {
+  const add = useMockAddServer();
+
   const form = useForm({
     defaultValues,
 
@@ -69,6 +73,18 @@ export function CreateServerForm({ children }: CreateServerFormProps) {
     onSubmit: async ({ value }) => {
       const payload = formValuesToCreatePayload(value);
       console.log("payload:", payload);
+
+      add.mutate(payload, {
+        onError: (error) =>
+          toast.add({
+            title: "Error creating server.",
+            description: error.message,
+          }),
+        onSuccess: () =>
+          toast.add({
+            title: "Server created successfully!",
+          }),
+      });
     },
   });
 

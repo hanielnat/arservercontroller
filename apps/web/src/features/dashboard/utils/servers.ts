@@ -96,6 +96,10 @@ const get = async (id: string): Promise<ServerOut> =>
     withDelay(servers.filter((s) => s.serverConfigData.id === id)[0]);
 
 const add = async (server: ServerConfigCreate): Promise<void> => {
+    if (servers.find((s) => s.serverConfigData.name === server.name)) {
+        return;
+    }
+
     const created: ServerOut = {
         createdAt: new Date().valueOf(),
         updatedAt: new Date().valueOf(),
@@ -138,25 +142,40 @@ const action = async (
 ): Promise<boolean> => {
     const sv = servers.find((s) => s.serverConfigData.id === id);
     if (!sv) return false;
+    const current = sv.serverConfigData.status;
 
     switch (action) {
         case "start":
+            if (current === "running") {
+                return false;
+            }
+
+            await delay(2 * 1000);
             sv.serverConfigData.status = "running";
-            await delay(1 * 1000);
             break;
 
         case "stop":
+            if (current === "exited" || current === "dead") {
+                return false;
+            }
+
+            await delay(2 * 1000);
             sv.serverConfigData.status = "exited";
-            await delay(1 * 1000);
             break;
 
         case "restart":
+            if (current === "exited" || current === "dead") {
+                return false;
+            }
+
+            await delay(2 * 1000);
             sv.serverConfigData.status = "restarting";
             await delay(2 * 1000);
             sv.serverConfigData.status = "running";
             break;
 
         case "reloadConfig":
+            await delay(2 * 1000);
             sv.serverConfigData.status = "restarting";
             await delay(2 * 1000);
             sv.serverConfigData.status = "running";
