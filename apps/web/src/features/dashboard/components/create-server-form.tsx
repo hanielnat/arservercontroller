@@ -6,7 +6,7 @@ import { CodeTextArea } from "@/components/ui/code-textarea";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
-import { useMockAddServer } from "@/hooks/use-server-mutation";
+import { useAddServer } from "@/hooks/use-server-mutation";
 import { formValuesToCreatePayload, type ServerCreateFormValues } from "@/types/server";
 import { ServerCreateFormSchema } from "@/types/server.schema";
 
@@ -61,7 +61,7 @@ const defaultValues: ServerCreateFormValues = {
 };
 
 export function CreateServerForm({ children }: CreateServerFormProps) {
-  const add = useMockAddServer();
+  const add = useAddServer();
 
   const form = useForm({
     defaultValues,

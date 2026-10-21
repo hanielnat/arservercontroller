@@ -1,10 +1,49 @@
 import { PORT_MAX, PORT_MIN, SCHEMA_VERSION } from "@/lib/consts";
-import type { ServerConfigCreate, ServerConfigUpdate, ServerOut, ServersOut } from "@/types/server";
+import type {
+    ServerConfig,
+    ServerConfigCreate,
+    ServerConfigUpdate,
+    ServerOut,
+    ServersOut,
+    ServerStatusOut,
+} from "@/types/server";
+
+const STORAGE_KEY = "mockServers";
 
 const withDelay = async <T>(value: T, ms = 300): Promise<T> =>
     new Promise((resolve) => setTimeout(() => resolve(value), ms));
 
 const delay = (ms = 300): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+const loadServers = (): ServerOut[] => {
+    if (typeof window === "undefined") {
+        return [];
+    }
+
+    try {
+        const raw = window.sessionStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+            return [];
+        }
+
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+};
+
+const saveServers = (list: ServerOut[]): void => {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    try {
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    } catch {
+        // ignore storage failures
+    }
+};
 
 const uuid = () =>
     "xxxxyxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -54,7 +93,10 @@ const ipRand = (): string => {
     return octets.join(".");
 };
 
-let servers: ServerOut[] = [];
+let servers: ServerOut[] = loadServers();
+
+const persist = () => saveServers(servers);
+
 const list = async (count: number = 20): Promise<ServersOut> => {
     const times = Math.min(count, 20);
 
@@ -84,6 +126,7 @@ const list = async (count: number = 20): Promise<ServersOut> => {
                 },
             });
         }
+        persist();
     }
 
     return withDelay({
@@ -95,9 +138,10 @@ const list = async (count: number = 20): Promise<ServersOut> => {
 const get = async (id: string): Promise<ServerOut> =>
     withDelay(servers.filter((s) => s.serverConfigData.id === id)[0]);
 
-const add = async (server: ServerConfigCreate): Promise<void> => {
-    if (servers.find((s) => s.serverConfigData.name === server.name)) {
-        return;
+const add = async (server: ServerConfigCreate): Promise<ServerConfig> => {
+    const exists = servers.find((s) => s.serverConfigData.name === server.name);
+    if (exists) {
+        return exists.serverConfigData;
     }
 
     const created: ServerOut = {
@@ -110,17 +154,21 @@ const add = async (server: ServerConfigCreate): Promise<void> => {
         },
     };
     servers = [...servers, created];
-    return withDelay(undefined);
+    persist();
+    return withDelay(created.serverConfigData);
 };
 
 const remove = async (id: string): Promise<void> => {
     servers = servers.filter((s) => s.serverConfigData.id !== id);
+    persist();
     return withDelay(undefined);
 };
 
-const update = async (id: string, toUpdate: ServerConfigUpdate): Promise<boolean> => {
+const update = async (id: string, toUpdate: ServerConfigUpdate): Promise<ServerOut> => {
     const sv = servers.find((s) => s.serverConfigData.id === id);
-    if (!sv) return false;
+    if (!sv) {
+        throw new Error("Mocked server not found");
+    }
 
     const updated: ServerOut = {
         ...sv,
@@ -133,7 +181,8 @@ const update = async (id: string, toUpdate: ServerConfigUpdate): Promise<boolean
     };
 
     servers = servers.map((s) => (s.serverConfigData.id === id ? updated : s));
-    return withDelay(true);
+    persist();
+    return withDelay(updated);
 };
 
 const action = async (
@@ -182,19 +231,32 @@ const action = async (
             break;
     }
 
+    persist();
     return withDelay(true);
 };
 
-export const mockServer = {
-    randomUuid: uuid,
-    randomName: randomName,
-    randomPort: portRand,
-    randomIpv4: ipRand,
+const status = async (id: string): Promise<ServerStatusOut> => {
+    const sv = servers.find((s) => s.serverConfigData.id === id);
+    if (!sv) {
+        throw new Error("Mocked server not found");
+    }
 
+    return withDelay({
+        container: sv.serverConfigData.status ?? "dead",
+        agent: "dead",
+        reforger: {
+            pid: null,
+            status: "dead",
+        },
+    } as ServerStatusOut);
+};
+
+export const mockServer = {
     list,
     get,
     add,
     remove,
     update,
     action,
+    status,
 };

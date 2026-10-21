@@ -27,7 +27,7 @@ const navMain: NavMainItem[] = [
     subItems: [
       {
         title: "Create",
-        url: "/create-server",
+        url: "/servers/create",
       },
       {
         title: "Dynamic server 01",

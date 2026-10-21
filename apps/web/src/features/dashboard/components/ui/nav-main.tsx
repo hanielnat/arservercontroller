@@ -11,8 +11,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-
-import type { NavMainItem, NavMainSubItem } from "../nav-types";
+import type { NavMainItem, NavMainSubItem } from "@/features/dashboard/nav-types";
 
 function NavSubButton({ item }: { item: NavMainSubItem }) {
   if (item.url !== undefined) {

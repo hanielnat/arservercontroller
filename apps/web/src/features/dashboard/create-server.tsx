@@ -15,9 +15,8 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { CreateServerForm } from "@/features/dashboard/components/create-server-form";
 import { cn } from "@/lib/utils";
-
-import { CreateServerForm } from "./components/create-server-form";
 
 type Steps = "form" | "logs" | "result" | "done";
 const stepOrder: Steps[] = ["form", "logs", "result", "done"];
@@ -64,7 +63,7 @@ function CreateServerCreationProgress() {
   return <div>Logs...</div>;
 }
 
-export default function CreateServer() {
+export function CreateServer() {
   const [step, setStep] = useState<Steps>("form");
   const [canProceed, setCanProceed] = useState(true);
 
@@ -100,10 +99,10 @@ export default function CreateServer() {
   };
 
   return (
-    <>
+    <div>
       <CreateServerHeader />
 
-      <div className="bg-muted/50 mx-auto w-full flex-1 rounded-md p-4 md:min-h-min">
+      <div className="bg-muted/50 mx-auto mt-4 w-full flex-1 rounded-md p-4 md:min-h-min">
         <Progress value={stepOrder.indexOf(step) * (100 / 3)} className="mx-auto mb-2" />
         <div className="mb-4 flex flex-col gap-2">
           <div className="mx-auto flex flex-col items-center sm:flex-row">
@@ -212,6 +211,6 @@ export default function CreateServer() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
 import {
   CopyIcon,
@@ -32,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
-import { useMockRemoveServer, useMockServerAction } from "@/hooks/use-server-mutation";
+import { useRemoveServer, useServerAction } from "@/hooks/use-server-mutation";
 import type { ServerOut } from "@/types/server";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
@@ -42,8 +43,8 @@ type ServerCardProps = React.ComponentProps<"div"> & {
 export default function ServerCard(props: ServerCardProps) {
   const { server, className, ...rest } = props;
 
-  const action = useMockServerAction();
-  const removeServer = useMockRemoveServer();
+  const action = useServerAction();
+  const removeServer = useRemoveServer();
 
   const handleStart = async () => {
     action.mutate(
@@ -122,7 +123,15 @@ export default function ServerCard(props: ServerCardProps) {
       <CardHeader>
         <CardTitle>
           <div className="flex flex-row">
-            <h1>{server?.serverConfigData.name}</h1>
+            <Button
+              className="text-primary-foreground p-0"
+              variant="link"
+              render={
+                <Link to="/servers/$serverId" params={{ serverId: server.serverConfigData.id }}>
+                  {server.serverConfigData.name}
+                </Link>
+              }
+            />
 
             <div className="ml-auto">
               <span>{server?.serverConfigData.bindAddress}</span>
@@ -174,11 +183,7 @@ export default function ServerCard(props: ServerCardProps) {
       </CardHeader>
 
       <CardContent>
-        <div className="flex justify-between gap-2">
-          <div>{Math.floor(Math.random() * 100)}%</div>
-          <div>{Math.floor(Math.random() * 100)}%</div>
-          <div>{Math.floor(Math.random() * 128)}</div>
-        </div>
+        <div className="flex justify-between gap-2"></div>
       </CardContent>
 
       <CardFooter>
@@ -192,7 +197,7 @@ export default function ServerCard(props: ServerCardProps) {
                 : "bg-red-900 text-red-200",
             )}
           >
-            {server?.serverConfigData.status} • {Math.floor(Math.random() * 24)}
+            {server?.serverConfigData.status}
           </Badge>
 
           <ButtonGroup className={cn("transition-all", "ml-auto")}>

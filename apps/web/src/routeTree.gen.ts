@@ -11,10 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppCreateServerRouteImport } from './routes/_app/create-server'
 import { Route as AppDockerRouteImport } from './routes/_app/docker'
 import { Route as AppLogsRouteImport } from './routes/_app/logs'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppServersServerIdRouteImport } from './routes/_app/servers/$serverId'
+import { Route as AppServersCreateRouteImport } from './routes/_app/servers/create'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
@@ -23,11 +24,6 @@ const AppRouteRoute = AppRouteRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppCreateServerRoute = AppCreateServerRouteImport.update({
-  id: '/create-server',
-  path: '/create-server',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppDockerRoute = AppDockerRouteImport.update({
@@ -45,43 +41,69 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppServersServerIdRoute = AppServersServerIdRouteImport.update({
+  id: '/servers/$serverId',
+  path: '/servers/$serverId',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppServersCreateRoute = AppServersCreateRouteImport.update({
+  id: '/servers/create',
+  path: '/servers/create',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/create-server': typeof AppCreateServerRoute
   '/docker': typeof AppDockerRoute
   '/logs': typeof AppLogsRoute
   '/settings': typeof AppSettingsRoute
+  '/servers/$serverId': typeof AppServersServerIdRoute
+  '/servers/create': typeof AppServersCreateRoute
 }
 export interface FileRoutesByTo {
-  '/create-server': typeof AppCreateServerRoute
   '/docker': typeof AppDockerRoute
   '/logs': typeof AppLogsRoute
   '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
+  '/servers/$serverId': typeof AppServersServerIdRoute
+  '/servers/create': typeof AppServersCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
-  '/_app/create-server': typeof AppCreateServerRoute
   '/_app/docker': typeof AppDockerRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/servers/$serverId': typeof AppServersServerIdRoute
+  '/_app/servers/create': typeof AppServersCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/create-server' | '/docker' | '/logs' | '/settings'
+  fullPaths:
+    | '/'
+    | '/docker'
+    | '/logs'
+    | '/settings'
+    | '/servers/$serverId'
+    | '/servers/create'
   fileRoutesByTo: FileRoutesByTo
-  to: '/create-server' | '/docker' | '/logs' | '/settings' | '/'
+  to:
+    | '/docker'
+    | '/logs'
+    | '/settings'
+    | '/'
+    | '/servers/$serverId'
+    | '/servers/create'
   id:
     | '__root__'
     | '/_app'
-    | '/_app/create-server'
     | '/_app/docker'
     | '/_app/logs'
     | '/_app/settings'
     | '/_app/'
+    | '/_app/servers/$serverId'
+    | '/_app/servers/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -102,13 +124,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/create-server': {
-      id: '/_app/create-server'
-      path: '/create-server'
-      fullPath: '/create-server'
-      preLoaderRoute: typeof AppCreateServerRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/docker': {
@@ -132,23 +147,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/servers/$serverId': {
+      id: '/_app/servers/$serverId'
+      path: '/servers/$serverId'
+      fullPath: '/servers/$serverId'
+      preLoaderRoute: typeof AppServersServerIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/servers/create': {
+      id: '/_app/servers/create'
+      path: '/servers/create'
+      fullPath: '/servers/create'
+      preLoaderRoute: typeof AppServersCreateRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
 interface AppRouteRouteChildren {
-  AppCreateServerRoute: typeof AppCreateServerRoute
   AppDockerRoute: typeof AppDockerRoute
   AppLogsRoute: typeof AppLogsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppServersServerIdRoute: typeof AppServersServerIdRoute
+  AppServersCreateRoute: typeof AppServersCreateRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
-  AppCreateServerRoute: AppCreateServerRoute,
   AppDockerRoute: AppDockerRoute,
   AppLogsRoute: AppLogsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppServersServerIdRoute: AppServersServerIdRoute,
+  AppServersCreateRoute: AppServersCreateRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

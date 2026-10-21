@@ -26,8 +26,8 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { CrateServerDialog } from "@/features/dashboard/components/create-server-dialog";
 import ServerCard from "@/features/dashboard/components/server-card";
 import { ServerTable } from "@/features/dashboard/components/server-table";
-import { useMockRemoveServer } from "@/hooks/use-server-mutation";
-import { useMockServers } from "@/hooks/use-servers";
+import { useRemoveServer } from "@/hooks/use-server-mutation";
+import { useServers } from "@/hooks/use-servers";
 
 function EmptyOverview() {
   return (
@@ -132,10 +132,10 @@ export default function DashboardOverview() {
   const [isGridLayout, setIsGridLayout] = useState(true);
   const [search, setSearch] = useState("");
 
-  const { data, isPending, isError, error, refetch: refreshServers } = useMockServers();
+  const { data, isPending, isError, error, refetch: refreshServers } = useServers();
   const servers = data?.data;
 
-  const deleteServer = useMockRemoveServer();
+  const deleteServer = useRemoveServer();
 
   const qc = useQueryClient();
   const refetch = (offset = 0, limit = 10): void => {
