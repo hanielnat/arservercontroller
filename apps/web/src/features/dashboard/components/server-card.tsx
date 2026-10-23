@@ -1,10 +1,9 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
 import {
-  CopyIcon,
+  InfoIcon,
   LogsIcon,
   MenuIcon,
-  PencilIcon,
   PlayIcon,
   PowerIcon,
   RotateCcwIcon,
@@ -12,7 +11,6 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -23,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CopyTextButton } from "@/components/ui/copy-to-clipboard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,8 +32,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useRemoveServer, useServerAction } from "@/hooks/use-server-mutation";
 import type { ServerOut } from "@/types/server";
+
+import { ServerStatusBadge } from "../server-info";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;
@@ -45,6 +47,9 @@ export default function ServerCard(props: ServerCardProps) {
 
   const action = useServerAction();
   const removeServer = useRemoveServer();
+
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const handleStart = async () => {
     action.mutate(
@@ -111,10 +116,6 @@ export default function ServerCard(props: ServerCardProps) {
     );
   };
 
-  const handleOpenInfo = () => {};
-
-  const handleOpenLogs = () => {};
-
   return (
     <Card
       className={cn("hover:ring hover:ring-card-foreground", "transition-all", className)}
@@ -133,15 +134,19 @@ export default function ServerCard(props: ServerCardProps) {
               }
             />
 
-            <div className="ml-auto">
-              <span>{server?.serverConfigData.bindAddress}</span>
+            <div className="ml-auto flex items-center gap-1">
+              <div className="group/ip flex items-center gap-1">
+                <CopyTextButton
+                  size="icon-sm"
+                  value={server?.serverConfigData.bindAddress as string}
+                  className={cn(!isMobile ? "opacity-0 group-hover/ip:opacity-100" : undefined)}
+                />
 
-              <Button className="ml-2" variant={"ghost"}>
-                <CopyIcon />
-              </Button>
+                <span className="font-mono text-xs">{server?.serverConfigData.bindAddress}</span>
+              </div>
 
               <DropdownMenu>
-                <DropdownMenuTrigger render={<Button variant="outline" />}>
+                <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
                   <MenuIcon />
                 </DropdownMenuTrigger>
 
@@ -149,12 +154,19 @@ export default function ServerCard(props: ServerCardProps) {
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                    <DropdownMenuItem onClick={() => handleOpenInfo()}>
-                      <PencilIcon />
-                      Edit
+                    <DropdownMenuItem
+                      onClick={() =>
+                        navigate({
+                          to: "/servers/$serverId",
+                          params: { serverId: server.serverConfigData.id ?? "" },
+                        })
+                      }
+                    >
+                      <InfoIcon />
+                      Details
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem onClick={() => handleOpenLogs()}>
+                    <DropdownMenuItem onClick={() => toast.add({ title: "Opening logs..." })}>
                       <LogsIcon />
                       Logs
                     </DropdownMenuItem>
@@ -188,17 +200,7 @@ export default function ServerCard(props: ServerCardProps) {
 
       <CardFooter>
         <div className="flex w-full items-center">
-          <Badge
-            className={cn(
-              "items-center",
-              "text-center",
-              server?.serverConfigData.status === "running"
-                ? "bg-green-900 text-green-200"
-                : "bg-red-900 text-red-200",
-            )}
-          >
-            {server?.serverConfigData.status}
-          </Badge>
+          <ServerStatusBadge status={server?.serverConfigData.status ?? "dead"} />
 
           <ButtonGroup className={cn("transition-all", "ml-auto")}>
             <Button onClick={async () => await handleStart()}>
