@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -36,7 +37,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useRemoveServer, useServerAction } from "@/hooks/use-server-mutation";
 import type { ServerOut } from "@/types/server";
 
-import { ServerStatusBadge } from "../server-info";
+import { ServerHealthIndicator, ServerStatusBadge } from "../server-info";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;
@@ -50,6 +51,26 @@ export default function ServerCard(props: ServerCardProps) {
 
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  const reforgerConfigGame = React.useMemo(
+    () => (server?.serverConfigData.reforgerConfig.game as Record<string, unknown>) ?? undefined,
+    [server.serverConfigData.reforgerConfig],
+  );
+
+  const displayName = React.useMemo(
+    () => (reforgerConfigGame?.name as string) ?? server?.serverConfigData.name,
+    [reforgerConfigGame, server.serverConfigData.name],
+  );
+
+  const idFormatted = React.useMemo(
+    () => server?.serverConfigData.id?.split("-")[0].concat("..."),
+    [server.serverConfigData.id],
+  );
+
+  const scenarioId = React.useMemo(() => {
+    const result = (reforgerConfigGame?.scenarioId as string) ?? undefined;
+    return result;
+  }, [reforgerConfigGame]);
 
   const handleStart = async () => {
     action.mutate(
@@ -123,14 +144,16 @@ export default function ServerCard(props: ServerCardProps) {
     >
       <CardHeader>
         <CardTitle>
-          <div className="flex flex-row">
-            <Button
-              className="text-primary-foreground p-0"
-              variant="link"
+          <div className="flex flex-row items-center">
+            <Badge
+              className="text-md"
               render={
-                <Link to="/servers/$serverId" params={{ serverId: server.serverConfigData.id }}>
-                  {server.serverConfigData.name}
-                </Link>
+                <span className="flex items-center gap-2">
+                  <ServerHealthIndicator id={server.serverConfigData.id} />
+                  <Link to="/servers/$serverId" params={{ serverId: server.serverConfigData.id }}>
+                    {server.serverConfigData.name}
+                  </Link>
+                </span>
               }
             />
 
@@ -190,28 +213,45 @@ export default function ServerCard(props: ServerCardProps) {
         </CardTitle>
 
         <CardDescription>
-          {server?.serverConfigData.name} • {server?.serverConfigData.id?.split("-")[0]}...
+          {displayName} •{" "}
+          <code className="group/id">
+            {idFormatted}
+            <CopyTextButton
+              value={server?.serverConfigData.id}
+              className="ml-1 group-hover/id:opacity-100 md:opacity-0"
+            />
+          </code>
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        <div className="flex justify-between gap-2"></div>
+        <div className="flex justify-between gap-2">
+          {scenarioId && (
+            <span className="flex flex-row justify-between gap-2">
+              <span>Scenario</span>
+              <code>{scenarioId}</code>
+            </span>
+          )}
+        </div>
       </CardContent>
 
       <CardFooter>
         <div className="flex w-full items-center">
-          <ServerStatusBadge status={server?.serverConfigData.status ?? "dead"} />
+          <ServerStatusBadge
+            status={server?.serverConfigData.status ?? "dead"}
+            className="align-middle"
+          />
 
           <ButtonGroup className={cn("transition-all", "ml-auto")}>
-            <Button onClick={async () => await handleStart()}>
+            <Button variant="success" onClick={async () => await handleStart()}>
               <PlayIcon />
             </Button>
 
-            <Button onClick={async () => await handleStop()}>
+            <Button variant="error" onClick={async () => await handleStop()}>
               <PowerIcon />
             </Button>
 
-            <Button onClick={async () => await handleRestart()}>
+            <Button variant="warning" onClick={async () => await handleRestart()}>
               <RotateCcwIcon />
             </Button>
           </ButtonGroup>
