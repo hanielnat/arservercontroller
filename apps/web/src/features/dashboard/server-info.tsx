@@ -10,6 +10,7 @@ import { CodeTextArea } from "@/components/ui/code-textarea";
 import { CopyTextButton } from "@/components/ui/copy-to-clipboard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { serversQueryOptions, useServerStatus } from "@/hooks/use-servers";
+import { useSeverity } from "@/hooks/use-severity";
 import { cn } from "@/lib/utils";
 import type { ServerConfig, ServerStatusEnum } from "@/types/server";
 
@@ -77,41 +78,9 @@ export function ServerStatusBadge({
   className,
   ...props
 }: { status: ServerStatusEnum } & React.ComponentProps<typeof Badge>) {
-  const getBgColor = () => {
-    let bg;
-
-    const destructive = "bg-destructive/10 text-destructive dark:bg-destructive/20";
-    const warning = "bg-yellow-500/15 dark:bg-yellow-500/20 text-amber-700 dark:text-amber-400";
-
-    switch (status) {
-      case "created":
-        bg = "bg-muted";
-        break;
-      case "dead":
-        bg = destructive;
-        break;
-      case "exited":
-        bg = "bg-muted";
-        break;
-      case "paused":
-        bg = warning;
-        break;
-      case "removing":
-        bg = destructive;
-        break;
-      case "restarting":
-        bg = warning;
-        break;
-      case "running":
-        bg = "bg-green-800 text-green-300";
-        break;
-    }
-
-    return bg;
-  };
-
+  const { statusToSeverity } = useSeverity();
   return (
-    <Badge className={cn(getBgColor(), className)} {...props}>
+    <Badge variant={statusToSeverity(status)} className={cn(className)} {...props}>
       {status}
     </Badge>
   );

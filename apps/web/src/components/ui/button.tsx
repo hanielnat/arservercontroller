@@ -7,7 +7,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default: "bg-primary/90 dark:bg-primary text-primary-foreground hover:bg-primary/80",
         outline:
           "border-border hover:bg-input/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-input/30",
         secondary:
@@ -17,6 +17,16 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+
+        info: "bg-info/40 text-info-foreground hover:bg-info/60 focus-visible:border-info/50 focus-visible:ring-info/40 dark:bg-info dark:hover:bg-info/60 dark:focus-visible:ring-info/40",
+        warning:
+          "bg-warning/40 text-warning-foreground hover:bg-warning/60 focus-visible:border-warning/50 focus-visible:ring-warning/40 dark:bg-warning dark:hover:bg-warning/60 dark:focus-visible:ring-warning/40",
+        success:
+          "bg-success/40 text-success-foreground hover:bg-success/60 focus-visible:border-success/50 focus-visible:ring-success/40 dark:bg-success dark:hover:bg-success/60 dark:focus-visible:ring-success/40",
+        error:
+          "bg-error/40 text-error-foreground hover:bg-error/60 focus-visible:border-error/50 focus-visible:ring-error/40 dark:bg-error dark:hover:bg-error/60 dark:focus-visible:ring-error/40",
+        muted:
+          "bg-muted text-muted-foreground hover:bg-[color-mix(in_oklch,var(--muted),var(--foreground)_5%)] focus-visible:border-muted/80 focus-visible:ring-muted/60 dark:bg-muted dark:hover:bg-muted/60 dark:focus-visible:ring-muted/40",
       },
       size: {
         default:
