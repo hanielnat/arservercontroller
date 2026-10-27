@@ -1,6 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 
+import type { Crumb } from "@/types/dashboard";
+
 // Create a QueryClient instance
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -11,6 +13,11 @@ export const queryClient = new QueryClient({
     },
 });
 
+export interface DashboardContext {
+    queryClient: QueryClient;
+    crumb?: Crumb;
+}
+
 // Import the generated route tree
 import { routeTree } from "@/routeTree.gen";
 
@@ -20,6 +27,9 @@ export const router = createRouter({
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
+    context: {
+        queryClient,
+    },
 });
 
 // Type-safe router registration

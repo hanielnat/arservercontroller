@@ -4,4 +4,10 @@ import { CreateServer } from "@/features/dashboard/create-server";
 
 export const Route = createFileRoute("/_app/servers/create")({
   component: () => <CreateServer />,
+  beforeLoad: () => ({
+    crumb: {
+      label: "Create Server",
+      to: "/servers/create",
+    },
+  }),
 });

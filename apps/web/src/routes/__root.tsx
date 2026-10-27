@@ -1,15 +1,16 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { tableDevtoolsPlugin } from "@tanstack/react-table-devtools";
 
 import NotFound from "@/components/layout/not-found";
 import Pending from "@/components/layout/pending";
 import { Toaster } from "@/components/ui/toast";
+import { type DashboardContext } from "@/router";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<DashboardContext>()({
   component: () => <RootLayout />,
   pendingComponent: () => <Pending />,
   notFoundComponent: () => <NotFound />,
