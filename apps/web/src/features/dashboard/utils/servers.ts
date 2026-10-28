@@ -54,6 +54,8 @@ const uuid = () =>
 
 const portRand = () => Math.floor(Math.random() * (PORT_MAX - PORT_MIN) + PORT_MIN);
 
+const pidRand = () => portRand();
+
 const randomName = (): string => {
     const adjectives = [
         "Alpha",
@@ -243,10 +245,10 @@ const status = async (id: string): Promise<ServerStatusOut> => {
 
     return withDelay({
         container: sv.serverConfigData.status ?? "dead",
-        agent: "dead",
+        agent: sv.serverConfigData.status,
         reforger: {
-            pid: null,
-            status: "dead",
+            pid: sv.serverConfigData.status === "running" ? pidRand() : null,
+            status: sv.serverConfigData.status,
         },
     } as ServerStatusOut);
 };

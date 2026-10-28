@@ -33,11 +33,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
+import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
+import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRemoveServer, useServerAction } from "@/hooks/use-server-mutation";
 import type { ServerOut } from "@/types/server";
-
-import { ServerHealthIndicator, ServerStatusBadge } from "../server-info";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;

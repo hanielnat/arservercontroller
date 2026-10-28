@@ -1,16 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { InfoIcon, PenIcon, ServerIcon } from "lucide-react";
 import type React from "react";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import { CodeTextArea } from "@/components/ui/code-textarea";
 import { CopyTextButton } from "@/components/ui/copy-to-clipboard";
+import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
+import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { serversQueryOptions, useServerStatus } from "@/hooks/use-servers";
-import { useSeverity } from "@/hooks/use-severity";
+import { serversQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 import type { ServerConfig, ServerStatusEnum } from "@/types/server";
 
@@ -42,6 +43,14 @@ function ServerInfoHeader({ id }: { id: string }) {
   );
 }
 
+function ServerInfoList({ children, className, ...props }: React.ComponentProps<"ul">) {
+  return (
+    <ul className={cn("rounded-md border", className)} {...props}>
+      {children}
+    </ul>
+  );
+}
+
 function ServerInfoListItem({
   keyRender,
   valueRender,
@@ -63,108 +72,6 @@ function ServerInfoListItem({
       {valueRender}
     </li>
   );
-}
-
-function ServerInfoList({ children, className, ...props }: React.ComponentProps<"ul">) {
-  return (
-    <ul className={cn("rounded-md border", className)} {...props}>
-      {children}
-    </ul>
-  );
-}
-
-export function ServerStatusBadge({
-  status,
-  className,
-  ...props
-}: { status: ServerStatusEnum } & React.ComponentProps<typeof Badge>) {
-  const { statusToSeverity } = useSeverity();
-  return (
-    <Badge variant={statusToSeverity(status)} className={cn(className)} {...props}>
-      {status}
-    </Badge>
-  );
-}
-
-export function ServerHealthIndicator({
-  id,
-  enabled = true,
-  renderBadge = false,
-  className,
-  ...props
-}: { id: string; enabled?: boolean; renderBadge?: boolean } & React.ComponentProps<typeof Badge>) {
-  const { data: status } = useServerStatus(id, enabled);
-
-  const statusToLabel = useMemo(() => {
-    if (!id) {
-      return "Unknown";
-    }
-
-    const m = new Map<string, boolean>([
-      ["agent", status?.agent === "running"],
-      ["container", status?.container === "running"],
-      ["reforger", status?.reforger.status === "running"],
-    ]);
-
-    return m.get("agent") && m.get("container") && m.get("reforger") ? "Healthy" : "Unhealthy";
-  }, [status, id]);
-
-  const labelToTone = useCallback((status: string) => {
-    const m = new Map<string, { pulse: string; alternate: string; badge: string }>([
-      [
-        "healthy",
-        {
-          pulse: "bg-emerald-500/60",
-          alternate: "bg-emerald-500",
-          badge: "bg-green-800/50",
-        },
-      ],
-      [
-        "unhealthy",
-        {
-          pulse: "bg-destructive/60",
-          alternate: "bg-destructive",
-          badge: "bg-destructive/30",
-        },
-      ],
-      [
-        "unknown",
-        {
-          pulse: "bg-yellow-500/60",
-          alternate: "bg-yellow-500",
-          badge: "bg-muted/50",
-        },
-      ],
-    ]);
-
-    return m.get(status.toLowerCase());
-  }, []);
-
-  const withIndicator = () => (
-    <span
-      className={cn("flex size-2 items-center justify-center", renderBadge ? undefined : className)}
-    >
-      <span
-        className={cn(
-          "absolute size-2 animate-ping rounded-full",
-          labelToTone(statusToLabel)?.pulse,
-        )}
-      />
-      <span className={cn("relative size-2 rounded-full", labelToTone(statusToLabel)?.alternate)} />
-    </span>
-  );
-
-  const withBadge = () => (
-    <Badge
-      className={cn("flex items-center gap-2", labelToTone(statusToLabel)?.badge, className)}
-      {...props}
-    >
-      {withIndicator()}
-      <span className="text-xs">{statusToLabel}</span>
-    </Badge>
-  );
-
-  return <>{renderBadge ? withBadge() : withIndicator()}</>;
 }
 
 interface ServerInfoLayoutItem {

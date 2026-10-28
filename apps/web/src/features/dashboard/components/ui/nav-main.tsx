@@ -13,11 +13,10 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import type { NavMainItem, NavMainSubItem } from "@/features/dashboard/nav-types";
 import { serversQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
-
-import { ServerHealthIndicator } from "../../server-info";
 
 function NavSubButton({
   item,
