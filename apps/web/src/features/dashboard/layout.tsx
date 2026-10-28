@@ -4,6 +4,7 @@ import {
   LayoutDashboardIcon,
   LogsIcon,
   ServerIcon,
+  ServerPlusIcon,
   SettingsIcon,
 } from "lucide-react";
 
@@ -28,20 +29,10 @@ const navMain: NavMainItem[] = [
       {
         title: "Create",
         url: "/servers/create",
-      },
-      {
-        title: "Dynamic server 01",
-        href: "#",
-      },
-      {
-        title: "Dynamic server 02",
-        href: "#",
-      },
-      {
-        title: "Dynamic server 03",
-        href: "#",
+        icon: <ServerPlusIcon />,
       },
     ],
+    dynamicSubItems: "runningServers",
   },
   {
     title: "Logs",

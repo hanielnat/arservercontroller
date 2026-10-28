@@ -8,6 +8,7 @@ export interface NavMainSubItem {
     title: string;
     url?: RoutePath;
     href?: string;
+    icon?: React.ReactNode;
 }
 
 export interface NavMainItem {
@@ -17,6 +18,7 @@ export interface NavMainItem {
     icon: React.ReactNode;
     isActive?: boolean;
     subItems?: NavMainSubItem[];
+    dynamicSubItems?: "runningServers" | "other";
 }
 
 export interface SidebarData {
