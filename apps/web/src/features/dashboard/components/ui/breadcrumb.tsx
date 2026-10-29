@@ -24,15 +24,13 @@ export default function DashboardBreadcrumbs() {
         {crumbs.map((crumb, index) => {
           const isLast = index === crumbs.length - 1;
           return (
-            <BreadcrumbItem key={crumb?.to ?? crumb?.label}>
+            <BreadcrumbItem key={index}>
               {isLast ? (
                 <BreadcrumbPage>{crumb?.label}</BreadcrumbPage>
               ) : (
-                <>
-                  <BreadcrumbLink render={<Link to={crumb?.to}>{crumb?.label}</Link>} />
-                  <BreadcrumbSeparator />
-                </>
+                <BreadcrumbLink render={<Link to={crumb?.to}>{crumb?.label}</Link>} />
               )}
+              {!isLast && <BreadcrumbSeparator />}
             </BreadcrumbItem>
           );
         })}
