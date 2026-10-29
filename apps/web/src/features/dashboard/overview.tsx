@@ -1,6 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
+  ChevronsUpDownIcon,
   ContainerIcon,
+  GroupIcon,
   LayoutDashboardIcon,
   LayoutListIcon,
   PlusIcon,
@@ -23,11 +26,22 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Toggle } from "@/components/ui/toggle";
 import { CrateServerDialog } from "@/features/dashboard/components/create-server-dialog";
 import ServerCard from "@/features/dashboard/components/server-card";
 import { ServerTable } from "@/features/dashboard/components/server-table";
 import { useRemoveServer } from "@/hooks/use-server-mutation";
 import { useServers } from "@/hooks/use-servers";
+import { cn } from "@/lib/utils";
+import type { ServerOut } from "@/types/server";
 
 function EmptyOverview() {
   return (
@@ -45,7 +59,7 @@ function EmptyOverview() {
       <EmptyContent>
         <CrateServerDialog
           trigger={
-            <Button size={"lg"}>
+            <Button size="lg">
               <PlusIcon />
               Create server
             </Button>
@@ -56,39 +70,57 @@ function EmptyOverview() {
   );
 }
 
-interface DashboardOverviewHeaderProps {
+type SortingOrder = "descending" | "ascending";
+type SortByOption = "updated" | "created" | "name";
+type GroupByOption = "" | "status";
+
+type GroupedServers = Partial<Record<string, ServerOut[]>>;
+
+type ProcessedServersType = {
+  list: ServerOut[];
+  grouped?: GroupedServers;
+};
+
+interface ViewState {
   isGridLayout: boolean;
-  totalCount: number;
   search: string;
-  refetchPending: boolean;
-  refetch: () => void;
+  sortBy: SortByOption;
+  sortOrder: SortingOrder;
+  groupBy: GroupByOption;
   onSearchChange: (value: string) => void;
   setIsGridLayout: React.Dispatch<React.SetStateAction<boolean>>;
+  setGroupBy: React.Dispatch<React.SetStateAction<GroupByOption>>;
+  setSortOrder: React.Dispatch<React.SetStateAction<SortingOrder>>;
+  setSortBy: React.Dispatch<React.SetStateAction<SortByOption>>;
+}
+
+interface DashboardOverviewHeaderProps {
+  totalCount: number;
+  refetchPending: boolean;
+  refetch: () => void;
+  state: ViewState;
 }
 
 function DashboardOverviewHeader({
-  isGridLayout,
   totalCount,
-  search,
   refetchPending,
   refetch,
-  onSearchChange,
-  setIsGridLayout,
+  state,
 }: DashboardOverviewHeaderProps) {
   return (
-    <div className="mb-2 align-middle">
+    <div className="mb-2 w-full">
       <div className="flex items-center gap-2">
         <ServerIcon />
         <h1 className="text-2xl">Servers</h1>
-        <Badge variant={"outline"}>{totalCount}</Badge>
+        <Badge variant="outline">{totalCount}</Badge>
       </div>
 
-      <div className="flex items-center justify-end">
-        <InputGroup className="mr-2 ml-auto max-w-50">
+      <div className="mt-2 flex items-center gap-2">
+        <InputGroup className="max-w-50 md:max-w-80">
           <InputGroupInput
-            placeholder="Search"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search by name, addres or ID"
+            value={state.search}
+            onChange={(e) => state.onSearchChange(e.target.value)}
           />
 
           <InputGroupAddon>
@@ -96,30 +128,84 @@ function DashboardOverviewHeader({
           </InputGroupAddon>
         </InputGroup>
 
-        <ButtonGroup>
-          <Button
-            size={"lg"}
-            variant={"secondary"}
-            onClick={() => setIsGridLayout((prev) => !prev)}
+        <span className="flex max-w-fit gap-1">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-muted-foreground truncate text-xs">Sort by</Label>
+            <Select
+              items={
+                [
+                  {
+                    label: "Name",
+                    value: "name" as const,
+                  },
+                  {
+                    label: "Updated",
+                    value: "updated" as const,
+                  },
+                  {
+                    label: "Created",
+                    value: "created" as const,
+                  },
+                ] satisfies { label: string; value: SortByOption }[]
+              }
+              value={state.sortBy}
+              onValueChange={(value) => {
+                if (value) {
+                  state.setSortBy(value);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="updated">Updated</SelectItem>
+                <SelectItem value="created">Created</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Toggle
+            variant="outline"
+            onClick={() => state.setGroupBy((prev) => (prev === "status" ? "" : "status"))}
           >
-            {isGridLayout ? <LayoutDashboardIcon /> : <LayoutListIcon />}
+            <GroupIcon className="group-aria-pressed/toggle:fill-foreground" />
+            {state.groupBy === "" ? "Group by none" : `Group by ${state.groupBy}`}
+          </Toggle>
+
+          <Toggle
+            variant="outline"
+            onClick={() =>
+              state.setSortOrder((prev) => (prev === "ascending" ? "descending" : "ascending"))
+            }
+          >
+            <ChevronsUpDownIcon />
+            Sort {state.sortOrder}
+          </Toggle>
+        </span>
+
+        <ButtonGroup className="ml-auto">
+          <Button
+            size="lg"
+            variant="secondary"
+            onClick={() => state.setIsGridLayout((prev) => !prev)}
+          >
+            {state.isGridLayout ? <LayoutDashboardIcon /> : <LayoutListIcon />}
           </Button>
 
-          <Button
-            size={"lg"}
-            variant={"secondary"}
-            disabled={refetchPending}
-            onClick={() => refetch()}
-          >
+          <Button size="lg" variant="secondary" disabled={refetchPending} onClick={() => refetch()}>
             <RefreshCwIcon />
           </Button>
 
-          <CrateServerDialog
-            trigger={
-              <Button size={"lg"}>
+          <Button
+            size="lg"
+            render={
+              <Link to="/servers/create">
                 <PlusIcon />
-                Create server
-              </Button>
+                Create Server
+              </Link>
             }
           />
         </ButtonGroup>
@@ -128,9 +214,53 @@ function DashboardOverviewHeader({
   );
 }
 
+function ServerCardsGrid({
+  servers,
+  className,
+}: { servers: ServerOut[] } & React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+        className,
+      )}
+    >
+      {servers.map((server) => (
+        <ServerCard key={server.serverConfigData.id} server={server} />
+      ))}
+    </div>
+  );
+}
+
+function ServerCardsGrouped({ groups }: { groups: GroupedServers }) {
+  return (
+    <div className="my-4 flex flex-col gap-8">
+      {Object.entries(groups).map(([groupKey, servers]) => (
+        <section key={groupKey}>
+          <h2 className="mb-3 flex items-center text-lg font-medium capitalize">
+            {groupKey || "unknown"}
+            <Badge variant="outline" className="ml-2">
+              {servers?.length ?? 0}
+            </Badge>
+          </h2>
+
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {(servers ?? []).map((server) => (
+              <ServerCard key={server.serverConfigData.id} server={server} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export default function DashboardOverview() {
   const [isGridLayout, setIsGridLayout] = useState(true);
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortByOption>("updated");
+  const [sortOrder, setSortOrder] = useState<SortingOrder>("descending");
+  const [groupBy, setGroupBy] = useState<GroupByOption>("");
 
   const { data, isPending, isError, error, refetch: refreshServers } = useServers();
   const servers = data?.data;
@@ -143,35 +273,82 @@ export default function DashboardOverview() {
     qc.invalidateQueries({ queryKey: [serverKeys.list(offset, limit)] });
   };
 
-  const filteredServers = useMemo(() => {
-    const q = search.trim().toLocaleLowerCase();
-    if (!q) {
-      return servers;
+  const processedServers = useMemo((): ProcessedServersType => {
+    if (!servers) {
+      return {
+        list: [],
+      };
     }
 
-    return servers?.filter((s) => {
-      const cfg = s.serverConfigData;
-      return (
-        cfg.name.toLocaleLowerCase().includes(q) ||
-        cfg.id?.toLocaleLowerCase().includes(q) ||
-        (cfg.bindAddress ?? "").includes(q) ||
-        String(cfg.bindPort).includes(q) ||
-        (cfg.status ?? "").includes(q)
-      );
+    const q = search.trim().toLocaleLowerCase();
+    let filtered: ServerOut[] | undefined;
+
+    if (q) {
+      filtered = servers.filter((s) => {
+        const cfg = s.serverConfigData;
+        return (
+          cfg.name.toLocaleLowerCase().includes(q) ||
+          cfg.id?.toLocaleLowerCase().includes(q) ||
+          (cfg.bindAddress ?? "").includes(q) ||
+          String(cfg.bindPort).includes(q) ||
+          (cfg.status ?? "").includes(q)
+        );
+      });
+    }
+
+    const list = filtered ?? servers;
+
+    const sorted = list.toSorted((a, b) => {
+      if (sortBy === "name") {
+        return sortOrder === "ascending"
+          ? a.serverConfigData.name.localeCompare(b.serverConfigData.name)
+          : b.serverConfigData.name.localeCompare(a.serverConfigData.name);
+      }
+
+      if (sortBy === "created") {
+        return sortOrder === "ascending" ? a.createdAt - b.createdAt : b.createdAt - a.createdAt;
+      }
+
+      if (sortBy === "updated") {
+        return sortOrder === "ascending" ? a.updatedAt - b.updatedAt : b.updatedAt - a.updatedAt;
+      }
+
+      return 0;
     });
-  }, [servers, search]);
+
+    if (groupBy === "") {
+      return {
+        list: sorted,
+      };
+    }
+
+    const grouped = Object.groupBy(sorted, (sv) => sv.serverConfigData.status ?? "");
+
+    return {
+      list: sorted,
+      grouped,
+    };
+  }, [servers, search, sortOrder, sortBy, groupBy]);
 
   return (
     <div className="h-full">
       {(data?.count ?? 0) > 0 && (
         <DashboardOverviewHeader
-          isGridLayout={isGridLayout}
-          setIsGridLayout={setIsGridLayout}
-          search={search}
           refetchPending={isPending}
           refetch={refetch}
-          onSearchChange={setSearch}
           totalCount={data?.count ?? 0}
+          state={{
+            isGridLayout,
+            setIsGridLayout,
+            search,
+            onSearchChange: setSearch,
+            sortBy,
+            setSortBy,
+            sortOrder,
+            setSortOrder,
+            groupBy,
+            setGroupBy,
+          }}
         />
       )}
 
@@ -182,14 +359,14 @@ export default function DashboardOverview() {
       ) : isError ? (
         <div>Error {error.message}</div>
       ) : isGridLayout ? (
-        <div className="my-4 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredServers?.map((server) => (
-            <ServerCard className="max-w-full" key={server.serverConfigData.id} server={server} />
-          ))}
-        </div>
+        groupBy !== "" && processedServers.grouped ? (
+          <ServerCardsGrouped groups={processedServers.grouped} />
+        ) : (
+          <ServerCardsGrid servers={processedServers.list} />
+        )
       ) : (
         <ServerTable
-          servers={servers ?? []}
+          servers={processedServers.list}
           search={search}
           onSearchChange={setSearch}
           onEdit={(server) => {
