@@ -1,6 +1,8 @@
 import * as z from "zod";
 
+import { mockServer } from "@/features/dashboard/utils/servers";
 import { apiClient, buildUrl, type ApiClientOptions } from "@/lib/client";
+import type { WebSocketLike } from "@/types/dashboard";
 import type {
     ServerConfig,
     ServerConfigCreate,
@@ -15,6 +17,8 @@ import {
     ServersOutSchema,
     ServerStatusOutSchema,
 } from "@/types/server.schema";
+
+const useMock = import.meta.env.DEV;
 
 export const serversApi = {
     list: async (offset = 0, limit = 10, options?: ApiClientOptions) =>
@@ -84,6 +88,16 @@ export const serversApi = {
             }),
         ),
 
-    creationLogsWs: (id: string): WebSocket =>
-        new WebSocket(buildUrl(`/servers/ws/${id}/creation`)),
+    creationLogsWs: (
+        id: string,
+        options?: { wsFactory?: (url: string) => WebSocketLike },
+    ): WebSocketLike => {
+        const wsFactory = options?.wsFactory
+            ? options?.wsFactory
+            : useMock
+              ? () => mockServer.creationLogs(id)
+              : (url: string) => new WebSocket(url);
+
+        return wsFactory(buildUrl(`/servers/ws/${id}/creation`));
+    },
 };

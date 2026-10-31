@@ -10,10 +10,6 @@ import { useAddServer } from "@/hooks/use-server-mutation";
 import { formValuesToCreatePayload, type ServerCreateFormValues } from "@/types/server";
 import { ServerCreateFormSchema } from "@/types/server.schema";
 
-type CreateServerFormProps = {
-  children?: (state: { canSubmit: boolean; isSubmitting: boolean }) => React.ReactNode;
-};
-
 const defaultValues: ServerCreateFormValues = {
   name: "",
   bindPort: 2001,
@@ -60,7 +56,12 @@ const defaultValues: ServerCreateFormValues = {
   `,
 };
 
-export function CreateServerForm({ children }: CreateServerFormProps) {
+type CreateServerFormProps = {
+  onCreationRequested: (id: string) => void;
+  children?: (state: { canSubmit: boolean; isSubmitting: boolean }) => React.ReactNode;
+};
+
+export function CreateServerForm({ onCreationRequested, children }: CreateServerFormProps) {
   const add = useAddServer();
 
   const form = useForm({
@@ -70,22 +71,22 @@ export function CreateServerForm({ children }: CreateServerFormProps) {
       onSubmit: ServerCreateFormSchema,
     },
 
-    onSubmit: async ({ value }) => {
-      const payload = formValuesToCreatePayload(value);
-      console.log("payload:", payload);
+    onSubmit: async ({ value }) =>
+      add.mutate(formValuesToCreatePayload(value), {
+        onSuccess: (data) => {
+          toast.add({
+            title: "Server creation started",
+          });
 
-      add.mutate(payload, {
+          onCreationRequested(data.id);
+        },
+
         onError: (error) =>
           toast.add({
             title: "Error creating server.",
             description: error.message,
           }),
-        onSuccess: () =>
-          toast.add({
-            title: "Server created successfully!",
-          }),
-      });
-    },
+      }),
   });
 
   return (

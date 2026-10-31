@@ -8,6 +8,8 @@ import type {
     ServerStatusOut,
 } from "@/types/server";
 
+import { MockWebSocket } from "../../../../tests/mock-websocket";
+
 const STORAGE_KEY = "mockServers";
 
 const withDelay = async <T>(value: T, ms = 300): Promise<T> =>
@@ -253,6 +255,69 @@ const status = async (id: string): Promise<ServerStatusOut> => {
     } as ServerStatusOut);
 };
 
+interface CreationLog {
+    phase?: string;
+    step?: string;
+    message?: string;
+    error?: boolean;
+    final?: boolean;
+}
+
+const creationLogs = (id: string): MockWebSocket => {
+    const ws = new MockWebSocket(`ws://mock/creation/${id}`);
+
+    const logs: CreationLog[] = [
+        { phase: "manager", step: "start", message: `Starting creation of server '${id}'` },
+        { phase: "docker", step: "prepare", message: "preparing" },
+        { phase: "docker", step: "create", message: "creating" },
+        { phase: "docker", step: "created", message: "created" },
+        { phase: "manager", step: "agent_start", message: "Calling agent /start inside container" },
+        { phase: "manager", step: "agent_started", message: "agent started" },
+        { phase: "manager", step: "success", message: "Server created successfully", final: false },
+        {
+            phase: "manager",
+            step: "preapre",
+            message: "Error starting the container: Unknown error",
+            error: false,
+            final: true,
+        },
+    ];
+
+    let index = 0;
+    let openTimeout: ReturnType<typeof setTimeout> | undefined;
+    let messageTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    ws.addEventListener("close", () => {
+        if (openTimeout !== undefined) {
+            clearTimeout(openTimeout);
+        }
+        if (messageTimeout !== undefined) {
+            clearTimeout(messageTimeout);
+        }
+    });
+
+    const sendNext = () => {
+        if (ws.readyState !== MockWebSocket.OPEN) {
+            return;
+        }
+
+        if (index >= logs.length) {
+            ws.close();
+            return;
+        }
+
+        const log = logs[index++];
+        ws.send(JSON.stringify(log));
+
+        messageTimeout = setTimeout(sendNext, 1000);
+    };
+
+    ws.addEventListener("open", () => sendNext());
+    openTimeout = setTimeout(() => ws.open(), 100);
+
+    return ws;
+};
+
 export const mockServer = {
     list,
     get,
@@ -261,4 +326,5 @@ export const mockServer = {
     update,
     action,
     status,
+    creationLogs,
 };
