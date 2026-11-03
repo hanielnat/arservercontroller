@@ -1,8 +1,8 @@
+import { useNavigate } from "@tanstack/react-router";
 import {
   CheckIcon,
   ChevronRightIcon,
   FormIcon,
-  InfoIcon,
   ListIcon,
   LogsIcon,
   ServerPlusIcon,
@@ -11,7 +11,6 @@ import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { CreateServerForm } from "@/features/dashboard/components/create-server-form";
@@ -20,8 +19,8 @@ import { ServerProperties } from "@/features/dashboard/components/server-propert
 import { useServers } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 
-type Steps = "form" | "logs" | "result" | "done";
-const stepOrder: Steps[] = ["form", "logs", "result", "done"];
+type Steps = "form" | "logs" | "result";
+const stepOrder: Steps[] = ["form", "logs", "result"];
 
 function StepButton({
   currentStep,
@@ -36,10 +35,10 @@ function StepButton({
       className={cn(
         "flex flex-row items-center gap-2",
         "px-3 py-8",
-        currentStep ? "bg-primary" : undefined,
+        currentStep ? "bg-primary hover:dark:bg-primary/50!" : undefined,
+        !disabled ? "text-secondary dark:text-primary-foreground" : undefined,
         className,
       )}
-      variant="ghost"
       size="lg"
       onClick={onClick}
       disabled={disabled}
@@ -85,16 +84,20 @@ function CreatedServerDetails({ id }: { id: string }) {
 
 export function CreateServer() {
   const [step, setStep] = useState<Steps>("form");
-  const [canProceed, setCanProceed] = useState(true);
   const [createdServerId, setCreatedServerId] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [isSuccessful, setIsSuccessful] = useState(false);
   const setIsCreatingRef = useRef(setIsCreating);
   const setIsDoneRef = useRef(setIsDone);
+  const setIsSuccessfulRef = useRef(setIsSuccessful);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsCreatingRef.current = setIsCreating;
     setIsDoneRef.current = setIsDone;
+    setIsSuccessfulRef.current = setIsSuccessful;
   }, []);
 
   const handleCreationStarted = useCallback((id: string) => {
@@ -111,85 +114,114 @@ export function CreateServer() {
     setIsCreatingRef.current(value);
   }, []);
 
-  const handleSetIsDone = useCallback((val: boolean) => {
-    setIsDoneRef.current(val);
+  const handleSetIsDone = useCallback((value: boolean) => {
+    setIsDoneRef.current(value);
+  }, []);
+
+  const handleSetIsSuccessful = useCallback((value: boolean) => {
+    setIsSuccessfulRef.current(value);
   }, []);
 
   const isStepDisabled = (targetStep: Steps) => {
     const currentIndex = stepOrder.indexOf(step);
     const targetIndex = stepOrder.indexOf(targetStep);
-    return targetIndex > currentIndex + 1;
-  };
-
-  const handleReset = () => {
-    setCanProceed(false);
-    setStep("form");
-  };
-
-  const handleCancel = () => {
-    setCanProceed(false);
-    setStep("form");
+    return currentIndex !== targetIndex;
   };
 
   const handleNext = () => {
-    if (step === "done") {
-      return;
-    }
+    if (step === "result") {
+      navigate({
+        from: "/servers/create",
+        to: "/",
+      });
 
-    if (!canProceed) {
       return;
     }
 
     const currentIndex = stepOrder.indexOf(step);
-    if (currentIndex < stepOrder.length - 1) {
-      setStep(stepOrder[currentIndex + 1]);
+    if (currentIndex > stepOrder.length - 1) {
+      return;
     }
+
+    setStep(stepOrder[currentIndex + 1]);
   };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <CreateServerHeader />
 
-      <div className="bg-muted/50 mx-auto mt-4 flex min-h-0 w-full flex-1 flex-col rounded-md p-4 md:w-[70%]">
-        <Progress value={stepOrder.indexOf(step) * (100 / 3)} className="mx-auto mb-2" />
+      <div className="bg-secondary dark:bg-card mt-4 flex min-h-0 w-full flex-1 flex-col rounded-md p-4 md:mx-auto md:w-[98%] lg:w-[80%] xl:w-[70%]">
+        <Progress
+          value={(stepOrder.indexOf(step) * 100) / (stepOrder.length - 1)}
+          className="mb-2 w-full"
+        />
+
         <div className="mb-4 flex flex-col gap-2">
           <div className="mx-auto flex flex-col items-center sm:flex-row">
             <StepButton
               currentStep={step === "form" ? step : undefined}
+              disabled={isStepDisabled("form")}
               onClick={() => setStep("form")}
+              className="w-full md:w-fit"
             >
-              <FormIcon />
+              <FormIcon className="size-8" />
               <div className="flex flex-col items-start">
                 <span className="text-md">Server Configuration</span>
-                <span className="text-muted-foreground">IP address, name, bind port, mods...</span>
+                <span
+                  className={cn(
+                    !isStepDisabled("form")
+                      ? "text-muted/50 dark:text-muted-foreground"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  IP address, name, bind port, mods...
+                </span>
               </div>
             </StepButton>
 
-            <ChevronRightIcon />
+            <ChevronRightIcon className="rotate-90 md:-rotate-0" />
 
             <StepButton
               currentStep={step === "logs" ? step : undefined}
               disabled={isStepDisabled("logs")}
               onClick={() => setStep("logs")}
+              className="w-full md:w-fit"
             >
-              <LogsIcon />
+              <LogsIcon className="size-8" />
               <div className="flex flex-col items-start">
                 <span className="text-md">Creation Progress</span>
-                <span className="text-muted-foreground">Docker container creation process</span>
+                <span
+                  className={cn(
+                    !isStepDisabled("logs")
+                      ? "text-muted/50 dark:text-muted-foreground"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Docker container creation process
+                </span>
               </div>
             </StepButton>
 
-            <ChevronRightIcon />
+            <ChevronRightIcon className="rotate-90 md:-rotate-0" />
 
             <StepButton
               currentStep={step === "result" ? step : undefined}
               disabled={isStepDisabled("result")}
               onClick={() => setStep("result")}
+              className="w-full md:w-fit"
             >
-              <CheckIcon />
+              <CheckIcon className="size-8" />
               <div className="flex flex-col items-start">
                 <span className="text-md">Server Details</span>
-                <span className="text-muted-foreground">Details of the created server</span>
+                <span
+                  className={cn(
+                    !isStepDisabled("result")
+                      ? "text-muted/50 dark:text-muted-foreground"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Details of the created server
+                </span>
               </div>
             </StepButton>
           </div>
@@ -199,19 +231,7 @@ export function CreateServer() {
 
         <div className="flex min-h-0 flex-1 flex-col">
           {step === "form" ? (
-            <>
-              <div className="mt-4 mb-6 flex flex-row items-center gap-4">
-                <InfoIcon />
-                <div className="flex flex-col items-start">
-                  <span className="text-xl">Fill in server data</span>
-                  <div className="text-muted-foreground text-sm">
-                    Define server properties like connection port and display name.
-                  </div>
-                </div>
-              </div>
-
-              <CreateServerForm onCreationRequested={handleCreationStarted} />
-            </>
+            <CreateServerForm onCreationRequested={handleCreationStarted} />
           ) : step === "logs" ? (
             <ServerCreationProgress
               id={createdServerId}
@@ -219,30 +239,35 @@ export function CreateServer() {
               isDone={isDone}
               onSetIsCreating={handleSetIsCreating}
               onSetIsDone={handleSetIsDone}
+              onSetIsSuccessful={handleSetIsSuccessful}
             />
           ) : (
             <CreatedServerDetails id={createdServerId} />
           )}
 
-          <div className="mt-4 flex justify-end">
-            <ButtonGroup className="">
-              <Button variant="secondary" disabled={step !== "form"} onClick={handleReset}>
-                Reset
-              </Button>
-              <Button variant="destructive" onClick={handleCancel}>
-                Cancel
-              </Button>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              type="reset"
+              form="create-server-form"
+              variant="secondary"
+              disabled={step !== "form"}
+            >
+              Reset
+            </Button>
 
-              {step === "form" ? (
-                <Button type="submit" form="create-server-form">
-                  Submit
-                </Button>
-              ) : (
-                <Button disabled={step === "done"} onClick={handleNext}>
-                  {step !== "done" ? "Next" : "Done"}
-                </Button>
-              )}
-            </ButtonGroup>
+            {step === "form" ? (
+              <Button type="submit" form="create-server-form">
+                Submit
+              </Button>
+            ) : isDone && !isSuccessful ? (
+              <Button onClick={() => navigate({ from: "/servers/create", to: "/" })}>
+                Go Back
+              </Button>
+            ) : (
+              <Button disabled={isCreating || !isSuccessful} onClick={handleNext}>
+                {step === "result" ? "Done" : "Next"}
+              </Button>
+            )}
           </div>
         </div>
       </div>

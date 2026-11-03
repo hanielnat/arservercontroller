@@ -145,7 +145,11 @@ function ProgressSection({
       <div
         className={cn(
           "mb-2 flex flex-row items-center gap-2 rounded-md p-2",
-          hasError ? "bg-error" : isDone ? "bg-success" : "bg-card",
+          hasError
+            ? "bg-error/50 text-error-foreground dark:bg-error dark:text-error-foreground"
+            : isDone
+              ? "bg-success/50 text-success-foreground dark:bg-success dark:text-success-foreground"
+              : "bg-secondary dark:bg-card",
         )}
       >
         <span className="px-2">
@@ -206,6 +210,7 @@ interface ServerCreationProgressProps {
   onSetIsCreating: (value: boolean) => void;
   isDone: boolean;
   onSetIsDone: (value: boolean) => void;
+  onSetIsSuccessful: (value: boolean) => void;
 }
 
 export function ServerCreationProgress({
@@ -214,6 +219,7 @@ export function ServerCreationProgress({
   isDone,
   onSetIsCreating,
   onSetIsDone,
+  onSetIsSuccessful,
 }: ServerCreationProgressProps) {
   const wsRef: React.Ref<WebSocketLike | null> = useRef(null);
   const startedAtRef = useRef<number | null>(null);
@@ -229,22 +235,20 @@ export function ServerCreationProgress({
     mutationFn: ({ id }: { id: string }) => serversApi.cancelAdd(id),
     onSettled: () => {
       onSetIsCreating(false);
+      onSetIsSuccessful(false);
       onSetIsDone(true);
       qc.invalidateQueries({ queryKey: serverKeys.lists() });
       wsRef.current?.close(1000, "server creation cancelled");
     },
   });
 
-  const handleOpen = useCallback(
-    (_: Event) => {
-      console.log("Websocket connected");
-      startedAtRef.current = Date.now();
-      setElapsedMs(0);
-      onSetIsCreating(true);
-      onSetIsDone(false);
-    },
-    [onSetIsCreating, onSetIsDone],
-  );
+  const handleOpen = useCallback(() => {
+    console.debug("Websocket connected");
+    startedAtRef.current = Date.now();
+    setElapsedMs(0);
+    onSetIsCreating(true);
+    onSetIsDone(false);
+  }, [onSetIsCreating, onSetIsDone]);
 
   const handleMessage = useCallback(
     (ev: MessageEvent) => {
@@ -281,14 +285,23 @@ export function ServerCreationProgress({
             setElapsedMs(Date.now() - startedAtRef.current);
             startedAtRef.current = null;
           }
+
           onSetIsCreating(false);
+
+          if (hasError) {
+            onSetIsSuccessful(false);
+            onSetIsDone(true);
+            return;
+          }
+
+          onSetIsSuccessful(true);
           onSetIsDone(true);
         }
       } catch (error) {
         console.error("Failed to parse log message", error);
       }
     },
-    [onSetIsCreating, onSetIsDone],
+    [hasError, onSetIsCreating, onSetIsDone, onSetIsSuccessful],
   );
 
   const handleError = useCallback(
@@ -296,6 +309,7 @@ export function ServerCreationProgress({
       const msg = error instanceof ErrorEvent ? error.message : undefined;
       console.error("Websocket error", msg);
       toast.add({
+        type: "error",
         title: "Unknown WebSocket error",
         description: msg,
       });
@@ -303,19 +317,17 @@ export function ServerCreationProgress({
       setHasError(true);
       setErroredPhase("");
       onSetIsCreating(false);
+      onSetIsSuccessful(false);
       onSetIsDone(true);
     },
-    [onSetIsCreating, onSetIsDone],
+    [onSetIsCreating, onSetIsDone, onSetIsSuccessful],
   );
 
-  const handleClose = useCallback(
-    (_: Event) => {
-      console.info("Websocket disconnected");
-      onSetIsCreating(false);
-      onSetIsDone(true);
-    },
-    [onSetIsCreating, onSetIsDone],
-  );
+  const handleClose = useCallback(() => {
+    console.debug("Websocket disconnected");
+    onSetIsCreating(false);
+    onSetIsDone(true);
+  }, [onSetIsCreating, onSetIsDone]);
 
   const handleCancel = useCallback(
     () =>
@@ -334,6 +346,7 @@ export function ServerCreationProgress({
 
           onError: (error) => {
             toast.add({
+              type: "error",
               title: "Error cancelling server creation",
               description: error.message,
             });
@@ -390,7 +403,11 @@ export function ServerCreationProgress({
       <Card
         className={cn(
           "bg-background mx-auto flex size-full flex-col overflow-y-auto no-scrollbar p-1.5 transition-all",
-          hasError ? "ring-2 ring-error" : isDone ? "ring-2 ring-success" : undefined,
+          hasError
+            ? "ring-2 ring-error"
+            : isDone
+              ? "ring-2 ring-success/50 dark:ring-success"
+              : undefined,
         )}
       >
         <CardContent className="p-1.5">
