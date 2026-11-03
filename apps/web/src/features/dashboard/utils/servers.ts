@@ -196,6 +196,7 @@ const action = async (
     const sv = servers.find((s) => s.serverConfigData.id === id);
     if (!sv) return false;
     const current = sv.serverConfigData.status;
+    let nextStatus = current;
 
     switch (action) {
         case "start":
@@ -204,7 +205,7 @@ const action = async (
             }
 
             await delay(2 * 1000);
-            sv.serverConfigData.status = "running";
+            nextStatus = "running";
             break;
 
         case "stop":
@@ -213,7 +214,7 @@ const action = async (
             }
 
             await delay(2 * 1000);
-            sv.serverConfigData.status = "exited";
+            nextStatus = "exited";
             break;
 
         case "restart":
@@ -222,18 +223,29 @@ const action = async (
             }
 
             await delay(2 * 1000);
-            sv.serverConfigData.status = "restarting";
+            nextStatus = "restarting";
             await delay(2 * 1000);
-            sv.serverConfigData.status = "running";
+            nextStatus = "running";
             break;
 
         case "reloadConfig":
             await delay(2 * 1000);
-            sv.serverConfigData.status = "restarting";
+            nextStatus = "restarting";
             await delay(2 * 1000);
-            sv.serverConfigData.status = "running";
+            nextStatus = "running";
             break;
     }
+
+    const updated: ServerOut = {
+        ...sv,
+        updatedAt: new Date().valueOf(),
+        serverConfigData: {
+            ...sv.serverConfigData,
+            status: nextStatus,
+        },
+    };
+
+    servers = servers.map((server) => (server.serverConfigData.id === id ? updated : server));
 
     persist();
     return withDelay(true);

@@ -56,6 +56,7 @@ function NavServerList() {
 
   const { data: servers, isPending } = useQuery({
     ...serversQueryOptions(),
+    refetchInterval: 5000,
     select: (data) =>
       data.data
         .filter((server) => server.serverConfigData.status === "running")
