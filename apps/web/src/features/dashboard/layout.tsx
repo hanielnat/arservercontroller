@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { ModeToggle } from "@/features/dashboard/components/mode-toggle";
 import { AppSidebar } from "@/features/dashboard/components/ui/app-sidebar";
 import DashboardBreadcrumbs from "@/features/dashboard/components/ui/breadcrumb";
 import DashboardHeader from "@/features/dashboard/components/ui/header";
@@ -68,6 +69,10 @@ export default function DashboardLayout() {
       <SidebarInset>
         <DashboardHeader>
           <DashboardBreadcrumbs />
+
+          <div className="ml-auto">
+            <ModeToggle />
+          </div>
         </DashboardHeader>
 
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
