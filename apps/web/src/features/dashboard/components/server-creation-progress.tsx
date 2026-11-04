@@ -266,9 +266,11 @@ export function ServerCreationProgress({
           message: msg.message,
         };
 
-        void (msg.phase === "manager"
-          ? setManagerLogs((prev) => [...prev, log])
-          : setDockerLogs((prev) => [...prev, log]));
+        if (msg.phase === "manager") {
+          setManagerLogs((prev) => [...prev, log]);
+        } else {
+          setDockerLogs((prev) => [...prev, log]);
+        }
 
         if (
           msg.error ||
