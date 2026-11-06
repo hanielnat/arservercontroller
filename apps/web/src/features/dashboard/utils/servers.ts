@@ -8,6 +8,7 @@ import type {
     ServerStatusOut,
 } from "@/types/server";
 
+import { MockEventSource } from "../../../../tests/mock-eventsource";
 import { MockWebSocket } from "../../../../tests/mock-websocket";
 
 const STORAGE_KEY = "mockServers";
@@ -275,6 +276,88 @@ interface CreationLog {
     final?: boolean;
 }
 
+const createLogStream = (
+    url: string,
+    history: string[],
+    liveMessages: string[],
+    limit: number,
+    follow: boolean,
+    formatMessage: (message: string) => string = (message) => message,
+): MockEventSource => {
+    const source = new MockEventSource(url);
+    const historyLimit = Math.max(0, Math.floor(limit));
+    const initialMessages = historyLimit > 0 ? history.slice(-historyLimit) : [];
+    let historyIndex = 0;
+    let liveIndex = 0;
+
+    const sendNext = () => {
+        if (source.readyState === MockEventSource.CLOSED) {
+            return;
+        }
+
+        if (historyIndex < initialMessages.length) {
+            source.send(formatMessage(initialMessages[historyIndex++]));
+        } else if (follow) {
+            source.send(formatMessage(liveMessages[liveIndex++ % liveMessages.length]));
+        } else {
+            source.close();
+            return;
+        }
+
+        if (!follow && historyIndex >= initialMessages.length) {
+            source.close();
+            return;
+        }
+
+        setTimeout(sendNext, 50);
+    };
+
+    setTimeout(() => {
+        if (source.readyState === MockEventSource.CLOSED) {
+            return;
+        }
+
+        source.open();
+        setTimeout(sendNext, 250);
+    }, 100);
+
+    return source;
+};
+
+const logStream = (id: string, limit: number, follow: boolean): MockEventSource =>
+    createLogStream(
+        `http://mock/servers/${id}/logs/stream`,
+        [
+            "Agent connected to the dedicated server",
+            "Dedicated server status changed to running",
+            "Received heartbeat from the dedicated server",
+            "Player session initialized",
+        ],
+        ["Agent heartbeat received", "Monitoring dedicated server process"],
+        limit,
+        follow,
+    );
+
+const containerLogStream = (
+    id: string,
+    limit: number,
+    follow: boolean,
+    showTimeStamp: boolean,
+): MockEventSource =>
+    createLogStream(
+        `http://mock/servers/${id}/container/logs/stream`,
+        [
+            "Starting Arma Reforger dedicated server",
+            "Loading world: Everon",
+            "Network driver initialized",
+            "Dedicated server ready",
+        ],
+        ["Dedicated server heartbeat", "Server process is running"],
+        limit,
+        follow,
+        (message) => (showTimeStamp ? `${new Date().toISOString()} ${message}` : message),
+    );
+
 const creationLogs = (id: string): MockWebSocket => {
     const ws = new MockWebSocket(`ws://mock/creation/${id}`);
 
@@ -338,5 +421,7 @@ export const mockServer = {
     update,
     action,
     status,
+    logStream,
+    containerLogStream,
     creationLogs,
 };

@@ -1,3 +1,4 @@
+import type { MockEventSource } from "../../tests/mock-eventsource";
 import type { MockWebSocket } from "../../tests/mock-websocket";
 
 export interface Crumb {
@@ -6,3 +7,4 @@ export interface Crumb {
 }
 
 export type WebSocketLike = WebSocket | MockWebSocket;
+export type EventSourceLike = EventSource | MockEventSource;

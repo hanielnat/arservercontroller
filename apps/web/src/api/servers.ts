@@ -71,22 +71,26 @@ export const serversApi = {
             options,
         ),
 
-    logStream: (id: string, limit: number, follow: boolean): EventSource =>
-        new EventSource(buildUrl(`/servers/${id}/logs/stream`, { limit, follow })),
+    logStream: (id: string, limit: number, follow: boolean) =>
+        useMock
+            ? mockServer.logStream(id, limit, follow)
+            : new EventSource(buildUrl(`/servers/${id}/logs/stream`, { limit, follow })),
 
     containerLogStream: (
         id: string,
-        limit: number,
+        tail: number,
         follow: boolean,
-        showTimeStamp: boolean,
-    ): EventSource =>
-        new EventSource(
-            buildUrl(`/servers/${id}/container/logs/stream`, {
-                limit,
-                follow,
-                show_timestamp: showTimeStamp,
-            }),
-        ),
+        showTimeStamp: boolean = false,
+    ) =>
+        useMock
+            ? mockServer.containerLogStream(id, tail, follow, showTimeStamp)
+            : new EventSource(
+                  buildUrl(`/servers/${id}/container/logs/stream`, {
+                      tail,
+                      follow,
+                      show_timestamp: showTimeStamp,
+                  }),
+              ),
 
     creationLogsWs: (
         id: string,

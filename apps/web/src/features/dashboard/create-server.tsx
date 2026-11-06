@@ -230,20 +230,22 @@ export function CreateServer() {
         <Separator className="" />
 
         <div className="flex min-h-0 flex-1 flex-col">
-          {step === "form" ? (
-            <CreateServerForm onCreationRequested={handleCreationStarted} />
-          ) : step === "logs" ? (
-            <ServerCreationProgress
-              id={createdServerId}
-              isCreating={isCreating}
-              isDone={isDone}
-              onSetIsCreating={handleSetIsCreating}
-              onSetIsDone={handleSetIsDone}
-              onSetIsSuccessful={handleSetIsSuccessful}
-            />
-          ) : (
-            <CreatedServerDetails id={createdServerId} />
-          )}
+          <div className="min-h-0 flex-1 overflow-y-auto p-1">
+            {step === "form" ? (
+              <CreateServerForm onCreationRequested={handleCreationStarted} />
+            ) : step === "logs" ? (
+              <ServerCreationProgress
+                id={createdServerId}
+                isCreating={isCreating}
+                isDone={isDone}
+                onSetIsCreating={handleSetIsCreating}
+                onSetIsDone={handleSetIsDone}
+                onSetIsSuccessful={handleSetIsSuccessful}
+              />
+            ) : (
+              <CreatedServerDetails id={createdServerId} />
+            )}
+          </div>
 
           <div className="mt-4 flex justify-end gap-2">
             <Button
