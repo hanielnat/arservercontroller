@@ -12,10 +12,15 @@ export function CopyTextButton({
   onCopy,
   size = "icon",
   variant = "ghost",
+  tooltipContent,
   children,
   className,
   ...props
-}: { value: string; onCopy?: React.Dispatch<string> } & React.ComponentProps<typeof Button>) {
+}: {
+  value: string;
+  onCopy?: React.Dispatch<string>;
+  tooltipContent?: React.ReactNode;
+} & React.ComponentProps<typeof Button>) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -52,12 +57,8 @@ export function CopyTextButton({
     }
 
     toast.add({
-      title: (
-        <span className="flex flex-row gap-2">
-          <CheckIcon />
-          <span>Copied to clipboard</span>
-        </span>
-      ),
+      type: "success",
+      title: <span>Copied to clipboard</span>,
     });
   };
 
@@ -83,9 +84,7 @@ export function CopyTextButton({
         }
       />
 
-      <TooltipContent>
-        <p>Copy to clipboard</p>
-      </TooltipContent>
+      <TooltipContent>{tooltipContent ? tooltipContent : <p>Copy to clipboard</p>}</TooltipContent>
     </Tooltip>
   );
 }
