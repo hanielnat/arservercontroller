@@ -11,6 +11,9 @@ export function addServerMutationOptions(qc: QueryClient) {
     return mutationOptions({
         mutationFn: (payload: ServerConfigCreate) =>
             useMock ? mockServer.add(payload) : serversApi.add(payload),
+
+        mutationKey: ["server-operation", "add"],
+
         onSuccess: () => qc.invalidateQueries({ queryKey: serverKeys.lists() }),
     });
 }
@@ -25,6 +28,8 @@ export function updateServerMutationOptions(qc: QueryClient) {
     return mutationOptions({
         mutationFn: ({ id, data }: { id: string; data: ServerConfigUpdate }) =>
             useMock ? mockServer.update(id, data) : serversApi.update(id, data),
+
+        mutationKey: ["server-operation", "update"],
 
         onSuccess: (_data, { id }) => {
             qc.invalidateQueries({ queryKey: serverKeys.lists() });
@@ -43,6 +48,8 @@ export function removeServerMutationOptions(qc: QueryClient) {
     return mutationOptions({
         mutationFn: ({ id, force = false }: { id: string; force?: boolean }) =>
             useMock ? mockServer.remove(id) : serversApi.remove(id, force),
+
+        mutationKey: ["server-operation", "remove"],
 
         onSuccess: () => qc.invalidateQueries({ queryKey: serverKeys.lists() }),
     });
@@ -78,6 +85,8 @@ export function serverActionMutationOptions(qc: QueryClient) {
                     return serversApi.reloadConfig(id);
             }
         },
+
+        mutationKey: ["server-operation", "action"],
 
         onSuccess: (_data, { id }) => {
             qc.invalidateQueries({ queryKey: serverKeys.status(id) });

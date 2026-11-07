@@ -14,14 +14,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { CopyTextButton } from "@/components/ui/copy-to-clipboard";
 import {
   DropdownMenu,
@@ -32,7 +25,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "@/components/ui/toast";
 import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -63,78 +55,39 @@ export default function ServerCard(props: ServerCardProps) {
   );
 
   const idFormatted = React.useMemo(
-    () => server?.serverConfigData.id?.split("-")[0].concat("..."),
+    () => server?.serverConfigData.id.slice(0, 8) ?? "",
     [server.serverConfigData.id],
   );
 
+  const bindAddress = server?.serverConfigData.bindAddress ?? "0.0.0.0";
+  const bindPort = server?.serverConfigData.bindPort ?? "N/A";
+
   const scenarioId = React.useMemo(() => {
-    const result = (reforgerConfigGame?.scenarioId as string) ?? undefined;
+    const id = (reforgerConfigGame?.scenarioId as string) ?? "";
+    let result: string | undefined = "Not set";
+
+    if (id.length > 0) {
+      const missionName = id.split("/").at(-1);
+      result = missionName ? missionName : result;
+    }
+
     return result;
   }, [reforgerConfigGame]);
 
-  const handleStart = async () => {
-    action.mutate(
-      { id: server.serverConfigData.id, action: "start" },
-      {
-        onSuccess: (data) => {
-          toast.add({ data, title: "Server started" });
-        },
-        onError: (error) => {
-          toast.add({ data: error, title: "Server failed to start", description: error.message });
-        },
-      },
-    );
+  const handleStart = () => {
+    action.mutate({ id: server.serverConfigData.id, action: "start" });
   };
 
-  const handleStop = async () => {
-    action.mutate(
-      { id: server.serverConfigData.id, action: "stop" },
-      {
-        onSuccess: (data) => {
-          toast.add({ data, title: "Server stopped" });
-        },
-        onError: (error) => {
-          toast.add({ data: error, title: "Server failed to stop", description: error.message });
-        },
-      },
-    );
+  const handleStop = () => {
+    action.mutate({ id: server.serverConfigData.id, action: "stop" });
   };
 
-  const handleRestart = async () => {
-    action.mutate(
-      { id: server.serverConfigData.id, action: "restart" },
-      {
-        onSuccess: (data) => {
-          toast.add({ data, title: "Server restarted" });
-        },
-        onError: (error) => {
-          toast.add({ data: error, title: "Server failed to restart", description: error.message });
-        },
-      },
-    );
+  const handleRestart = () => {
+    action.mutate({ id: server.serverConfigData.id, action: "restart" });
   };
 
-  const handleRemove = async (force = true) => {
-    let toastId: string;
-    if (removeServer.isPending) {
-      toastId = toast.add({ title: "Removing server" });
-    }
-
-    removeServer.mutate(
-      { id: server.serverConfigData.id, force },
-      {
-        onSuccess: (data) => {
-          toast.add({ data, title: "Server removed" });
-        },
-        onError: (error) => {
-          toast.update(toastId, {
-            data: error,
-            title: "Server failed to be removed",
-            description: error.message,
-          });
-        },
-      },
-    );
+  const handleRemove = (force = true) => {
+    removeServer.mutate({ id: server.serverConfigData.id, force });
   };
 
   return (
@@ -142,96 +95,100 @@ export default function ServerCard(props: ServerCardProps) {
       className={cn("hover:ring hover:ring-card-foreground", "transition-all", className)}
       {...rest}
     >
-      <CardHeader>
-        <CardTitle>
-          <div className="flex flex-row items-center">
-            <Badge
-              className="text-md"
-              render={
-                <span className="flex items-center gap-2">
-                  <ServerHealthIndicator id={server.serverConfigData.id} />
-                  <Link to="/servers/$serverId" params={{ serverId: server.serverConfigData.id }}>
-                    {server.serverConfigData.name}
-                  </Link>
-                </span>
-              }
-            />
-
-            <div className="ml-auto flex items-center gap-1">
-              <div className="group/ip flex items-center gap-1">
-                <CopyTextButton
-                  size="icon-sm"
-                  value={server?.serverConfigData.bindAddress as string}
-                  className={cn(!isMobile ? "opacity-0 group-hover/ip:opacity-100" : undefined)}
-                />
-
-                <span className="font-mono text-xs">{server?.serverConfigData.bindAddress}</span>
-              </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
-                  <MenuIcon />
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent>
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
-                    <DropdownMenuItem
-                      onClick={() =>
-                        navigate({
-                          to: "/servers/$serverId",
-                          params: { serverId: server.serverConfigData.id ?? "" },
-                        })
-                      }
+      <CardHeader className="space-y-3">
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <ServerHealthIndicator id={server.serverConfigData.id} />
+              <Badge
+                className="text-md max-w-full overflow-hidden"
+                render={
+                  <span className="flex items-center gap-2">
+                    <Link
+                      to="/servers/$serverId"
+                      params={{ serverId: server.serverConfigData.id }}
+                      className="truncate"
                     >
-                      <InfoIcon />
-                      Details
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem onClick={() => toast.add({ title: "Opening logs..." })}>
-                      <LogsIcon />
-                      Logs
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={async () => await handleRemove()}
-                    >
-                      <Trash2Icon />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      {server.serverConfigData.name}
+                    </Link>
+                  </span>
+                }
+              />
             </div>
-          </div>
-        </CardTitle>
 
-        <CardDescription>
-          {displayName} •{" "}
-          <code className="group/id">
-            {idFormatted}
+            <CardDescription className="mt-2 truncate">
+              {displayName || server.serverConfigData.name}
+            </CardDescription>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
+              <MenuIcon />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                <DropdownMenuItem
+                  onClick={() =>
+                    navigate({
+                      to: "/servers/$serverId",
+                      params: { serverId: server.serverConfigData.id ?? "" },
+                    })
+                  }
+                >
+                  <InfoIcon />
+                  Details
+                </DropdownMenuItem>
+
+                <DropdownMenuItem>
+                  <Link to="/logs">
+                    <LogsIcon />
+                    Logs
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuGroup>
+                <DropdownMenuItem variant="destructive" onClick={() => handleRemove()}>
+                  <Trash2Icon />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="group/ip text-muted-foreground flex items-center gap-2 text-xs">
+          <span className="text-foreground font-mono">
+            {bindAddress}:{bindPort}
+          </span>
+          <CopyTextButton
+            size="icon-xs"
+            value={`${bindAddress}:${bindPort}`}
+            className={cn(!isMobile ? "opacity-0 group-hover/ip:opacity-100" : undefined)}
+          />
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-2">
+        <div className="flex items-center justify-start gap-2 text-sm">
+          <span className="text-muted-foreground">Scenario</span>
+          <code className="max-w-[60%] truncate text-right">{scenarioId ?? "Not set"}</code>
+        </div>
+
+        <div className="flex items-center justify-start gap-2 text-sm">
+          <span className="text-muted-foreground">Server ID</span>
+          <code className="group/id flex items-center gap-1 truncate">
+            <span className="truncate">{idFormatted}</span>
             <CopyTextButton
               value={server?.serverConfigData.id}
               className="ml-1 group-hover/id:opacity-100 md:opacity-0"
             />
           </code>
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
-        <div className="flex justify-between gap-2">
-          {scenarioId && (
-            <span className="flex flex-row justify-between gap-2">
-              <span>Scenario</span>
-              <code>{scenarioId}</code>
-            </span>
-          )}
         </div>
       </CardContent>
 
@@ -243,15 +200,15 @@ export default function ServerCard(props: ServerCardProps) {
           />
 
           <ButtonGroup className={cn("transition-all", "ml-auto")}>
-            <Button variant="success" onClick={async () => await handleStart()}>
+            <Button variant="success" onClick={handleStart}>
               <PlayIcon />
             </Button>
 
-            <Button variant="error" onClick={async () => await handleStop()}>
+            <Button variant="error" onClick={handleStop}>
               <PowerIcon />
             </Button>
 
-            <Button variant="warning" onClick={async () => await handleRestart()}>
+            <Button variant="warning" onClick={handleRestart}>
               <RotateCcwIcon />
             </Button>
           </ButtonGroup>

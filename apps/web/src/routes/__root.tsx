@@ -8,6 +8,7 @@ import { tableDevtoolsPlugin } from "@tanstack/react-table-devtools";
 import NotFound from "@/components/layout/not-found";
 import Pending from "@/components/layout/pending";
 import { Toaster } from "@/components/ui/toast";
+import { PendingServerOperations } from "@/features/dashboard/components/pending-server-operations";
 import { type DashboardContext } from "@/router";
 
 export const Route = createRootRouteWithContext<DashboardContext>()({
@@ -20,6 +21,7 @@ function RootLayout() {
   return (
     <>
       <Outlet />
+      <PendingServerOperations />
       <Toaster />
       <hr />
       <TanStackDevtools

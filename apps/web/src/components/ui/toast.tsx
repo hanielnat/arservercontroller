@@ -1,12 +1,12 @@
 import { Toast as ToastPrimitive } from "@base-ui/react/toast";
 import { cn } from "cn";
 import {
-  XIcon,
   CircleCheckIcon,
   InfoIcon,
-  TriangleAlertIcon,
-  OctagonXIcon,
   Loader2Icon,
+  OctagonXIcon,
+  TriangleAlertIcon,
+  XIcon,
 } from "lucide-react";
 import * as React from "react";
 
@@ -204,17 +204,17 @@ const createToastManager = ToastPrimitive.createToastManager;
 const useToastManager = ToastPrimitive.useToastManager;
 
 export {
-  Toaster,
+  createToastManager,
   Toast,
+  toast,
   ToastAction,
   ToastClose,
   ToastContent,
   ToastDescription,
+  Toaster,
   ToastPortal,
   ToastProvider,
   ToastTitle,
   ToastViewport,
-  createToastManager,
-  toast,
   useToastManager,
 };
