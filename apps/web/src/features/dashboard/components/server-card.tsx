@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
 import {
   InfoIcon,
@@ -7,6 +7,7 @@ import {
   PlayIcon,
   PowerIcon,
   RotateCcwIcon,
+  ServerIcon,
   Trash2Icon,
 } from "lucide-react";
 import * as React from "react";
@@ -41,7 +42,6 @@ export default function ServerCard(props: ServerCardProps) {
   const action = useServerAction();
   const removeServer = useRemoveServer();
 
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
 
   const reforgerConfigGame = React.useMemo(
@@ -99,7 +99,7 @@ export default function ServerCard(props: ServerCardProps) {
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <ServerHealthIndicator id={server.serverConfigData.id} />
+              <ServerIcon size={16} />
               <Badge
                 className="text-md max-w-full overflow-hidden"
                 render={
@@ -131,23 +131,22 @@ export default function ServerCard(props: ServerCardProps) {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
                 <DropdownMenuItem
-                  onClick={() =>
-                    navigate({
-                      to: "/servers/$serverId",
-                      params: { serverId: server.serverConfigData.id ?? "" },
-                    })
+                  render={
+                    <Link to="/servers/$serverId" params={{ serverId: server.serverConfigData.id }}>
+                      <InfoIcon />
+                      Details
+                    </Link>
                   }
-                >
-                  <InfoIcon />
-                  Details
-                </DropdownMenuItem>
+                />
 
-                <DropdownMenuItem>
-                  <Link to="/logs">
-                    <LogsIcon />
-                    Logs
-                  </Link>
-                </DropdownMenuItem>
+                <DropdownMenuItem
+                  render={
+                    <Link to="/logs">
+                      <LogsIcon />
+                      Logs
+                    </Link>
+                  }
+                />
               </DropdownMenuGroup>
 
               <DropdownMenuSeparator />
@@ -194,10 +193,13 @@ export default function ServerCard(props: ServerCardProps) {
 
       <CardFooter>
         <div className="flex w-full items-center">
-          <ServerStatusBadge
-            status={server?.serverConfigData.status ?? "dead"}
-            className="align-middle"
-          />
+          <span className="flex items-center gap-2">
+            <ServerHealthIndicator id={server.serverConfigData.id} />
+            <ServerStatusBadge
+              status={server?.serverConfigData.status ?? "dead"}
+              className="align-middle"
+            />
+          </span>
 
           <ButtonGroup className={cn("transition-all", "ml-auto")}>
             <Button variant="success" onClick={handleStart}>

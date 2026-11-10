@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import type { VariantProps } from "class-variance-authority";
-import { BotIcon, BroomIcon, ContainerIcon, LogsIcon, ServerIcon, XCircleIcon } from "lucide-react";
+import {
+  BotIcon,
+  BroomIcon,
+  ContainerIcon,
+  LogsIcon,
+  ServerIcon,
+  ServerOffIcon,
+  XCircleIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { serversApi } from "@/api/servers";
@@ -9,6 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CopyTextButton } from "@/components/ui/copy-to-clipboard";
+import {
+  Empty,
+  EmptyContent as EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { HealthIndicator } from "@/components/ui/health-indicator";
 import { Item, ItemContent } from "@/components/ui/item";
 import { Label } from "@/components/ui/label";
@@ -141,47 +156,29 @@ function LogItem({ entry, showTimestamps }: { entry: LogEntry; showTimestamps: b
   );
 }
 
-export function LogsPage() {
-  const [currentServer, setCurrentServer] = useState<SelectedServer | null>(null);
-  const [limit, setLimit] = useState(500);
+export function ServerLogs({
+  id,
+  name,
+  onClose,
+  className,
+}: {
+  id: string;
+  name?: string;
+  onClose?: () => void;
+  className?: string;
+}) {
+  const [limit, setLimit] = useState(300);
   const [follow, setFollow] = useState(true);
   const [showTimestamps, setShowTimestamps] = useState(false);
-
   const logScrollRef = useRef<HTMLDivElement>(null);
   const shouldStickToBottom = useRef(true);
-
   const [current, setCurrent] = useState<LogOrigin>("agent");
   const [allLogs, setAllLogs] = useState<LogEntry[]>([]);
-  const filteredLogs = allLogs.filter((filtered) => filtered.origin === current);
-
   const [streamConnections, setStreamConnections] = useState<Record<LogOrigin, boolean>>({
     agent: false,
     container: false,
   });
   const isConnected = streamConnections[current];
-
-  const { data: servers } = useQuery({
-    ...serversQueryOptions(),
-    select: (data) =>
-      data.data
-        .filter((running) => running.serverConfigData.status === "running")
-        .map((s) => ({
-          label: s.serverConfigData.name ?? "Unknown",
-          value: {
-            id: s.serverConfigData.id,
-            name: s.serverConfigData.name ?? "Unknown",
-            status: s.serverConfigData.status ?? "dead",
-          },
-        })) satisfies ServerSelectItem[],
-  });
-
-  const serversSelect = [
-    {
-      label: "Server",
-      value: null,
-    },
-    ...(servers ?? []),
-  ] as ServerSelectItem[];
 
   const limitsSelect = [
     {
@@ -205,12 +202,6 @@ export function LogsPage() {
       value: 15000,
     },
   ] as SelectItem<number>[];
-
-  const handleSelectServer = (server: SelectedServer | null) => {
-    setAllLogs([]);
-    setStreamConnections({ agent: false, container: false });
-    setCurrentServer(server);
-  };
 
   const handleLogScroll = () => {
     const container = logScrollRef.current;
@@ -264,22 +255,10 @@ export function LogsPage() {
     setStreamConnections((prev) => ({ ...prev, [origin]: false }));
   }, []);
 
-  const eventClose = () => {
-    setAllLogs([]);
-    setStreamConnections({ agent: false, container: false });
-    setCurrentServer(null);
-  };
-
-  const currentServerId = currentServer?.id;
-
   useEffect(() => {
-    if (!currentServerId) {
-      return;
-    }
-
     let active = true;
-    const reforgerEvents = serversApi.logStream(currentServerId, limit, follow);
-    const containerEvents = serversApi.containerLogStream(currentServerId, limit, follow, false);
+    const reforgerEvents = serversApi.logStream(id, limit, follow);
+    const containerEvents = serversApi.containerLogStream(id, limit, follow, false);
 
     reforgerEvents.onopen = () => {
       if (active) {
@@ -318,189 +297,227 @@ export function LogsPage() {
       reforgerEvents.close();
       containerEvents.close();
     };
-  }, [currentServerId, limit, follow, handleEventOpen, handleEventMessage, handleEventError]);
+  }, [id, limit, follow, handleEventOpen, handleEventMessage, handleEventError]);
+
+  const filteredLogs = allLogs.filter((entry) => entry.origin === current);
+
+  return (
+    <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col", className)}>
+      <div className="bg-background sticky top-0 left-0 m-0 flex flex-wrap items-center gap-2 rounded-t-md border-b p-2 sm:p-1.5">
+        <div className="mr-auto flex shrink-0 items-center gap-2">
+          <span className="truncate">{name ? `Logs of ${name}` : "Server logs"}</span>
+
+          <HealthIndicator
+            label={`${current} log status`}
+            pulseClass={isConnected ? "bg-success" : "bg-warning"}
+            alternateClass={isConnected ? "bg-success-foreground" : "bg-warning-foreground"}
+          />
+        </div>
+
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <div className="flex flex-row items-center gap-1">
+            <Switch
+              id="current-log-origin"
+              checked={current === "container"}
+              onCheckedChange={(checked) => setCurrent(checked ? "container" : "agent")}
+            />
+            <Label
+              htmlFor="current-log-origin"
+              className="text-ellipsis whitespace-nowrap capitalize"
+            >{`${current} logs`}</Label>
+          </div>
+
+          <div className="col-span-2 flex min-w-0 flex-row items-center gap-1 sm:col-span-1">
+            <Select
+              id="input-line-limit"
+              items={limitsSelect}
+              value={limit}
+              onValueChange={(value) => {
+                const nextLimit = value ?? 10;
+                setStreamConnections({ agent: false, container: false });
+                setLimit(nextLimit);
+              }}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue>{limit ?? 10}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {limitsSelect.map((lim, index) => (
+                  <SelectItem key={index} value={lim.value}>
+                    {lim.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Label htmlFor="input-line-limit" className="text-ellipsis whitespace-nowrap">
+              Lines to fetch
+            </Label>
+          </div>
+
+          <div className="flex flex-row items-center gap-1">
+            <Checkbox
+              id="input-follow-logs"
+              checked={follow}
+              onCheckedChange={(checked) => {
+                setStreamConnections({ agent: false, container: false });
+                setFollow(checked);
+              }}
+            />
+            <Label htmlFor="input-follow-logs" className="text-ellipsis whitespace-nowrap">
+              Auto update
+            </Label>
+          </div>
+
+          <div className="flex flex-row items-center gap-1">
+            <Checkbox
+              id="input-show-timestamps"
+              checked={showTimestamps}
+              onCheckedChange={setShowTimestamps}
+            />
+            <Label htmlFor="input-show-timestamps" className="text-ellipsis whitespace-nowrap">
+              Show time stamps
+            </Label>
+          </div>
+
+          <div className="ml-auto flex shrink-0 flex-row justify-end overflow-x-auto">
+            <CopyTextButton
+              variant="ghost"
+              size="default"
+              tooltipContent={<p>Copy logs to clipboard</p>}
+
+              value={filteredLogs
+                .slice(Math.max(0, filteredLogs.length - limit), filteredLogs.length)
+                .map((entry) => [entry.timestamp, entry.origin.toUpperCase(), entry.msg].join(","))
+                .join("\n")}
+
+              onCopy={() => {
+                const lineCount = [
+                  ...filteredLogs.slice(
+                    Math.max(0, filteredLogs.length - limit),
+                    filteredLogs.length,
+                  ),
+                ].length;
+                toast.add({
+                  type: "success",
+                  title: <span>Copied {lineCount} lines to clipboard</span>,
+                });
+              }}
+            >
+              Copy
+            </CopyTextButton>
+
+            <Button type="button" variant="ghost" onClick={() => setAllLogs([])}>
+              <BroomIcon />
+              Clear
+            </Button>
+
+            {onClose && (
+              <Button type="button" variant="ghost" onClick={onClose}>
+                <XCircleIcon />
+                Close
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div
+        ref={logScrollRef}
+        onScroll={handleLogScroll}
+        className="bg-background ring-muted min-h-0 min-w-0 flex-1 overflow-y-auto rounded-md rounded-t-none p-0 ring"
+      >
+        <div className="mt-1 px-1 py-0">
+          {filteredLogs.map((log, index) => (
+            <LogItem
+              key={`${log.timestamp}-${index}`}
+              entry={log}
+              showTimestamps={showTimestamps}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function LogsPage() {
+  const [currentServer, setCurrentServer] = useState<SelectedServer | null>(null);
+
+  const { data: servers } = useQuery({
+    ...serversQueryOptions(),
+    select: (data) =>
+      data.data.map((server) => ({
+        label: server.serverConfigData.name ?? "Unknown",
+        value: {
+          id: server.serverConfigData.id,
+          name: server.serverConfigData.name ?? "Unknown",
+          status: server.serverConfigData.status ?? "dead",
+        },
+      })) satisfies ServerSelectItem[],
+  });
+
+  const serversSelect = [
+    { label: "Server", value: null },
+    ...(servers ?? []),
+  ] as ServerSelectItem[];
 
   return (
     <div className="flex h-[calc(100dvh-4rem)] min-h-0 min-w-0 flex-col">
       <LogsHeader />
-
       <Card className="min-h-0 flex-1">
-        <CardTitle className="flex items-center gap-2 px-4">
-          {currentServer ? `Logs of ${currentServer.name}` : "Select a server"}
-
-          <HealthIndicator
-            label="Log status"
-            pulseClass={currentServer ? (isConnected ? "bg-success" : "bg-warning") : "bg-muted"}
-            alternateClass={
-              currentServer
-                ? isConnected
-                  ? "bg-success-foreground"
-                  : "bg-warning-foreground"
-                : "bg-muted-foreground"
-            }
-          />
+        <CardTitle className="flex flex-wrap items-center gap-2 px-4">
+          <span className="mr-auto">
+            {currentServer ? `Logs of ${currentServer.name}` : "Select a server"}
+          </span>
+          <Select items={serversSelect} value={currentServer} onValueChange={setCurrentServer}>
+            <SelectTrigger className="w-full min-w-0 sm:w-50">
+              <SelectValue className="min-w-0" placeholder="Select a server">
+                {(server) => (
+                  <span className="flex min-w-0 items-center gap-2">
+                    <ServerIcon />
+                    <span className="truncate">{server?.name ?? "Select a server"}</span>
+                  </span>
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-50">
+              <SelectGroup>
+                <SelectLabel>Servers</SelectLabel>
+                {servers?.map((server) => (
+                  <SelectItem
+                    key={server.value?.id}
+                    value={server.value}
+                    disabled={server.value.status !== "running"}
+                  >
+                    <ServerIcon />
+                    {server.value?.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </CardTitle>
+        <CardContent className="flex min-h-0 flex-1 flex-col p-2">
+          {currentServer ? (
+            <ServerLogs
+              key={currentServer.id}
+              id={currentServer.id}
+              name={currentServer.name}
+              onClose={() => setCurrentServer(null)}
+            />
+          ) : (
+            <Empty className="bg-background border-secondary border border-dashed">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <ServerOffIcon />
+                </EmptyMedia>
 
-        <CardContent
-          ref={logScrollRef}
-          onScroll={handleLogScroll}
-          className="bg-background ring-muted mx-2 min-h-0 min-w-0 flex-1 overflow-y-auto rounded-md p-0 ring"
-        >
-          <div className="bg-background sticky top-0 left-0 m-0 grid grid-cols-2 items-center gap-2 border-b p-2 sm:flex sm:flex-wrap sm:p-1.5">
-            <div className="col-span-2 flex min-w-0 items-center gap-2 sm:col-span-1">
-              <Select
-                items={serversSelect}
-                value={currentServer ?? null}
-                onValueChange={(value) =>
-                  value === currentServer ? handleSelectServer(null) : handleSelectServer(value)
-                }
-              >
-                <SelectTrigger className="w-full min-w-0 sm:w-50">
-                  <SelectValue className="min-w-0" placeholder="Select a server">
-                    {(server) => (
-                      <>
-                        <ServerIcon />
-                        <span className="truncate">{server?.name ?? "Select a server"}</span>
-                      </>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
+                <EmptyTitle>No server selected.</EmptyTitle>
 
-                <SelectContent className="w-50">
-                  <SelectGroup>
-                    <SelectLabel>Servers</SelectLabel>
-
-                    {servers?.map((sv) => (
-                      <SelectItem key={sv.value?.id} value={sv.value}>
-                        <ServerIcon />
-                        {sv.value?.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-row items-center gap-1">
-              <Switch
-                id="current-log-origin"
-                onClick={() => setCurrent((prev) => (prev === "agent" ? "container" : "agent"))}
-              />
-              <Label
-                htmlFor="current-log-origin"
-                className="text-ellipsis whitespace-nowrap capitalize"
-              >{`${current} logs`}</Label>
-            </div>
-
-            <div className="col-span-2 flex min-w-0 flex-row items-center gap-1 sm:col-span-1">
-              <Select
-                id="input-line-limit"
-                items={limitsSelect}
-                value={limit}
-                onValueChange={(value) => {
-                  const nextLimit = value ?? 10;
-                  setAllLogs((prev) => trimLogsToLimit(prev, nextLimit));
-                  setStreamConnections({ agent: false, container: false });
-                  setLimit(nextLimit);
-                }}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue>{limit ?? 10}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {limitsSelect.map((lim, index) => (
-                    <SelectItem key={index} value={lim.value}>
-                      {lim.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Label htmlFor="input-line-limit" className="text-ellipsis whitespace-nowrap">
-                Lines to fetch
-              </Label>
-            </div>
-
-            <div className="flex flex-row items-center gap-1">
-              <Checkbox
-                id="input-follow-logs"
-                onClick={() => {
-                  setStreamConnections({ agent: false, container: false });
-                  setFollow((prev) => !prev);
-                }}
-                defaultChecked={follow}
-              />
-              <Label htmlFor="input-follow-logs" className="text-ellipsis whitespace-nowrap">
-                Auto update
-              </Label>
-            </div>
-
-            <div className="flex flex-row items-center gap-1">
-              <Checkbox
-                id="input-show-timestamps"
-                onClick={() => {
-                  setShowTimestamps((prev) => !prev);
-                }}
-                defaultChecked={showTimestamps}
-              />
-              <Label htmlFor="input-show-timestamps" className="text-ellipsis whitespace-nowrap">
-                Show time stamps
-              </Label>
-            </div>
-
-            <div className="col-span-2 ml-auto flex w-full shrink-0 flex-row justify-end overflow-x-auto sm:w-auto">
-              <CopyTextButton
-                variant="ghost"
-                size="default"
-                tooltipContent={<p>Copy logs to clipboard</p>}
-
-                value={filteredLogs
-                  .slice(Math.max(0, filteredLogs.length - limit), filteredLogs.length)
-                  .map((entry) =>
-                    [entry.timestamp, entry.origin.toUpperCase(), entry.msg].join(","),
-                  )
-                  .join("\n")}
-
-                onCopy={() => {
-                  const lineCount = [
-                    ...filteredLogs.slice(
-                      Math.max(0, filteredLogs.length - limit),
-                      filteredLogs.length,
-                    ),
-                  ].length;
-                  toast.add({
-                    type: "success",
-                    title: <span>Copied {lineCount} lines to clipboard</span>,
-                  });
-                }}
-              >
-                Copy
-              </CopyTextButton>
-
-              <Button variant="ghost" onClick={() => setAllLogs([])}>
-                <BroomIcon />
-                Clear
-              </Button>
-
-              <Button variant="ghost" onClick={() => eventClose()}>
-                <XCircleIcon />
-                Close
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-1 px-1 py-0">
-            {filteredLogs
-              .filter((filtered) => filtered.origin === current)
-              .map((log, index) => {
-                return (
-                  <LogItem
-                    key={`${log.timestamp}-${index}`}
-                    entry={log}
-                    showTimestamps={showTimestamps}
-                  />
-                );
-              })}
-          </div>
+                <EmptyDescription>Select a server to view its logs.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -12,6 +12,7 @@ import {
     ServersOutSchema,
     ServerStatusEnumSchema,
     ServerStatusOutSchema,
+    ServerUpdateFormSchema,
 } from "@/types/server.schema";
 
 export type ServerStatusEnum = z.infer<typeof ServerStatusEnumSchema>;
@@ -23,6 +24,8 @@ export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 // #region Forms
 
 export type ServerCreateFormValues = z.infer<typeof ServerCreateFormSchema>;
+
+export type ServerUpdateFormValues = z.infer<typeof ServerUpdateFormSchema>;
 
 // #endregion
 
@@ -52,6 +55,21 @@ export function formValuesToCreatePayload(values: ServerCreateFormValues): Serve
         environment: values.environment,
         extraPorts: values.extraPorts?.map((p) => [p.key, p.value] as [string, number]),
         reforgerConfig: JSON.parse(values.reforgerConfig),
+    });
+}
+
+export function formValuesToUpdatePayload(values: ServerUpdateFormValues): ServerConfigUpdate {
+    return ServerConfigUpdateSchema.parse({
+        name: values.name,
+        bindPort: values.bindPort,
+        bindAddress: values.bindAddress,
+        a2sPort: values.a2sPort,
+        rconPort: values.rconPort,
+        commandLine: values.commandLine,
+        environment: values.environment,
+        extraPorts: values.extraPorts?.map(({ key, value }) => [key, value] as [string, number]),
+        containerId: values.containerId,
+        reforgerConfig: values.reforgerConfig,
     });
 }
 

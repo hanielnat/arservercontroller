@@ -84,7 +84,7 @@ export const ExtraPortFormItemSchema = z.object({
 export const ServerCreateFormSchema = z.object({
     name: nameSchema,
     bindPort: portSchema,
-    bindAddress: z.string().optional(),
+    bindAddress: z.ipv4().optional(),
     a2sPort: portSchema.optional(),
     rconPort: portSchema.optional(),
 
@@ -104,6 +104,27 @@ export const ServerCreateFormSchema = z.object({
             }
         }),
 });
+
+export const ServerUpdateFormSchema = ServerCreateFormSchema.omit({
+    status: true,
+    reforgerConfig: true,
+})
+    .partial()
+    .extend({
+        bindAddress: z.ipv4().optional().nullable(),
+        a2sPort: portSchema.optional().nullable(),
+        rconPort: portSchema.optional().nullable(),
+
+        commandLine: z.array(z.string()).optional().nullable(),
+        environment: z
+            .union([z.record(z.string(), z.any()), z.array(z.string())])
+            .optional()
+            .nullable(),
+        extraPorts: z.array(ExtraPortFormItemSchema).optional().nullable(),
+        reforgerConfig: z.record(z.string(), z.unknown()),
+
+        containerId: z.string().optional().nullable(),
+    });
 
 // #endregion
 

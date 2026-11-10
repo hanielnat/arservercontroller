@@ -324,8 +324,12 @@ const createLogStream = (
     return source;
 };
 
-const logStream = (id: string, limit: number, follow: boolean): MockEventSource =>
-    createLogStream(
+const logStream = (id: string, limit: number, follow: boolean): MockEventSource => {
+    if (servers.find((s) => id === s.serverConfigData.id)?.serverConfigData.status !== "running") {
+        throw new Error("Server is not running");
+    }
+
+    return createLogStream(
         `http://mock/servers/${id}/logs/stream`,
         [
             "Agent connected to the dedicated server",
@@ -337,6 +341,7 @@ const logStream = (id: string, limit: number, follow: boolean): MockEventSource 
         limit,
         follow,
     );
+};
 
 const containerLogStream = (
     id: string,
