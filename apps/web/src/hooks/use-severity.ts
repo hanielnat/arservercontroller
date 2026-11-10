@@ -24,31 +24,31 @@ const STATUS_TO_TONE: SeverityType = {
 
 const SEVERITY_TO_TONE: Record<Severity, ToneType> = {
     success: {
-        bg: `bg-success`,
+        bg: `bg-success/80`,
         foreground: `bg-success-foreground`,
         text: `text-success`,
         textForeground: `text-success-foreground`,
     },
     error: {
-        bg: `bg-error`,
+        bg: `bg-error/80`,
         foreground: `bg-error-foreground`,
         text: `text-error`,
         textForeground: `text-error-foreground`,
     },
     info: {
-        bg: `bg-info`,
+        bg: `bg-info/80`,
         foreground: `bg-info-foreground`,
         text: `text-info`,
         textForeground: `text-info-foreground`,
     },
     warning: {
-        bg: `bg-warning`,
+        bg: `bg-warning/80`,
         foreground: `bg-warning-foreground`,
         text: `text-warning`,
         textForeground: `text-warning-foreground`,
     },
     muted: {
-        bg: `bg-muted`,
+        bg: `bg-muted/80`,
         foreground: `bg-foreground-foreground`,
         text: `text-muted`,
         textForeground: `text-muted-foreground`,

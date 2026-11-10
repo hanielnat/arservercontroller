@@ -35,7 +35,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
-import { CrateServerDialog } from "@/features/dashboard/components/create-server-dialog";
 import ServerCard from "@/features/dashboard/components/server-card";
 import { ServerTable } from "@/features/dashboard/components/server-table";
 import { useRemoveServer } from "@/hooks/use-server-mutation";
@@ -57,12 +56,13 @@ function EmptyOverview() {
       </EmptyHeader>
 
       <EmptyContent>
-        <CrateServerDialog
-          trigger={
-            <Button size="lg">
+        <Button
+          size="lg"
+          render={
+            <Link to={"/servers/create"}>
               <PlusIcon />
               Create server
-            </Button>
+            </Link>
           }
         />
       </EmptyContent>

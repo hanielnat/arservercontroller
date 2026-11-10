@@ -43,22 +43,22 @@ const HEALTH_TO_TONE: Record<Health, { pulse: string; alternate: string; badge: 
     Healthy: {
         pulse: "bg-success-foreground/50",
         alternate: "bg-success-foreground/80",
-        badge: "bg-success/80",
+        badge: "bg-success/80 text-success-foreground",
     },
     Unhealthy: {
         pulse: "bg-error-foreground/50",
         alternate: "bg-error-foreground/80",
-        badge: "bg-error/80",
+        badge: "bg-error/80 text-error-foreground",
     },
     Ignore: {
         pulse: "bg-muted-foreground/50",
         alternate: "bg-muted-foreground/80",
-        badge: "bg-muted/80",
+        badge: "bg-muted/80 text-muted-foreground",
     },
     Unknown: {
         pulse: "bg-warning-foreground/50",
         alternate: "bg-warning-foreground/80",
-        badge: "bg-warning/80",
+        badge: "bg-warning/80 text-warning-foreground",
     },
 };
 
