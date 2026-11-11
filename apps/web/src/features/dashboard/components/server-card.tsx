@@ -1,20 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
-import {
-  InfoIcon,
-  LogsIcon,
-  MenuIcon,
-  PlayIcon,
-  PowerIcon,
-  RotateCcwIcon,
-  ServerIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { InfoIcon, LogsIcon, MenuIcon, ServerIcon } from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { CopyTextButton } from "@/components/ui/copy-to-clipboard";
 import {
@@ -28,9 +18,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useRemoveServer, useServerAction } from "@/hooks/use-server-mutation";
 import type { ServerOut } from "@/types/server";
+
+import { ServerActionDelete, ServerActions } from "./server-actions";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;
@@ -38,11 +28,6 @@ type ServerCardProps = React.ComponentProps<"div"> & {
 
 export default function ServerCard(props: ServerCardProps) {
   const { server, className, ...rest } = props;
-
-  const action = useServerAction();
-  const removeServer = useRemoveServer();
-
-  const isMobile = useIsMobile();
 
   const reforgerConfigGame = React.useMemo(
     () => (server?.serverConfigData.reforgerConfig.game as Record<string, unknown>) ?? undefined,
@@ -73,22 +58,6 @@ export default function ServerCard(props: ServerCardProps) {
 
     return result;
   }, [reforgerConfigGame]);
-
-  const handleStart = () => {
-    action.mutate({ id: server.serverConfigData.id, action: "start" });
-  };
-
-  const handleStop = () => {
-    action.mutate({ id: server.serverConfigData.id, action: "stop" });
-  };
-
-  const handleRestart = () => {
-    action.mutate({ id: server.serverConfigData.id, action: "restart" });
-  };
-
-  const handleRemove = (force = true) => {
-    removeServer.mutate({ id: server.serverConfigData.id, force });
-  };
 
   return (
     <Card
@@ -147,29 +116,56 @@ export default function ServerCard(props: ServerCardProps) {
                     </Link>
                   }
                 />
+
+                <DropdownMenuItem
+                  render={
+                    <CopyTextButton
+                      size="default"
+                      showTooltip={false}
+                      value={server.serverConfigData.id}
+                      className="w-full justify-start"
+                    >
+                      Copy ID
+                    </CopyTextButton>
+                  }
+                />
+
+                <DropdownMenuItem
+                  render={
+                    <CopyTextButton
+                      size="default"
+                      showTooltip={false}
+                      value={`${bindAddress}:${bindPort}`}
+                      className="w-full justify-start"
+                    >
+                      Copy Address
+                    </CopyTextButton>
+                  }
+                />
               </DropdownMenuGroup>
 
               <DropdownMenuSeparator />
 
               <DropdownMenuGroup>
-                <DropdownMenuItem variant="destructive" onClick={() => handleRemove()}>
-                  <Trash2Icon />
-                  Delete
-                </DropdownMenuItem>
+                <DropdownMenuItem
+                  closeOnClick={false}
+                  render={
+                    <ServerActionDelete
+                      size="default"
+                      id={server.serverConfigData.id}
+                      className="w-full"
+                    >
+                      Delete
+                    </ServerActionDelete>
+                  }
+                />
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        <div className="group/ip text-muted-foreground flex items-center gap-2 text-xs">
-          <span className="text-foreground font-mono">
-            {bindAddress}:{bindPort}
-          </span>
-          <CopyTextButton
-            size="icon-xs"
-            value={`${bindAddress}:${bindPort}`}
-            className={cn(!isMobile ? "opacity-0 group-hover/ip:opacity-100" : undefined)}
-          />
+        <div className="text-foreground font-mono text-xs">
+          {bindAddress}:{bindPort}
         </div>
       </CardHeader>
 
@@ -181,13 +177,7 @@ export default function ServerCard(props: ServerCardProps) {
 
         <div className="flex items-center justify-start gap-2 text-sm">
           <span className="text-muted-foreground">Server ID</span>
-          <code className="group/id flex items-center gap-1 truncate">
-            <span className="truncate">{idFormatted}</span>
-            <CopyTextButton
-              value={server?.serverConfigData.id}
-              className="ml-1 group-hover/id:opacity-100 md:opacity-0"
-            />
-          </code>
+          <code className="truncate">{idFormatted}</code>
         </div>
       </CardContent>
 
@@ -201,19 +191,7 @@ export default function ServerCard(props: ServerCardProps) {
             />
           </span>
 
-          <ButtonGroup className={cn("transition-all", "ml-auto")}>
-            <Button variant="success" onClick={handleStart}>
-              <PlayIcon />
-            </Button>
-
-            <Button variant="error" onClick={handleStop}>
-              <PowerIcon />
-            </Button>
-
-            <Button variant="warning" onClick={handleRestart}>
-              <RotateCcwIcon />
-            </Button>
-          </ButtonGroup>
+          <ServerActions id={server?.serverConfigData.id ?? ""} className="ml-auto" />
         </div>
       </CardFooter>
     </Card>

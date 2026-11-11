@@ -206,7 +206,7 @@ export function UpdateServerForm({
                 value={key}
                 onChange={(e) => updateKey(key, e.target.value)}
                 placeholder="KEY"
-                className="w-[40%]"
+                className="w-[40%] font-mono"
                 autoComplete="off"
               />
 
@@ -214,7 +214,7 @@ export function UpdateServerForm({
                 value={String(value ?? "")}
                 onChange={(e) => updateValue(key, e.target.value)}
                 placeholder="value"
-                className="flex-1"
+                className="flex-1 font-mono"
                 autoComplete="off"
               />
 
@@ -273,7 +273,7 @@ export function UpdateServerForm({
                   });
                 }}
                 placeholder="protocol"
-                className="w-[40%]"
+                className="w-[40%] font-mono"
                 autoComplete="off"
               />
 
@@ -287,7 +287,7 @@ export function UpdateServerForm({
                   })
                 }
                 placeholder="port"
-                className="flex-1"
+                className="flex-1 font-mono"
                 autoComplete="off"
               />
 
@@ -347,6 +347,7 @@ export function UpdateServerForm({
                     onChange={(e) => subField.handleChange(e.target.value)}
                     placeholder="-logLevel spam"
                     autoComplete="off"
+                    className="font-mono"
                   />
 
                   <Button
@@ -376,7 +377,7 @@ export function UpdateServerForm({
           Update
         </Button>
 
-        <Button type="reset" form="update-server-form" variant="muted" disabled={!isDirty}>
+        <Button type="reset" form="update-server-form" variant="secondary" disabled={!isDirty}>
           Reset
         </Button>
       </ButtonGroup>
@@ -416,6 +417,7 @@ export function UpdateServerForm({
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="0.0.0.0"
                     autoComplete="off"
+                    className="font-mono"
                   />
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
@@ -451,6 +453,7 @@ export function UpdateServerForm({
                     onChange={(e) => field.handleChange(e.target.valueAsNumber)}
                     placeholder="2001"
                     autoComplete="off"
+                    className="font-mono"
                   />
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
@@ -486,6 +489,7 @@ export function UpdateServerForm({
                     onChange={(e) => field.handleChange(e.target.valueAsNumber)}
                     placeholder="17777"
                     autoComplete="off"
+                    className="font-mono"
                   />
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
@@ -521,6 +525,7 @@ export function UpdateServerForm({
                     onChange={(e) => field.handleChange(e.target.valueAsNumber)}
                     placeholder="19999"
                     autoComplete="off"
+                    className="font-mono"
                   />
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>

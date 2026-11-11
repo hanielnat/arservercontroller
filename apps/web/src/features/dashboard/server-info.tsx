@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { CheckIcon, InfoIcon, PenIcon, ServerIcon, XIcon } from "lucide-react";
 import React, { useState } from "react";
 
@@ -18,6 +19,8 @@ import { useUpdateServer } from "@/hooks/use-server-mutation";
 import { serversQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 import { ServerConfigSchema } from "@/types/server.schema";
+
+import { ServerActionDelete, ServerActions } from "./components/server-actions";
 
 function ServerInfoHeader({ id }: { id: string }) {
   const isMobile = useIsMobile();
@@ -56,6 +59,7 @@ export function ServerInfo({
   const [changedName, setChangedName] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
 
+  const navigate = useNavigate();
   const { data: server } = useQuery({
     ...serversQueryOptions(),
     select: (data) => data.data.find((s) => id === s.serverConfigData.id),
@@ -161,13 +165,24 @@ export function ServerInfo({
             id={server?.serverConfigData.id ?? ""}
             className="ml-2"
           />
+
+          <span className="items-cente ml-auto flex flex-row gap-0.5">
+            <ServerActions id={server?.serverConfigData.id ?? ""} />
+            <ServerActionDelete
+              size="icon"
+              id={server?.serverConfigData.id ?? ""}
+              onDelete={() => navigate({ to: "/" })}
+            />
+          </span>
         </CardTitle>
 
         <Tabs defaultValue="overview">
           <TabsList variant="line">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="edit">Edit</TabsTrigger>
-            <TabsTrigger value="logs">Logs</TabsTrigger>
+            <TabsTrigger value="logs" disabled={server?.serverConfigData.status !== "running"}>
+              Logs
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
