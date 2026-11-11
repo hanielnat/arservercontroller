@@ -31,6 +31,8 @@ export type ServerUpdateFormValues = z.infer<typeof ServerUpdateFormSchema>;
 
 // #region ApiClient
 
+export type ServerAction = "start" | "stop" | "restart" | "reloadConfig";
+
 export type ServerOut = z.infer<typeof ServerOutSchema>;
 
 export type ServersOut = z.infer<typeof ServersOutSchema>;

@@ -1,9 +1,15 @@
-import { mutationOptions, QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+    mutationOptions,
+    QueryClient,
+    useIsMutating,
+    useMutation,
+    useQueryClient,
+} from "@tanstack/react-query";
 
 import { serversApi } from "@/api/servers";
 import { serverKeys } from "@/api/servers.keys";
 import { mockServer } from "@/features/dashboard/utils/servers";
-import type { ServerConfigCreate, ServerConfigUpdate } from "@/types/server";
+import type { ServerAction, ServerConfigCreate, ServerConfigUpdate } from "@/types/server";
 
 const useMock = import.meta.env.DEV;
 
@@ -63,13 +69,7 @@ export function useRemoveServer() {
 
 export function serverActionMutationOptions(qc: QueryClient) {
     return mutationOptions({
-        mutationFn: ({
-            id,
-            action,
-        }: {
-            id: string;
-            action: "start" | "stop" | "restart" | "reloadConfig";
-        }) => {
+        mutationFn: ({ id, action }: { id: string; action: ServerAction }) => {
             if (useMock) {
                 return mockServer.action(id, action);
             }
@@ -99,4 +99,23 @@ export function useServerAction() {
     const qc = useQueryClient();
 
     return useMutation(serverActionMutationOptions(qc));
+}
+
+export function useIsServerActionPending(id: string, action?: ServerAction) {
+    return (
+        useIsMutating({
+            exact: true,
+            mutationKey: ["server-operation", "action"],
+
+            predicate: (mutation) => {
+                const variables = mutation.state.variables as
+                    | { id: string; action: ServerAction }
+                    | undefined;
+
+                return (
+                    variables?.id === id && (action === undefined || variables.action === action)
+                );
+            },
+        }) > 0
+    );
 }

@@ -1,5 +1,6 @@
 import { PORT_MAX, PORT_MIN, SCHEMA_VERSION } from "@/lib/consts";
 import type {
+    ServerAction,
     ServerConfig,
     ServerConfigCreate,
     ServerConfigUpdate,
@@ -190,10 +191,7 @@ const update = async (id: string, toUpdate: ServerConfigUpdate): Promise<ServerO
     return withDelay(updated);
 };
 
-const action = async (
-    id: string,
-    action: "start" | "stop" | "restart" | "reloadConfig",
-): Promise<boolean> => {
+const action = async (id: string, action: ServerAction): Promise<boolean> => {
     const sv = servers.find((s) => s.serverConfigData.id === id);
     if (!sv) return false;
     const current = sv.serverConfigData.status;
