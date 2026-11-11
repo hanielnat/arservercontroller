@@ -12,13 +12,16 @@ export function CopyTextButton({
   onCopy,
   size = "icon",
   variant = "ghost",
-  tooltipContent,
+  showTooltip = true,
+  tooltipContent = "Copy to clipboard",
+  onClick,
   children,
   className,
   ...props
 }: {
   value: string;
   onCopy?: React.Dispatch<string>;
+  showTooltip?: boolean;
   tooltipContent?: React.ReactNode;
 } & React.ComponentProps<typeof Button>) {
   const [copied, setCopied] = useState(false);
@@ -62,29 +65,32 @@ export function CopyTextButton({
     });
   };
 
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            size={size}
-            variant={variant}
-            onClick={handleCopy}
-            className={cn("relative", copied ? "bg-primary!" : undefined, className)}
-            {...props}
-          >
-            <span className="flex items-center justify-center">
-              <CopyIcon
-                className={cn("absolute transition-all", copied ? "opacity-0" : "opacity-100")}
-              />
-              <CheckIcon className={cn("transition-all", copied ? "opacity-100" : "opacity-0")} />
-            </span>
-            {children}
-          </Button>
-        }
-      />
+  const Comp = (
+    <Button
+      size={size}
+      variant={variant}
+      onClick={(ev) => {
+        handleCopy();
+        onClick?.(ev);
+      }}
+      className={cn("relative", copied ? "bg-primary!" : undefined, className)}
+      {...props}
+    >
+      <span className="flex items-center justify-center">
+        <CopyIcon className={cn("absolute transition-all", copied ? "opacity-0" : "opacity-100")} />
+        <CheckIcon className={cn("transition-all", copied ? "opacity-100" : "opacity-0")} />
+      </span>
+      {children}
+    </Button>
+  );
 
-      <TooltipContent>{tooltipContent ? tooltipContent : <p>Copy to clipboard</p>}</TooltipContent>
+  return showTooltip ? (
+    <Tooltip>
+      <TooltipTrigger render={Comp} />
+
+      <TooltipContent>{tooltipContent}</TooltipContent>
     </Tooltip>
+  ) : (
+    Comp
   );
 }
