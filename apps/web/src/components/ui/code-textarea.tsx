@@ -1,18 +1,23 @@
-import { Editor } from "@sugar-high/react";
-import { vscode } from "@sugar-high/react/themes";
+import { json } from "@codemirror/lang-json";
+import { vscodeDark } from "@uiw/codemirror-theme-vscode";
+import CodeMirror, {
+  EditorView,
+  type BasicSetupOptions,
+  type Extension,
+} from "@uiw/react-codemirror";
 import type React from "react";
+import { useMemo } from "react";
 
-import { useTheme } from "@/hooks/providers/theme-provider";
 import { cn } from "@/lib/utils";
 
 type CodeTextAreaProps = {
   value: string;
   lang: "json" | "plaintext";
   title?: string;
+  wrapLines?: boolean;
   disabled?: boolean;
   error?: boolean;
-  minHeight?: string;
-  maxHeight?: string;
+  height?: string;
   onChange: (value: string) => void;
 } & Omit<React.ComponentProps<"div">, "onChange">;
 
@@ -20,55 +25,55 @@ export function CodeTextArea({
   value,
   lang,
   title,
+  wrapLines,
   disabled = false,
   error = false,
-  minHeight = "200px",
-  maxHeight = "400px",
+  height = "100%",
   onChange,
   className,
-  style,
   ...props
 }: CodeTextAreaProps) {
-  const theme = useTheme();
+  const extensions: Extension[] = useMemo(() => {
+    let result = [];
+
+    if (lang === "json") {
+      result.push(json());
+    }
+
+    if (wrapLines) {
+      result.push(EditorView.lineWrapping);
+    }
+
+    return result;
+  }, [lang, wrapLines]);
+
+  const basicSetup: BasicSetupOptions = {
+    lineNumbers: true,
+    foldGutter: false,
+    closeBrackets: true,
+    highlightSpecialChars: true,
+  };
 
   return (
     <div
+      title={title}
       className={cn(
-        "overflow-hidden rounded-md border border-input shadow-sm",
+        "h-full min-h-0 overflow-hidden rounded-md border border-input shadow-sm",
         "focus-within:ring-1 focus-within:ring-ring",
         error && "border-destructive focus-within:ring-destructive",
-        disabled && "cursor-not-allowed opacity-50",
         className,
       )}
-      style={{
-        minHeight,
-        maxHeight,
-        height: maxHeight ? undefined : minHeight,
-        ...style,
-      }}
       {...props}
     >
-      <Editor
-        lang={lang}
+      <CodeMirror
+        extensions={extensions}
         value={value}
-        title={title}
+        theme={vscodeDark}
+        editable={!disabled}
+        basicSetup={basicSetup}
         onChange={onChange}
-        lineNumbers={true}
-        controls={false}
-        theme={vscode}
-        fontSize="12px"
-        style={{
-          colorScheme: theme.theme,
-          minHeight: "100%",
-          maxHeight: "100%",
-        }}
-        textareaProps={{
-          disabled,
-          spellCheck: false,
-          autoCapitalize: "off",
-          autoComplete: "off",
-          autoCorrect: "off",
-        }}
+        height={height}
+        className="h-full min-h-0 flex-1 overflow-auto [&_.cm-editor]:h-full"
       />
     </div>
   );

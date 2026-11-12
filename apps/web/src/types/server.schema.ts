@@ -95,7 +95,7 @@ export const ServerCreateFormSchema = z.object({
     extraPorts: z.array(ExtraPortFormItemSchema).optional(),
     reforgerConfig: z
         .string()
-        .min(1, "Reforger config is obrigatory")
+        .min(1, "Reforger config is obligatory")
         .superRefine((str, ctx) => {
             try {
                 JSON.parse(str);
@@ -121,7 +121,19 @@ export const ServerUpdateFormSchema = ServerCreateFormSchema.omit({
             .optional()
             .nullable(),
         extraPorts: z.array(ExtraPortFormItemSchema).optional().nullable(),
-        reforgerConfig: z.record(z.string(), z.unknown()),
+        reforgerConfig: z
+            .string()
+            .min(1, "Reforger config is obligatory")
+            .superRefine((str, ctx) => {
+                try {
+                    const value: unknown = JSON.parse(str);
+                    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+                        ctx.addIssue({ code: "custom", message: "Config must be a JSON object" });
+                    }
+                } catch {
+                    ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+                }
+            }),
 
         containerId: z.string().optional().nullable(),
     });

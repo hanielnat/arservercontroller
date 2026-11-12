@@ -71,7 +71,7 @@ export function formValuesToUpdatePayload(values: ServerUpdateFormValues): Serve
         environment: values.environment,
         extraPorts: values.extraPorts?.map(({ key, value }) => [key, value] as [string, number]),
         containerId: values.containerId,
-        reforgerConfig: values.reforgerConfig,
+        reforgerConfig: JSON.parse(values.reforgerConfig),
     });
 }
 

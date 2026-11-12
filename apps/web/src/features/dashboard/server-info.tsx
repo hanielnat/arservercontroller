@@ -186,14 +186,14 @@ export function ServerInfo({
           </TabsList>
 
           <TabsContent value="overview">
-            <CardContent className="min-h-[calc(100dvh-15rem)] space-y-4 p-0">
-              <ServerProperties config={server?.serverConfigData} className="h-full" />
+            <CardContent className="h-[calc(100dvh-15rem)] min-h-0 space-y-4 overflow-hidden p-0">
+              <ServerProperties config={server?.serverConfigData} className="h-full min-h-0" />
             </CardContent>
           </TabsContent>
 
           <TabsContent value="edit">
-            <CardContent className="min-h-[calc(100dvh-15rem)] space-y-4 p-0">
-              <UpdateServerForm config={server?.serverConfigData} className="h-full" />
+            <CardContent className="min-h-0 min-h-[calc(100dvh-15rem)] space-y-4 p-0">
+              <UpdateServerForm config={server?.serverConfigData} className="h-full min-h-0" />
             </CardContent>
           </TabsContent>
 

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
-import { InfoIcon, LogsIcon, MenuIcon, ServerIcon } from "lucide-react";
+import { EllipsisVerticalIcon, InfoIcon, LogsIcon, ServerIcon } from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -61,38 +61,45 @@ export default function ServerCard(props: ServerCardProps) {
 
   return (
     <Card
-      className={cn("hover:ring hover:ring-card-foreground", "transition-all", className)}
+      className={cn(
+        "ring-muted ring-2 hover:ring-1 hover:ring-muted-foreground/50",
+        "transition-all",
+        className,
+      )}
       {...rest}
     >
       <CardHeader className="space-y-3">
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <ServerIcon size={16} />
+            <div className="flex items-center gap-0.5">
               <Badge
-                className="text-md max-w-full overflow-hidden"
-                render={
-                  <span className="flex items-center gap-2">
-                    <Link
-                      to="/servers/$serverId"
-                      params={{ serverId: server.serverConfigData.id }}
-                      className="truncate"
-                    >
-                      {server.serverConfigData.name}
-                    </Link>
-                  </span>
-                }
+                variant="secondary"
+                className="bg-primary text-primary-foreground dark:text-primary-foreground size-fit shrink-0 overflow-hidden rounded-sm p-1"
+                render={<ServerIcon size={16} />}
               />
+
+              <Button
+                variant="link"
+                className="dark:text-primary-foreground flex flex-row items-center gap-2 text-[15px]"
+              >
+                <Link
+                  to="/servers/$serverId"
+                  params={{ serverId: server.serverConfigData.id }}
+                  className="truncate"
+                >
+                  {server.serverConfigData.name}
+                </Link>
+              </Button>
             </div>
 
-            <CardDescription className="mt-2 truncate">
+            <CardDescription className="mt-2 truncate text-[13px]">
               {displayName || server.serverConfigData.name}
             </CardDescription>
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
-              <MenuIcon />
+              <EllipsisVerticalIcon />
             </DropdownMenuTrigger>
 
             <DropdownMenuContent>
@@ -164,25 +171,25 @@ export default function ServerCard(props: ServerCardProps) {
           </DropdownMenu>
         </div>
 
-        <div className="text-foreground font-mono text-xs">
+        <div className="text-foreground font-mono">
           {bindAddress}:{bindPort}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-2">
-        <div className="flex items-center justify-start gap-2 text-sm">
+      <CardContent className="space-y-1">
+        <div className="flex items-center justify-start gap-2 text-xs">
           <span className="text-muted-foreground">Scenario</span>
           <code className="max-w-[60%] truncate text-right">{scenarioId ?? "Not set"}</code>
         </div>
 
-        <div className="flex items-center justify-start gap-2 text-sm">
+        <div className="flex items-center justify-start gap-2 text-xs">
           <span className="text-muted-foreground">Server ID</span>
           <code className="truncate">{idFormatted}</code>
         </div>
       </CardContent>
 
       <CardFooter>
-        <div className="flex w-full items-center">
+        <div className="flex w-full flex-row items-center gap-0.5">
           <span className="flex items-center gap-2">
             <ServerHealthIndicator id={server.serverConfigData.id} />
             <ServerStatusBadge

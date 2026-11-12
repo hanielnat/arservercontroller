@@ -2,24 +2,29 @@ import { useForm, useSelector, type AnyFieldApi } from "@tanstack/react-form";
 import {
   CableIcon,
   ChevronDownIcon,
+  Code2Icon,
   NetworkIcon,
   PlusIcon,
   RadioIcon,
   RotateCcwIcon,
   SaveIcon,
+  Settings2Icon,
   TerminalIcon,
   Trash2Icon,
   VariableIcon,
+  XCircleIcon,
 } from "lucide-react";
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { CodeTextArea } from "@/components/ui/code-textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
-import { useUpdateServer } from "@/hooks/use-server-mutation";
+import { useServerAction, useUpdateServer } from "@/hooks/use-server-mutation";
 import { cn } from "@/lib/utils";
 import {
   formValuesToUpdatePayload,
@@ -79,7 +84,9 @@ export function UpdateServerForm({
   className?: string;
 }) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(true);
+  const [isConfigOpen, setIsConfigOpen] = useState(true);
   const update = useUpdateServer();
+  const reloadConfig = useServerAction();
 
   const defaultValues: ServerUpdateFormValues = {
     name: config?.name,
@@ -91,7 +98,7 @@ export function UpdateServerForm({
     commandLine: config?.commandLine,
     environment: config?.environment,
     extraPorts: config?.extraPorts?.map(([key, value]) => ({ key, value })),
-    reforgerConfig: config?.reforgerConfig ?? {},
+    reforgerConfig: JSON.stringify(config?.reforgerConfig ?? {}, null, 2),
   };
 
   const form = useForm({
@@ -101,10 +108,16 @@ export function UpdateServerForm({
       onSubmit: ServerUpdateFormSchema,
     },
 
-    onSubmit: ({ value }) =>
+    onSubmit: ({ value }) => {
+      const shouldReloadConfig = form.getFieldMeta("reforgerConfig")?.isDirty;
       update.mutate(
         { id: config?.id ?? "", data: formValuesToUpdatePayload(value) },
         {
+          onSuccess: () => {
+            if (shouldReloadConfig) {
+              reloadConfig.mutate({ id: config?.id ?? "", action: "reloadConfig" });
+            }
+          },
           onError: (error) =>
             toast.add({
               type: "error",
@@ -112,10 +125,12 @@ export function UpdateServerForm({
               description: error.message,
             }),
         },
-      ),
+      );
+    },
   });
 
   const isDirty = useSelector(form.store, (state) => state.isDirty);
+  const isFormValid = useSelector(form.store, (state) => state.isFormValid);
 
   const handleFormSubmit = (ev: React.SubmitEvent<HTMLFormElement>) => {
     ev.preventDefault();
@@ -382,11 +397,18 @@ export function UpdateServerForm({
         </Button>
       </ButtonGroup>
 
+      {!isFormValid && (
+        <Label className="text-destructive">
+          <XCircleIcon size={16} />
+          Form invalid
+        </Label>
+      )}
+
       <form
         id="update-server-form"
         onSubmit={handleFormSubmit}
         onReset={handleFormReset}
-        className={cn("flex flex-col max-w-lg space-y-8 sm:shrink-0", className)}
+        className={cn("flex flex-col space-y-8 shrink-0", className)}
       >
         <FieldGroup className="space-y-2">
           {/* Bind Address */}
@@ -539,19 +561,16 @@ export function UpdateServerForm({
             render={
               <Button
                 variant="outline"
-                size="default"
-                className="w-full data-panel-open:rounded-b-none"
+                className="flex size-10 w-full flex-row items-center gap-2 text-[12px] data-panel-open:rounded-b-none"
               >
+                <Settings2Icon />
                 Advanced properties
-                <ChevronDownIcon
-                  size={16}
-                  className="ml-auto group-data-panel-open/button:rotate-180"
-                />
+                <ChevronDownIcon className="ml-auto group-data-panel-open/button:rotate-180" />
               </Button>
             }
           />
 
-          <CollapsibleContent className="space-y-8 rounded-md rounded-tl-none rounded-tr-none border border-t-0 p-4">
+          <CollapsibleContent className="bg-muted/50 space-y-8 rounded-md rounded-tl-none rounded-tr-none border border-t-0 p-4">
             <FieldGroup>
               {/* Launch Options */}
               <form.Field name="commandLine" mode="array" children={renderCommandline} />
@@ -560,6 +579,43 @@ export function UpdateServerForm({
               {/* Extra Ports */}
               <form.Field name="extraPorts" mode="array" children={renderExtraPorts} />
             </FieldGroup>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <Collapsible open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+          <CollapsibleTrigger
+            render={
+              <Button
+                variant="outline"
+                className="flex size-10 w-full flex-row items-center justify-start gap-2 text-[12px] data-panel-open:rounded-b-none"
+              >
+                <Code2Icon />
+                Reforger server configuration
+                <ChevronDownIcon className="ml-auto group-data-panel-open/button:rotate-180" />
+              </Button>
+            }
+          />
+
+          <CollapsibleContent className="space-y-8 rounded-md rounded-tl-none rounded-tr-none border border-t-0">
+            <form.Field
+              name="reforgerConfig"
+              children={(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid} className="bg-muted/50">
+                    {isInvalid && <FieldError errors={field.state.meta.errors} className="p-2" />}
+                    <CodeTextArea
+                      value={field.state.value}
+                      lang="json"
+                      height="51vh"
+                      error={isInvalid}
+                      onChange={field.handleChange}
+                      className="min-h-0 flex-1 rounded-t-none"
+                    />
+                  </Field>
+                );
+              }}
+            />
           </CollapsibleContent>
         </Collapsible>
       </form>

@@ -133,15 +133,15 @@ export function ServerProperties({
         ))}
       </ul>
 
-      <div className="flex-1">
-        <CodeTextArea
-          lang="json"
-          value={JSON.stringify(config?.reforgerConfig ?? {})}
-          onChange={(value) => console.log(value)}
-          minHeight="100%"
-          className="h-full"
-        />
-      </div>
+      <CodeTextArea
+        value={JSON.stringify(config?.reforgerConfig, null, 2)}
+        lang="json"
+        disabled={true}
+        onChange={() => {
+          return;
+        }}
+        className="min-h-0 flex-1"
+      />
     </div>
   );
 }
