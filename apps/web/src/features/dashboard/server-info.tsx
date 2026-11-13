@@ -10,6 +10,7 @@ import { CopyTextButton } from "@/components/ui/copy-to-clipboard";
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ServerActionDelete, ServerActions } from "@/features/dashboard/components/server-actions";
 import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import { ServerProperties } from "@/features/dashboard/components/server-properties";
 import { UpdateServerForm } from "@/features/dashboard/components/update-server-form";
@@ -19,8 +20,6 @@ import { useUpdateServer } from "@/hooks/use-server-mutation";
 import { serversQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 import { ServerConfigSchema } from "@/types/server.schema";
-
-import { ServerActionDelete, ServerActions } from "./components/server-actions";
 
 function ServerInfoHeader({ id }: { id: string }) {
   const isMobile = useIsMobile();

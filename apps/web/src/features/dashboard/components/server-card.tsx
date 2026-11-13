@@ -16,11 +16,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ServerActionDelete, ServerActions } from "@/features/dashboard/components/server-actions";
 import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
 import type { ServerOut } from "@/types/server";
-
-import { ServerActionDelete, ServerActions } from "./server-actions";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;
