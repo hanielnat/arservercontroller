@@ -150,7 +150,7 @@ export function CreateServer() {
     <div className="flex min-h-0 flex-1 flex-col">
       <CreateServerHeader />
 
-      <div className="bg-secondary dark:bg-card mt-4 flex min-h-0 w-full flex-1 flex-col rounded-md p-4 md:mx-auto md:w-[98%] lg:w-[80%] xl:w-[70%]">
+      <div className="bg-secondary dark:bg-card mt-4 flex min-h-0 w-full flex-1 flex-col rounded-md p-4">
         <Progress
           value={(stepOrder.indexOf(step) * 100) / (stepOrder.length - 1)}
           className="mb-2 w-full"

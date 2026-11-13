@@ -11,7 +11,6 @@ import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServerActionDelete, ServerActions } from "@/features/dashboard/components/server-actions";
-import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import { ServerProperties } from "@/features/dashboard/components/server-properties";
 import { UpdateServerForm } from "@/features/dashboard/components/update-server-form";
 import { ServerLogs } from "@/features/dashboard/logs";
@@ -159,12 +158,6 @@ export function ServerInfo({
             </React.Fragment>
           )}
 
-          <ServerHealthIndicator
-            renderBadge={true}
-            id={server?.serverConfigData.id ?? ""}
-            className="ml-2"
-          />
-
           <span className="items-cente ml-auto flex flex-row gap-0.5">
             <ServerActions id={server?.serverConfigData.id ?? ""} />
             <ServerActionDelete
@@ -185,13 +178,13 @@ export function ServerInfo({
           </TabsList>
 
           <TabsContent value="overview">
-            <CardContent className="h-[calc(100dvh-15rem)] min-h-0 space-y-4 overflow-hidden p-0">
+            <CardContent className="min-h-0 space-y-4 overflow-hidden p-0">
               <ServerProperties config={server?.serverConfigData} className="h-full min-h-0" />
             </CardContent>
           </TabsContent>
 
           <TabsContent value="edit">
-            <CardContent className="min-h-0 min-h-[calc(100dvh-15rem)] space-y-4 p-0">
+            <CardContent className="space-y-4 p-0">
               <UpdateServerForm config={server?.serverConfigData} className="h-full min-h-0" />
             </CardContent>
           </TabsContent>
