@@ -18,7 +18,9 @@ export default defineConfig(({ mode }) => {
                 autoCodeSplitting: true,
                 semicolons: false,
             }),
-            react(),
+            react({
+                compiler: true,
+            }),
             tailwindcss(),
         ],
         resolve: {
