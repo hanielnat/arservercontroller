@@ -51,6 +51,7 @@
         "oxc-transform-react": "^0.158.0",
         "oxfmt": "^0.71.0",
         "oxlint": "^1.86.0",
+        "oxlint-plugin-organize-imports": "^0.2.0",
         "simple-git-hooks": "^2.14.0",
         "typescript": "~6.0.2",
         "vite": "^8.2.2",
