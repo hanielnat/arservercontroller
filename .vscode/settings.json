@@ -33,7 +33,6 @@
   "editor.formatOnSave": true,
   "npm.packageManager": "bun",
   "npm.scriptRunner": "bun",
-  "editor.guides.indentation": true,
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "python.createEnvironment.contentButton": "show",
@@ -45,6 +44,7 @@
     "editor.wordBasedSuggestions": "currentDocument",
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
   "explorer.fileNesting.patterns": {
     "Reforger.Dockerfile": "build-image.sh, entrypoint.sh, update.sh, healthcheck.sh",
     "pyproject.toml": "*.md, uv.lock, .python-version, alembic.ini, .*ignore"
@@ -52,7 +52,10 @@
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit",
-    "source.format.oxc": "always",
+    "source.format.oxc": "explicit",
     "source.organizeImports": "never"
-  }
+  },
+  "tailwindCSS.validate": false,
+  "oxc.typeAware": true,
+  "oxc.path.tsgolint": "./apps/web/node_modules/oxlint-tsgolint/bin/tsgolint.js"
 }

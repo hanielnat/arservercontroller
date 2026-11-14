@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# fix from https://github.com/schoero/eslint-plugin-better-tailwindcss/issues/386#issuecomment-5083965724
+export SYNCKIT_TIMEOUT=300000
+bun run lint-staged

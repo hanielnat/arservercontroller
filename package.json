@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "lint-staged": "^17.6.0"
+  },
+  "lint-staged": {
+    "apps/web/**/*.{js,jsx,ts,tsx}": [
+      "bun run --cwd ./apps/web lint:fix",
+      "bun run --cwd ./apps/web fmt"
+    ],
+    "apps/web/**/*.{json,html}": [
+      "bun run --cwd ./apps/web fmt"
+    ]
+  }
+}
