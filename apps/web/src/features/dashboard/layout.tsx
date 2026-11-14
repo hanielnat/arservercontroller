@@ -1,6 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
 import {
-  ContainerIcon,
   LayoutDashboardIcon,
   LogsIcon,
   ServerIcon,
@@ -9,7 +8,7 @@ import {
 } from "lucide-react";
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/features/dashboard/components/mode-toggle";
+import { ThemeToggler } from "@/features/dashboard/components/theme-toggler";
 import { AppSidebar } from "@/features/dashboard/components/ui/app-sidebar";
 import DashboardBreadcrumbs from "@/features/dashboard/components/ui/breadcrumb";
 import DashboardHeader from "@/features/dashboard/components/ui/header";
@@ -41,11 +40,6 @@ const navMain: NavMainItem[] = [
     icon: <LogsIcon />,
   },
   {
-    title: "Docker Status",
-    url: "/docker",
-    icon: <ContainerIcon />,
-  },
-  {
     title: "Settings",
     url: "/settings",
     icon: <SettingsIcon />,
@@ -53,11 +47,6 @@ const navMain: NavMainItem[] = [
 ] satisfies NavMainItem[];
 
 const sidebarData: SidebarData = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: navMain,
 } satisfies SidebarData;
 
@@ -71,7 +60,7 @@ export default function DashboardLayout() {
           <DashboardBreadcrumbs />
 
           <div className="ml-auto">
-            <ModeToggle />
+            <ThemeToggler />
           </div>
         </DashboardHeader>
 

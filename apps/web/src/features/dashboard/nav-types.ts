@@ -22,7 +22,7 @@ export interface NavMainItem {
 }
 
 export interface SidebarData {
-    user: {
+    user?: {
         name: string;
         email: string;
         avatar: string;
