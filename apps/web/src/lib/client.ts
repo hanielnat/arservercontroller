@@ -56,14 +56,14 @@ export async function apiClient(
     method: HttpMethod,
     endpoint: string,
     options?: ApiClientOptions,
-): Promise<unknown>;
+): Promise<void>;
 
 export async function apiClient<T>(
     method: HttpMethod,
     endpoint: string,
     schemaOrOptions?: z.ZodType<T> | ApiClientOptions,
     maybeOptions?: ApiClientOptions,
-): Promise<T | unknown> {
+): Promise<T | void> {
     const schema = schemaOrOptions && "parse" in schemaOrOptions ? schemaOrOptions : undefined;
 
     const options: ApiClientOptions = schema
@@ -72,14 +72,19 @@ export async function apiClient<T>(
 
     const { body, params, headers, ...rest } = options;
 
+    const requestHeaders = new Headers({
+        Accept: "application/json",
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+    });
+
+    new Headers(headers).forEach((value, key) => {
+        requestHeaders.set(key, value);
+    });
+
     const fetchFn = options.customFetch ?? window.fetch;
     const res = await fetchFn(buildUrl(endpoint, params), {
         method,
-        headers: {
-            Accept: "application/json",
-            ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-            ...headers,
-        },
+        headers: requestHeaders,
         body: body !== undefined ? JSON.stringify(body) : undefined,
         ...rest,
     });
