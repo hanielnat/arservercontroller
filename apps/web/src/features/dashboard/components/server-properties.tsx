@@ -26,7 +26,7 @@ interface ServerProperty {
   valueRender?: (value: ServerConfig[keyof ServerConfig] | undefined) => React.ReactNode;
 }
 
-function valueToString(value: ServerConfig[keyof ServerConfig] | undefined) {
+function valueAsString(value: ServerConfig[keyof ServerConfig] | undefined) {
   return typeof value === "string" ? value : JSON.stringify(value, null, 2);
 }
 
@@ -36,12 +36,14 @@ function valueAsRenderable(value: ServerConfig[keyof ServerConfig] | undefined):
   }
 
   if (typeof value !== "object" || typeof value === "string") {
-    return <code className="font-mono">{valueToString(value)}</code>;
+    return <code className="font-mono">{valueAsString(value)}</code>;
   }
 
   return (
-    <pre className="bg-muted max-h-32 w-full min-w-0 overflow-auto rounded p-2 text-xs sm:max-w-[60%]">
-      <code className="font-mono">{valueToString(value)}</code>
+    <pre
+      className="max-h-32 w-full min-w-0 overflow-auto rounded-md border border-input bg-muted/50 p-1.5 text-xs sm:max-w-[60%]"
+    >
+      <code className="font-mono">{valueAsString(value)}</code>
     </pre>
   );
 }
@@ -56,20 +58,26 @@ function labelIconRender(label: string, Icon: LucideIcon) {
 }
 
 function copyableValueRender(value: ServerConfig[keyof ServerConfig] | undefined) {
+  if (value === undefined || value === null) {
+    return valueAsRenderable(value);
+  }
+
   if (typeof value !== "object") {
     return (
       <span className="flex flex-row items-center gap-1">
-        <CopyTextButton size="icon-xs" value={valueToString(value)} />
-        <code className="font-mono">{valueToString(value)}</code>
+        <CopyTextButton size="icon-xs" value={valueAsString(value)} />
+        <code className="font-mono">{valueAsString(value)}</code>
       </span>
     );
   }
 
   return (
     <span className="flex w-full min-w-0 flex-row items-start gap-1 sm:max-w-[60%]">
-      <CopyTextButton size="icon-xs" value={valueToString(value)} />
-      <pre className="bg-muted/50 border-input max-h-32 min-w-0 flex-1 overflow-auto rounded-md border p-1.5 text-xs whitespace-pre">
-        <code className="font-mono">{valueToString(value)}</code>
+      <CopyTextButton size="icon-xs" value={valueAsString(value)} />
+      <pre
+        className="max-h-32 min-w-0 flex-1 overflow-auto rounded-md border border-input bg-muted/50 p-1.5 text-xs whitespace-pre"
+      >
+        <code className="font-mono">{valueAsString(value)}</code>
       </pre>
     </span>
   );
@@ -77,7 +85,9 @@ function copyableValueRender(value: ServerConfig[keyof ServerConfig] | undefined
 
 function ServerPropertyListItem({ label, value, valueRender }: Omit<ServerProperty, "key">) {
   return (
-    <li className="flex min-h-16 w-full min-w-0 shrink-0 flex-col justify-between gap-4 border-b py-2 last:border-b-0 sm:flex-row sm:items-center">
+    <li
+      className="flex min-h-16 w-full min-w-0 shrink-0 flex-col justify-between gap-4 border-b py-2 last:border-b-0 sm:flex-row sm:items-center"
+    >
       {label}
       {valueRender ? valueRender(value) : valueAsRenderable(value)}
     </li>
@@ -152,7 +162,7 @@ export function ServerProperties({
   }, [config]);
 
   return (
-    <div className={cn("flex flex-1 h-full flex-col gap-4 p-0 sm:flex-row ", className)}>
+    <div className={cn("flex flex-1 h-full flex-col gap-4 p-0 sm:flex-row", className)}>
       <div className="flex min-w-0 flex-1 flex-col gap-2 py-4">
         <span className="text-[14px]">Server details</span>
 
@@ -176,11 +186,10 @@ export function ServerProperties({
           value={JSON.stringify(config?.reforgerConfig, null, 2)}
           lang="json"
           disabled={true}
-          height="51vh"
           onChange={() => {
             return;
           }}
-          className="flex-1"
+          className="h-51vh flex-1"
         />
       </div>
     </div>

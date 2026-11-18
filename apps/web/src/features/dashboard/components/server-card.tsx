@@ -1,6 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
-import { EllipsisVerticalIcon, InfoIcon, LogsIcon, ServerIcon } from "lucide-react";
+import {
+  ContainerIcon,
+  EllipsisVerticalIcon,
+  HeartIcon,
+  InfoIcon,
+  LogsIcon,
+  MapIcon,
+  ServerIcon,
+} from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ServerActionDelete, ServerActions } from "@/features/dashboard/components/server-actions";
 import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
@@ -39,24 +48,144 @@ export default function ServerCard(props: ServerCardProps) {
   );
 
   const idFormatted = React.useMemo(
-    () => server?.serverConfigData.id.slice(0, 8) ?? "",
+    () => server?.serverConfigData.id.slice(0, 8) ?? "unknown",
     [server.serverConfigData.id],
   );
 
-  const bindAddress = server?.serverConfigData.bindAddress ?? "0.0.0.0";
-  const bindPort = server?.serverConfigData.bindPort ?? "N/A";
+  const bindAddress = server?.serverConfigData.bindAddress ?? "unknown";
+  const bindPort = server?.serverConfigData.bindPort ?? "unknown";
 
   const scenarioId = React.useMemo(() => {
     const id = (reforgerConfigGame?.scenarioId as string) ?? "";
-    let result: string | undefined = "Not set";
+    let result: string | undefined = "unknown";
 
     if (id.length > 0) {
       const missionName = id.split("/").at(-1);
       result = missionName ? missionName : result;
     }
 
-    return result;
+    return { trimmed: result, full: id };
   }, [reforgerConfigGame]);
+
+  const dropDownMenuItems = React.useMemo(
+    () => [
+      {
+        render: (
+          <Link to="/servers/$serverId" params={{ serverId: server.serverConfigData.id }}>
+            <InfoIcon />
+            Details
+          </Link>
+        ),
+      },
+      {
+        render: (
+          <Link to="/logs">
+            <LogsIcon />
+            Logs
+          </Link>
+        ),
+      },
+      {
+        render: (
+          <CopyTextButton
+            size="default"
+            showTooltip={false}
+            value={server.serverConfigData.id}
+            className="w-full justify-start"
+          >
+            Copy ID
+          </CopyTextButton>
+        ),
+      },
+      {
+        render: (
+          <CopyTextButton
+            size="default"
+            showTooltip={false}
+            value={`${bindAddress}:${bindPort}`}
+            className="w-full justify-start"
+          >
+            Copy Address
+          </CopyTextButton>
+        ),
+      },
+      {
+        render: (
+          <CopyTextButton
+            size="default"
+            showTooltip={false}
+            value={!scenarioId.full ? "unknown" : scenarioId.full}
+            className="w-full justify-start"
+          >
+            Copy scenario ID
+          </CopyTextButton>
+        ),
+      },
+    ],
+    [server.serverConfigData.id, bindAddress, bindPort, scenarioId.full],
+  );
+
+  const serverProps = React.useMemo(() => {
+    return [
+      {
+        label: (
+          <React.Fragment>
+            <HeartIcon className="rounded-md bg-secondary p-1" />
+            Health
+          </React.Fragment>
+        ),
+        render: (
+          <ServerHealthIndicator
+            id={server.serverConfigData.id}
+            showTooltip={true}
+            renderBadge={true}
+          />
+        ),
+      },
+      {
+        label: (
+          <React.Fragment>
+            <ContainerIcon className="rounded-md bg-secondary p-1" />
+            Status
+          </React.Fragment>
+        ),
+        render: (
+          <ServerStatusBadge
+            status={server?.serverConfigData.status ?? "dead"}
+            className="align-middle"
+          />
+        ),
+      },
+      {
+        label: (
+          <React.Fragment>
+            <MapIcon className="rounded-md bg-secondary p-1" />
+            Scenario
+          </React.Fragment>
+        ),
+        render: (
+          <Tooltip>
+            <TooltipTrigger
+              render={<code className="max-w-fit font-mono">{scenarioId.trimmed}</code>}
+            />
+
+            {scenarioId.full ? (
+              <TooltipContent className="max-w-fit font-mono">{scenarioId.full}</TooltipContent>
+            ) : null}
+          </Tooltip>
+        ),
+      },
+      {
+        label: (
+          <React.Fragment>
+            <ServerIcon className="rounded-md bg-secondary p-1" />
+            Server
+          </React.Fragment>
+        ),
+        render: <code className="truncate">{idFormatted}</code>,
+      },
+    ] as Array<{ label: React.ReactNode; render: React.ReactNode }>;
+  }, [scenarioId, idFormatted, server.serverConfigData.id, server.serverConfigData.status]);
 
   return (
     <Card
@@ -73,13 +202,13 @@ export default function ServerCard(props: ServerCardProps) {
             <div className="flex items-center gap-0.5">
               <Badge
                 variant="secondary"
-                className="bg-primary text-primary-foreground dark:text-primary-foreground size-fit shrink-0 overflow-hidden rounded-sm p-1"
+                className="size-fit shrink-0 overflow-hidden rounded-sm bg-primary p-1 text-primary-foreground dark:text-primary-foreground"
                 render={<ServerIcon size={16} />}
               />
 
               <Button
                 variant="link"
-                className="dark:text-primary-foreground flex flex-row items-center gap-2 text-[15px]"
+                className="flex flex-row items-center gap-2 text-[15px] dark:text-primary-foreground"
               >
                 <Link
                   to="/servers/$serverId"
@@ -101,53 +230,12 @@ export default function ServerCard(props: ServerCardProps) {
               <EllipsisVerticalIcon />
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent>
+            <DropdownMenuContent className="w-fit">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
-                <DropdownMenuItem
-                  render={
-                    <Link to="/servers/$serverId" params={{ serverId: server.serverConfigData.id }}>
-                      <InfoIcon />
-                      Details
-                    </Link>
-                  }
-                />
-
-                <DropdownMenuItem
-                  render={
-                    <Link to="/logs">
-                      <LogsIcon />
-                      Logs
-                    </Link>
-                  }
-                />
-
-                <DropdownMenuItem
-                  render={
-                    <CopyTextButton
-                      size="default"
-                      showTooltip={false}
-                      value={server.serverConfigData.id}
-                      className="w-full justify-start"
-                    >
-                      Copy ID
-                    </CopyTextButton>
-                  }
-                />
-
-                <DropdownMenuItem
-                  render={
-                    <CopyTextButton
-                      size="default"
-                      showTooltip={false}
-                      value={`${bindAddress}:${bindPort}`}
-                      className="w-full justify-start"
-                    >
-                      Copy Address
-                    </CopyTextButton>
-                  }
-                />
+                {dropDownMenuItems.map((item, index) => (
+                  <DropdownMenuItem key={index} render={item.render} />
+                ))}
               </DropdownMenuGroup>
 
               <DropdownMenuSeparator />
@@ -170,35 +258,29 @@ export default function ServerCard(props: ServerCardProps) {
           </DropdownMenu>
         </div>
 
-        <div className="text-foreground font-mono">
+        <div className="font-mono text-foreground">
           {bindAddress}:{bindPort}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-1">
-        <div className="flex items-center justify-start gap-2 text-xs">
-          <span className="text-muted-foreground">Scenario</span>
-          <code className="max-w-[60%] truncate text-right">{scenarioId ?? "Not set"}</code>
-        </div>
-
-        <div className="flex items-center justify-start gap-2 text-xs">
-          <span className="text-muted-foreground">Server ID</span>
-          <code className="truncate">{idFormatted}</code>
-        </div>
+        {serverProps.map((prop, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-[80px_minmax(0,1fr)] items-center gap-2 text-xs"
+          >
+            <span
+              className="flex shrink-0 flex-row items-center gap-1 overflow-hidden text-muted-foreground"
+            >
+              {prop.label}
+            </span>
+            {prop.render}
+          </div>
+        ))}
       </CardContent>
 
       <CardFooter>
-        <div className="flex w-full flex-row items-center gap-0.5">
-          <span className="flex items-center gap-2">
-            <ServerHealthIndicator id={server.serverConfigData.id} />
-            <ServerStatusBadge
-              status={server?.serverConfigData.status ?? "dead"}
-              className="align-middle"
-            />
-          </span>
-
-          <ServerActions id={server?.serverConfigData.id ?? ""} className="ml-auto" />
-        </div>
+        <ServerActions id={server.serverConfigData.id} className="ml-auto" />
       </CardFooter>
     </Card>
   );
