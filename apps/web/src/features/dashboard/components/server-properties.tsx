@@ -40,9 +40,7 @@ function valueAsRenderable(value: ServerConfig[keyof ServerConfig] | undefined):
   }
 
   return (
-    <pre
-      className="max-h-32 w-full min-w-0 overflow-auto rounded-md border border-input bg-muted/50 p-1.5 text-xs sm:max-w-[60%]"
-    >
+    <pre className="max-h-32 w-full min-w-0 overflow-auto rounded-md border border-input bg-muted/50 p-1.5 text-xs sm:max-w-[60%]">
       <code className="font-mono">{valueAsString(value)}</code>
     </pre>
   );
@@ -74,9 +72,7 @@ function copyableValueRender(value: ServerConfig[keyof ServerConfig] | undefined
   return (
     <span className="flex w-full min-w-0 flex-row items-start gap-1 sm:max-w-[60%]">
       <CopyTextButton size="icon-xs" value={valueAsString(value)} />
-      <pre
-        className="max-h-32 min-w-0 flex-1 overflow-auto rounded-md border border-input bg-muted/50 p-1.5 text-xs whitespace-pre"
-      >
+      <pre className="max-h-32 min-w-0 flex-1 overflow-auto rounded-md border border-input bg-muted/50 p-1.5 text-xs whitespace-pre">
         <code className="font-mono">{valueAsString(value)}</code>
       </pre>
     </span>
@@ -85,9 +81,7 @@ function copyableValueRender(value: ServerConfig[keyof ServerConfig] | undefined
 
 function ServerPropertyListItem({ label, value, valueRender }: Omit<ServerProperty, "key">) {
   return (
-    <li
-      className="flex min-h-16 w-full min-w-0 shrink-0 flex-col justify-between gap-4 border-b py-2 last:border-b-0 sm:flex-row sm:items-center"
-    >
+    <li className="flex min-h-16 w-full min-w-0 shrink-0 flex-col justify-between gap-4 border-b py-2 last:border-b-0 sm:flex-row sm:items-center">
       {label}
       {valueRender ? valueRender(value) : valueAsRenderable(value)}
     </li>
@@ -96,9 +90,11 @@ function ServerPropertyListItem({ label, value, valueRender }: Omit<ServerProper
 
 export function ServerProperties({
   config,
+  refetchStatusEnabled = true,
   className,
 }: {
   config?: ServerConfig;
+  refetchStatusEnabled?: boolean;
   className?: string;
 }) {
   const properties = useMemo((): ServerProperty[] => {
@@ -109,7 +105,7 @@ export function ServerProperties({
         value: config?.status,
         valueRender: (value) =>
           value ? (
-            <ServerStatusBadge status={value as ServerStatusEnum} />
+            <ServerStatusBadge id={config?.id ?? ""} enabled={refetchStatusEnabled} />
           ) : (
             valueAsRenderable(value)
           ),

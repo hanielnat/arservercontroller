@@ -63,7 +63,7 @@ export function HealthIndicator({
           </Badge>
         }
       />
-      <PopoverContent>{popoverContent}</PopoverContent>
+      <PopoverContent className="max-w-fit">{popoverContent}</PopoverContent>
     </Popover>
   );
 }

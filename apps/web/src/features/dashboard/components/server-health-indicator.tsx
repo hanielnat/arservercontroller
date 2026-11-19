@@ -8,6 +8,7 @@ import { useHealth } from "@/hooks/use-health";
 import { useServerStatus } from "@/hooks/use-servers";
 import { useSeverity } from "@/hooks/use-severity";
 import type { ServerStatusEnum } from "@/types/server";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ServerHealthIndicator({
   id,
@@ -20,12 +21,32 @@ export function ServerHealthIndicator({
   React.ComponentProps<typeof HealthIndicator>,
   "label" | "pulseClass" | "alternateClass" | "badgeClass"
 >) {
-  const { data: status } = useServerStatus(id ?? "", enabled);
-  const { statusToSeverity } = useSeverity();
-  const { compoundStatusToHealthTone, compoundStatusToOverallHealth } = useHealth();
+  const { data: status, isPending, isError } = useServerStatus(id ?? "", enabled);
+  const { statusToHealthTone, compoundStatusToHealthTone, compoundStatusToOverallHealth } = useHealth();
 
   const healthTone = status ? compoundStatusToHealthTone(status) : undefined;
   const healthLabel = status ? compoundStatusToOverallHealth(status) : "Unknown";
+  const healthToneUnknown = statusToHealthTone("Unknown");
+
+  if (isPending && !isError) {
+    return (
+      <Skeleton className="w-24 h-6 rounded-lg" />
+    )
+  }
+
+  if (isError) {
+    return (
+      <HealthIndicator
+        label="Unknown"
+        pulseClass={healthToneUnknown.pulse}
+        alternateClass={healthToneUnknown.alternate}
+        badgeClass={healthToneUnknown.badge}
+        renderBadge={renderBadge}
+        className={className}
+        {...props}
+      />
+    )
+  }
 
   if (!showTooltip) {
     return (
@@ -56,23 +77,19 @@ export function ServerHealthIndicator({
             <ContainerIcon size={16} />
             Container
           </span>
-          <ServerStatusBadge status={status?.container as ServerStatusEnum} />
+          <ServerStatusBadge id={id ?? ""} enabled={enabled} resource="container" />
 
           <span className="flex items-center gap-1">
             <BotIcon size={16} />
             Agent
           </span>
-          <ServerStatusBadge status={status?.agent as ServerStatusEnum} />
+          <ServerStatusBadge id={id ?? ""} enabled={enabled} resource="agent" />
 
           <span className="flex items-center gap-1">
             <ServerIcon size={16} />
             Reforger
           </span>
-          <Badge
-            variant={statusToSeverity((status?.reforger.status ?? "dead") as ServerStatusEnum)}
-          >
-            {JSON.stringify(status?.reforger, null, 2)}
-          </Badge>
+          <ServerStatusBadge id={id ?? ""} enabled={enabled} resource="reforger" />
         </div>
       }
     />

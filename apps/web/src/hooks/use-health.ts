@@ -76,9 +76,13 @@ export function useHealth() {
     );
 
     const statusToHealthTone = useCallback(
-        (status: ServerStatusEnum): HealthAsTone => {
-            const tone = statusToHealth(status);
-            return HEALTH_TO_TONE[tone];
+        (status: ServerStatusEnum | "Unknown"): HealthAsTone => {
+            if (status !== "Unknown") {
+                const tone = statusToHealth(status);
+                return HEALTH_TO_TONE[tone];
+            }
+
+            return HEALTH_TO_TONE["Unknown"]
         },
         [statusToHealth],
     );

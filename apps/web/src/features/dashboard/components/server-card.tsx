@@ -32,10 +32,11 @@ import type { ServerOut } from "@/types/server";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;
+  refetchStatusEnabled?: boolean
 };
 
 export default function ServerCard(props: ServerCardProps) {
-  const { server, className, ...rest } = props;
+  const { server, refetchStatusEnabled = true, className, ...rest } = props;
 
   const reforgerConfigGame = React.useMemo(
     () => (server?.serverConfigData.reforgerConfig.game as Record<string, unknown>) ?? undefined,
@@ -151,7 +152,8 @@ export default function ServerCard(props: ServerCardProps) {
         ),
         render: (
           <ServerStatusBadge
-            status={server?.serverConfigData.status ?? "dead"}
+            id={server.serverConfigData.id ?? ""}
+            enabled={refetchStatusEnabled}
             className="align-middle"
           />
         ),
@@ -269,9 +271,7 @@ export default function ServerCard(props: ServerCardProps) {
             key={index}
             className="grid grid-cols-[80px_minmax(0,1fr)] items-center gap-2 text-xs"
           >
-            <span
-              className="flex shrink-0 flex-row items-center gap-1 overflow-hidden text-muted-foreground"
-            >
+            <span className="flex shrink-0 flex-row items-center gap-1 overflow-hidden text-muted-foreground">
               {prop.label}
             </span>
             {prop.render}
