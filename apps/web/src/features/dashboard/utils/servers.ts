@@ -191,16 +191,19 @@ const update = async (id: string, toUpdate: ServerConfigUpdate): Promise<ServerO
     return withDelay(updated);
 };
 
-const action = async (id: string, action: ServerAction): Promise<boolean> => {
+const action = async (id: string, action: ServerAction): Promise<void> => {
     const sv = servers.find((s) => s.serverConfigData.id === id);
-    if (!sv) return false;
+    if (!sv) {
+        throw new Error(`Unknown server id ${id}`)
+    }
+
     const current = sv.serverConfigData.status;
     let nextStatus = current;
 
     switch (action) {
         case "start":
             if (current === "running") {
-                return false;
+                return;
             }
 
             await delay(2 * 1000);
@@ -209,7 +212,7 @@ const action = async (id: string, action: ServerAction): Promise<boolean> => {
 
         case "stop":
             if (current === "exited" || current === "dead") {
-                return false;
+                return;
             }
 
             await delay(2 * 1000);
@@ -218,7 +221,7 @@ const action = async (id: string, action: ServerAction): Promise<boolean> => {
 
         case "restart":
             if (current === "exited" || current === "dead") {
-                return false;
+                return;
             }
 
             await delay(2 * 1000);
@@ -247,7 +250,7 @@ const action = async (id: string, action: ServerAction): Promise<boolean> => {
     servers = servers.map((server) => (server.serverConfigData.id === id ? updated : server));
 
     persist();
-    return withDelay(true);
+    delay(300)
 };
 
 const status = async (id: string): Promise<ServerStatusOut> => {
