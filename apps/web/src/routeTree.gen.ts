@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppDockerRouteImport } from './routes/_app/docker'
 import { Route as AppLogsRouteImport } from './routes/_app/logs'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppServersServerIdRouteImport } from './routes/_app/servers/$serverId'
@@ -24,11 +23,6 @@ const AppRouteRoute = AppRouteRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppDockerRoute = AppDockerRouteImport.update({
-  id: '/docker',
-  path: '/docker',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppLogsRoute = AppLogsRouteImport.update({
@@ -54,14 +48,12 @@ const AppServersCreateRoute = AppServersCreateRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/docker': typeof AppDockerRoute
   '/logs': typeof AppLogsRoute
   '/settings': typeof AppSettingsRoute
   '/servers/$serverId': typeof AppServersServerIdRoute
   '/servers/create': typeof AppServersCreateRoute
 }
 export interface FileRoutesByTo {
-  '/docker': typeof AppDockerRoute
   '/logs': typeof AppLogsRoute
   '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
@@ -71,7 +63,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
-  '/_app/docker': typeof AppDockerRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
@@ -81,24 +72,12 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/docker'
-    | '/logs'
-    | '/settings'
-    | '/servers/$serverId'
-    | '/servers/create'
+    '/' | '/logs' | '/settings' | '/servers/$serverId' | '/servers/create'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/docker'
-    | '/logs'
-    | '/settings'
-    | '/'
-    | '/servers/$serverId'
-    | '/servers/create'
+  to: '/logs' | '/settings' | '/' | '/servers/$serverId' | '/servers/create'
   id:
     | '__root__'
     | '/_app'
-    | '/_app/docker'
     | '/_app/logs'
     | '/_app/settings'
     | '/_app/'
@@ -124,13 +103,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/docker': {
-      id: '/_app/docker'
-      path: '/docker'
-      fullPath: '/docker'
-      preLoaderRoute: typeof AppDockerRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/logs': {
@@ -165,7 +137,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteRouteChildren {
-  AppDockerRoute: typeof AppDockerRoute
   AppLogsRoute: typeof AppLogsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -174,7 +145,6 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
-  AppDockerRoute: AppDockerRoute,
   AppLogsRoute: AppLogsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
