@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   ChevronsUpDownIcon,
@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 
-import { serverKeys } from "@/api/servers.keys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -38,9 +37,12 @@ import { Toggle } from "@/components/ui/toggle";
 import ServerCard from "@/features/dashboard/components/server-card";
 import { ServerTable } from "@/features/dashboard/components/server-table";
 import { useRemoveServer } from "@/hooks/use-server-mutation";
-import { useServers } from "@/hooks/use-servers";
+import { serversQueryOptions, useServers } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 import type { ServerOut } from "@/types/server";
+import Pending from "@/components/layout/pending";
+import { QueryError } from "@/components/layout/query-error";
+import { Spinner } from "@/components/ui/spinner";
 
 function EmptyOverview() {
   return (
@@ -95,18 +97,16 @@ interface ViewState {
 }
 
 interface DashboardOverviewHeaderProps {
-  totalCount: number;
-  refetchPending: boolean;
-  refetch: () => void;
   state: ViewState;
 }
 
 function DashboardOverviewHeader({
-  totalCount,
-  refetchPending,
-  refetch,
   state,
 }: DashboardOverviewHeaderProps) {
+  const { data: totalCount, refetch, isFetching } = useQuery({
+    ...serversQueryOptions(),
+    select: (data) => data.count
+  });
   return (
     <div className="mb-2 w-full">
       <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ function DashboardOverviewHeader({
 
         <span className="flex max-w-fit gap-1">
           <div className="flex items-center gap-1.5">
-            <Label className="text-muted-foreground truncate text-xs">Sort by</Label>
+            <Label className="truncate text-xs text-muted-foreground">Sort by</Label>
             <Select
               items={
                 [
@@ -195,8 +195,8 @@ function DashboardOverviewHeader({
             {state.isGridLayout ? <LayoutDashboardIcon /> : <LayoutListIcon />}
           </Button>
 
-          <Button size="lg" variant="secondary" disabled={refetchPending} onClick={() => refetch()}>
-            <RefreshCwIcon />
+          <Button size="lg" variant="secondary" disabled={isFetching} onClick={() => void refetch()}>
+            {isFetching ? <Spinner className="size-4" /> : <RefreshCwIcon />}
           </Button>
 
           <Button
@@ -262,16 +262,10 @@ export default function DashboardOverview() {
   const [sortOrder, setSortOrder] = useState<SortingOrder>("descending");
   const [groupBy, setGroupBy] = useState<GroupByOption>("");
 
-  const { data, isPending, isError, error, refetch: refreshServers } = useServers();
+  const { data, isPending, isError, error, refetch } = useServers();
   const servers = data?.data;
 
   const deleteServer = useRemoveServer();
-
-  const qc = useQueryClient();
-  const refetch = (offset = 0, limit = 10): void => {
-    refreshServers();
-    qc.invalidateQueries({ queryKey: [serverKeys.list(offset, limit)] });
-  };
 
   const processedServers = useMemo((): ProcessedServersType => {
     if (!servers) {
@@ -334,9 +328,6 @@ export default function DashboardOverview() {
     <div className="h-full">
       {(data?.count ?? 0) > 0 && (
         <DashboardOverviewHeader
-          refetchPending={isPending}
-          refetch={refetch}
-          totalCount={data?.count ?? 0}
           state={{
             isGridLayout,
             setIsGridLayout,
@@ -352,12 +343,12 @@ export default function DashboardOverview() {
         />
       )}
 
-      {data?.count === 0 ? (
-        <EmptyOverview />
-      ) : isPending ? (
-        <div>Loading</div>
+      {isPending ? (
+        <Pending />
       ) : isError ? (
-        <div>Error {error.message}</div>
+        <QueryError error={error} onRetry={() => refetch()} title="Failed to load servers" />
+      ) : data?.count === 0 ? (
+        <EmptyOverview />
       ) : isGridLayout ? (
         groupBy !== "" && processedServers.grouped ? (
           <ServerCardsGrouped groups={processedServers.grouped} />

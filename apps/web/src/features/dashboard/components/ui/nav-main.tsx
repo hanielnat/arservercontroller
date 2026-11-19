@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon, ServerIcon } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -17,6 +17,7 @@ import { ServerHealthIndicator } from "@/features/dashboard/components/server-he
 import type { NavMainItem, NavMainSubItem } from "@/features/dashboard/nav-types";
 import { serversQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function NavSubButton({
   item,
@@ -66,7 +67,14 @@ function NavServerList() {
   });
 
   if (isPending) {
-    return <div>Loading...</div>;
+    return (
+      Array.from({ length: 5 }).map((_, i) => (
+        <span key={i} className="flex items-center gap-1 py-0.5">
+          <Skeleton className="ml-2 p-2 size-4 rounded-sm" />
+          <Skeleton className="h-6 w-full rounded-sm" />
+        </span>
+      ))
+    )
   }
 
   return servers?.map((s) => (

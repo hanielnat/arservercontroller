@@ -37,16 +37,18 @@ export function updateServerMutationOptions(qc: QueryClient) {
 
         mutationKey: ["server-operation", "update"],
 
-        onSuccess: (_data, { id }) => {
-            qc.invalidateQueries({ queryKey: serverKeys.lists() });
-            qc.invalidateQueries({ queryKey: serverKeys.detail(id) });
-            qc.invalidateQueries({ queryKey: serverKeys.status(id) });
-        },
+        onSuccess: (_data, { id }) =>
+            Promise.all([
+                qc.invalidateQueries({ queryKey: serverKeys.lists() }),
+                qc.invalidateQueries({ queryKey: serverKeys.detail(id) }),
+                qc.invalidateQueries({ queryKey: serverKeys.status(id) }),
+            ]),
     });
 }
 
 export function useUpdateServer() {
     const qc = useQueryClient();
+
     return useMutation(updateServerMutationOptions(qc));
 }
 
@@ -88,11 +90,13 @@ export function serverActionMutationOptions(qc: QueryClient) {
 
         mutationKey: ["server-operation", "action"],
 
-        onSuccess: (_data, { id }) => {
-            qc.invalidateQueries({ queryKey: serverKeys.status(id) });
-            qc.invalidateQueries({ queryKey: serverKeys.lists() });
+        onSuccess: (_data, { id }) =>
+            Promise.all([
+                qc.invalidateQueries({ queryKey: serverKeys.status(id) }),
+                qc.invalidateQueries({ queryKey: serverKeys.lists() })
+            ])
         },
-    });
+    );
 }
 
 export function useServerAction() {

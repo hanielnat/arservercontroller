@@ -1,4 +1,4 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { serversApi } from "@/api/servers";
 import { serverKeys } from "@/api/servers.keys";
@@ -17,10 +17,15 @@ export function useServers(offset = 0, limit = 10) {
     return useQuery(serversQueryOptions(offset, limit));
 }
 
+export function useSuspenseServers(offset = 0, limit = 10) {
+    return useSuspenseQuery(serversQueryOptions(offset, limit));
+}
+
 export function serverStatusQueryOptions(id: string, enabled = true) {
     return queryOptions({
         queryKey: serverKeys.status(id),
         queryFn: () => (useMock ? mockServer.status(id) : serversApi.status(id)),
+        refetchInterval: 5000,
         enabled: Boolean(id) && enabled,
     });
 }

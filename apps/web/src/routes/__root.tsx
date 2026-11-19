@@ -10,10 +10,12 @@ import Pending from "@/components/layout/pending";
 import { Toaster } from "@/components/ui/toast";
 import { PendingServerOperations } from "@/features/dashboard/components/pending-server-operations";
 import { type DashboardContext } from "@/router";
+import { RouteError } from "@/components/layout/route-error";
 
 export const Route = createRootRouteWithContext<DashboardContext>()({
   component: () => <RootLayout />,
   pendingComponent: () => <Pending />,
+  errorComponent: ({ error, reset }) => <RouteError error={error as Error} reset={reset} />,
   notFoundComponent: () => <NotFound />,
 });
 
