@@ -10,9 +10,5 @@
         }
     ],
     "tabWidth": 4,
-    "sortTailwindcss": {
-        "preserveWhitespace": false,
-        "stylesheet": "./src/index.css"
-    },
     "sortImports": true
 }

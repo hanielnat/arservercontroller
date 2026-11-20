@@ -10,7 +10,8 @@
   "lint-staged": {
     "apps/web/**/*.{js,jsx,ts,tsx}": [
       "bun run --cwd ./apps/web lint:fix",
-      "bun run --cwd ./apps/web fmt"
+      "bun run --cwd ./apps/web fmt",
+      "bun run --cwd ./apps/web lint"
     ],
     "apps/web/**/*.{json,html}": [
       "bun run --cwd ./apps/web fmt"

@@ -23,8 +23,9 @@
         "react/rules-of-hooks": "error",
         "react/only-export-components": "off",
         "react/no-children-prop": "off",
-        "better-tailwindcss/no-duplicate-classes": "warn",
-        "better-tailwindcss/no-conflicting-classes": "warn",
+        "better-tailwindcss/no-duplicate-classes": "error",
+        "better-tailwindcss/no-conflicting-classes": "error",
+        "better-tailwindcss/enforce-consistent-class-order": "warn",
         "better-tailwindcss/enforce-canonical-classes": "warn",
         "better-tailwindcss/no-unnecessary-whitespace": [
             "warn",
