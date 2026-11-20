@@ -1,5 +1,5 @@
 import { json } from "@codemirror/lang-json";
-import { vscodeDark } from "@uiw/codemirror-theme-vscode";
+import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
 import CodeMirror, {
   EditorView,
   type BasicSetupOptions,
@@ -8,6 +8,7 @@ import CodeMirror, {
 import type React from "react";
 import { useMemo } from "react";
 
+import { useTheme } from "@/hooks/providers/theme-provider";
 import { cn } from "@/lib/utils";
 
 type CodeTextAreaProps = {
@@ -33,6 +34,9 @@ export function CodeTextArea({
   className,
   ...props
 }: CodeTextAreaProps) {
+  const { theme, systemTheme } = useTheme();
+  const isDark = (theme === "system" ? systemTheme : theme) === "dark";
+
   const extensions: Extension[] = useMemo(() => {
     let result = [];
 
@@ -68,7 +72,7 @@ export function CodeTextArea({
       <CodeMirror
         extensions={extensions}
         value={value}
-        theme={vscodeDark}
+        theme={isDark ? vscodeDark : vscodeLight}
         editable={!disabled}
         basicSetup={basicSetup}
         onChange={onChange}

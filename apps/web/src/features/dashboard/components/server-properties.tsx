@@ -17,7 +17,7 @@ import { CopyTextButton } from "@/components/ui/copy-to-clipboard";
 import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
 import { cn } from "@/lib/utils";
-import type { ServerConfig, ServerStatusEnum } from "@/types/server";
+import type { ServerConfig } from "@/types/server";
 
 interface ServerProperty {
   label: React.ReactNode;
@@ -40,7 +40,13 @@ function valueAsRenderable(value: ServerConfig[keyof ServerConfig] | undefined):
   }
 
   return (
-    <pre className="max-h-32 w-full min-w-0 overflow-auto rounded-md border border-input bg-muted/50 p-1.5 text-xs sm:max-w-[60%]">
+    <pre
+      className="
+        max-h-32 w-full min-w-0 overflow-auto rounded-md border border-input bg-muted/50 p-1.5
+        text-xs
+        sm:max-w-[60%]
+      "
+    >
       <code className="font-mono">{valueAsString(value)}</code>
     </pre>
   );
@@ -72,7 +78,12 @@ function copyableValueRender(value: ServerConfig[keyof ServerConfig] | undefined
   return (
     <span className="flex w-full min-w-0 flex-row items-start gap-1 sm:max-w-[60%]">
       <CopyTextButton size="icon-xs" value={valueAsString(value)} />
-      <pre className="max-h-32 min-w-0 flex-1 overflow-auto rounded-md border border-input bg-muted/50 p-1.5 text-xs whitespace-pre">
+      <pre
+        className="
+          max-h-32 min-w-0 flex-1 overflow-auto rounded-md border border-input bg-muted/50 p-1.5
+          text-xs whitespace-pre
+        "
+      >
         <code className="font-mono">{valueAsString(value)}</code>
       </pre>
     </span>
@@ -81,7 +92,13 @@ function copyableValueRender(value: ServerConfig[keyof ServerConfig] | undefined
 
 function ServerPropertyListItem({ label, value, valueRender }: Omit<ServerProperty, "key">) {
   return (
-    <li className="flex min-h-16 w-full min-w-0 shrink-0 flex-col justify-between gap-4 border-b py-2 last:border-b-0 sm:flex-row sm:items-center">
+    <li
+      className="
+        flex min-h-16 w-full min-w-0 shrink-0 flex-col justify-between gap-4 border-b py-2
+        last:border-b-0
+        sm:flex-row sm:items-center
+      "
+    >
       {label}
       {valueRender ? valueRender(value) : valueAsRenderable(value)}
     </li>
@@ -155,10 +172,10 @@ export function ServerProperties({
         valueRender: copyableValueRender,
       },
     ];
-  }, [config]);
+  }, [refetchStatusEnabled, config]);
 
   return (
-    <div className={cn("flex flex-1 h-full flex-col gap-4 p-0 sm:flex-row", className)}>
+    <div className={cn("flex h-full flex-1 flex-col gap-4 p-0 sm:flex-row", className)}>
       <div className="flex min-w-0 flex-1 flex-col gap-2 py-4">
         <span className="text-[14px]">Server details</span>
 

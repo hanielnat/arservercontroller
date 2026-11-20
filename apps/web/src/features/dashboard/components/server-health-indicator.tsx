@@ -1,14 +1,11 @@
 import { BotIcon, ContainerIcon, ServerIcon } from "lucide-react";
 import React from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { HealthIndicator } from "@/components/ui/health-indicator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
 import { useHealth } from "@/hooks/use-health";
 import { useServerStatus } from "@/hooks/use-servers";
-import { useSeverity } from "@/hooks/use-severity";
-import type { ServerStatusEnum } from "@/types/server";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function ServerHealthIndicator({
   id,
@@ -22,16 +19,15 @@ export function ServerHealthIndicator({
   "label" | "pulseClass" | "alternateClass" | "badgeClass"
 >) {
   const { data: status, isPending, isError } = useServerStatus(id ?? "", enabled);
-  const { statusToHealthTone, compoundStatusToHealthTone, compoundStatusToOverallHealth } = useHealth();
+  const { statusToHealthTone, compoundStatusToHealthTone, compoundStatusToOverallHealth } =
+    useHealth();
 
   const healthTone = status ? compoundStatusToHealthTone(status) : undefined;
   const healthLabel = status ? compoundStatusToOverallHealth(status) : "Unknown";
   const healthToneUnknown = statusToHealthTone("Unknown");
 
   if (isPending && !isError) {
-    return (
-      <Skeleton className="w-24 h-6 rounded-lg" />
-    )
+    return <Skeleton className="h-6 w-24 rounded-lg" />;
   }
 
   if (isError) {
@@ -45,7 +41,7 @@ export function ServerHealthIndicator({
         className={className}
         {...props}
       />
-    )
+    );
   }
 
   if (!showTooltip) {

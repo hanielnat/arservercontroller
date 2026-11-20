@@ -18,7 +18,7 @@ function CreateServerFormHeader() {
       <InfoIcon />
       <div className="flex flex-col items-start">
         <span className="text-xl">Fill in server data</span>
-        <div className="text-muted-foreground text-sm">
+        <div className="text-sm text-muted-foreground">
           Define server properties like connection port and display name.
         </div>
       </div>
@@ -306,12 +306,12 @@ export function CreateServerForm({
 
                   <div className="space-y-2">
                     {entries.map(([key, value], index) => (
-                      <div key={index} className="flex gap-2">
+                      <div key={index} className="flex flex-col gap-2 sm:flex-row">
                         <Input
                           value={key}
                           onChange={(e) => updateKey(key, e.target.value)}
                           placeholder="KEY"
-                          className="w-[40%]"
+                          className="w-full min-w-0 sm:w-[40%]"
                           autoComplete="off"
                         />
 
@@ -366,7 +366,7 @@ export function CreateServerForm({
 
                   <div className="space-y-2">
                     {(field.state.value ?? []).map((item, index) => (
-                      <div key={index} className="flex gap-2">
+                      <div key={index} className="flex flex-col gap-2 sm:flex-row">
                         <Input
                           value={item?.key ?? ""}
                           onChange={(e) => {
@@ -376,7 +376,7 @@ export function CreateServerForm({
                             });
                           }}
                           placeholder="protocol"
-                          className="w-[40%]"
+                          className="w-full min-w-0 sm:w-[40%]"
                           autoComplete="off"
                         />
 

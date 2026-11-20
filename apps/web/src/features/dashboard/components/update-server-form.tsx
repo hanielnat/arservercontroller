@@ -216,12 +216,12 @@ export function UpdateServerForm({
 
         <div className="space-y-2">
           {entries.map(([key, value], index) => (
-            <div key={index} className="flex gap-2">
+            <div key={index} className="flex flex-col gap-2 sm:flex-row">
               <Input
                 value={key}
                 onChange={(e) => updateKey(key, e.target.value)}
                 placeholder="KEY"
-                className="w-[40%] font-mono"
+                className="w-full min-w-0 font-mono sm:w-[40%]"
                 autoComplete="off"
               />
 
@@ -278,7 +278,7 @@ export function UpdateServerForm({
 
         <div className="space-y-2">
           {(field.state.value ?? []).map((item, index) => (
-            <div key={index} className="flex gap-2">
+            <div key={index} className="flex flex-col gap-2 sm:flex-row">
               <Input
                 value={item?.key ?? ""}
                 onChange={(e) => {
@@ -288,7 +288,7 @@ export function UpdateServerForm({
                   });
                 }}
                 placeholder="protocol"
-                className="w-[40%] font-mono"
+                className="w-full min-w-0 font-mono sm:w-[40%]"
                 autoComplete="off"
               />
 
@@ -408,7 +408,7 @@ export function UpdateServerForm({
         id="update-server-form"
         onSubmit={handleFormSubmit}
         onReset={handleFormReset}
-        className={cn("flex flex-col space-y-8 shrink-0", className)}
+        className={cn("flex shrink-0 flex-col space-y-8", className)}
       >
         <FieldGroup className="space-y-2">
           {/* Bind Address */}
@@ -561,7 +561,10 @@ export function UpdateServerForm({
             render={
               <Button
                 variant="outline"
-                className="flex size-10 w-full flex-row items-center gap-2 text-[12px] data-panel-open:rounded-b-none"
+                className="
+                  flex size-10 w-full flex-row items-center gap-2 text-[12px]
+                  data-panel-open:rounded-b-none
+                "
               >
                 <Settings2Icon />
                 Advanced properties
@@ -570,7 +573,7 @@ export function UpdateServerForm({
             }
           />
 
-          <CollapsibleContent className="bg-muted/50 space-y-8 rounded-md rounded-tl-none rounded-tr-none border border-t-0 p-4">
+          <CollapsibleContent className="space-y-8 rounded-md rounded-t-none border border-t-0 bg-muted/50 p-4">
             <FieldGroup>
               {/* Launch Options */}
               <form.Field name="commandLine" mode="array" children={renderCommandline} />
@@ -587,7 +590,10 @@ export function UpdateServerForm({
             render={
               <Button
                 variant="outline"
-                className="flex size-10 w-full flex-row items-center justify-start gap-2 text-[12px] data-panel-open:rounded-b-none"
+                className="
+                  flex size-10 w-full flex-row items-center justify-start gap-2 text-[12px]
+                  data-panel-open:rounded-b-none
+                "
               >
                 <Code2Icon />
                 Reforger server configuration
@@ -596,7 +602,7 @@ export function UpdateServerForm({
             }
           />
 
-          <CollapsibleContent className="space-y-8 rounded-md rounded-tl-none rounded-tr-none border border-t-0">
+          <CollapsibleContent className="space-y-8 rounded-md rounded-t-none border border-t-0">
             <form.Field
               name="reforgerConfig"
               children={(field) => {

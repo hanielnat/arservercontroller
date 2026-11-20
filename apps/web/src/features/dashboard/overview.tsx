@@ -109,8 +109,8 @@ function DashboardOverviewHeader({ state }: DashboardOverviewHeaderProps) {
         <Badge variant="outline">{totalCount}</Badge>
       </div>
 
-      <div className="mt-2 flex items-center gap-2">
-        <InputGroup className="max-w-50 md:max-w-80">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <InputGroup className="w-full max-w-none sm:max-w-50 md:max-w-80">
           <InputGroupInput
             placeholder="Search by name, addres or ID"
             value={state.search}
@@ -122,7 +122,7 @@ function DashboardOverviewHeader({ state }: DashboardOverviewHeaderProps) {
           </InputGroupAddon>
         </InputGroup>
 
-        <span className="flex max-w-fit gap-1">
+        <span className="flex w-full flex-wrap gap-1 sm:w-auto">
           <div className="flex items-center gap-1.5">
             <Label className="truncate text-xs text-muted-foreground">Sort by</Label>
             <Select
