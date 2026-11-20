@@ -7,10 +7,10 @@ import { tableDevtoolsPlugin } from "@tanstack/react-table-devtools";
 
 import NotFound from "@/components/layout/not-found";
 import Pending from "@/components/layout/pending";
+import { RouteError } from "@/components/layout/route-error";
 import { Toaster } from "@/components/ui/toast";
 import { PendingServerOperations } from "@/features/dashboard/components/pending-server-operations";
 import { type DashboardContext } from "@/router";
-import { RouteError } from "@/components/layout/route-error";
 
 export const Route = createRootRouteWithContext<DashboardContext>()({
   component: () => <RootLayout />,

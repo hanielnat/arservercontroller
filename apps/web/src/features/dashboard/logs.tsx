@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useLoaderData } from "@tanstack/react-router";
 import type { VariantProps } from "class-variance-authority";
 import {
   BotIcon,
@@ -38,7 +38,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
-import { serversQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 import type { ServerStatusEnum } from "@/types/server";
 
@@ -132,7 +131,11 @@ function LogItem({ entry, showTimestamps }: { entry: LogEntry; showTimestamps: b
           )}
         >
           {showTimestamps && (
-            <time className="text-muted-foreground w-20 text-right font-mono whitespace-nowrap tabular-nums">
+            <time
+              className="
+                w-20 text-right font-mono whitespace-nowrap text-muted-foreground tabular-nums
+              "
+            >
               {entry.timestamp}
             </time>
           )}
@@ -144,7 +147,7 @@ function LogItem({ entry, showTimestamps }: { entry: LogEntry; showTimestamps: b
           )}
           <code
             className={cn(
-              "w-full min-w-0 border-l-2 font-mono wrap-break-word px-4",
+              "w-full min-w-0 border-l-2 px-4 font-mono wrap-break-word",
               levelClass.border,
             )}
           >
@@ -303,7 +306,13 @@ export function ServerLogs({
 
   return (
     <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col", className)}>
-      <div className="bg-background sticky top-0 left-0 m-0 flex flex-wrap items-center gap-2 rounded-t-md border-b p-2 sm:p-1.5">
+      <div
+        className="
+          sticky top-0 left-0 m-0 flex flex-wrap items-center gap-2 rounded-t-md border-b
+          bg-background p-2
+          sm:p-1.5
+        "
+      >
         <div className="mr-auto flex shrink-0 items-center gap-2">
           <span className="truncate">{name ? `Logs of ${name}` : "Server logs"}</span>
 
@@ -424,7 +433,10 @@ export function ServerLogs({
       <div
         ref={logScrollRef}
         onScroll={handleLogScroll}
-        className="bg-background ring-muted min-h-0 min-w-0 flex-1 overflow-y-auto rounded-md rounded-t-none p-0 ring"
+        className="
+          min-h-0 min-w-0 flex-1 overflow-y-auto rounded-md rounded-t-none bg-background p-0 ring
+          ring-muted
+        "
       >
         <div className="mt-1 px-1 py-0">
           {filteredLogs.map((log, index) => (
@@ -443,10 +455,10 @@ export function ServerLogs({
 export function LogsPage() {
   const [currentServer, setCurrentServer] = useState<SelectedServer | null>(null);
 
-  const { data: servers } = useQuery({
-    ...serversQueryOptions(),
+  const servers = useLoaderData({
+    from: "/_app/logs",
     select: (data) =>
-      data.data.map((server) => ({
+      data.servers.map((server) => ({
         label: server.serverConfigData.name ?? "Unknown",
         value: {
           id: server.serverConfigData.id,
@@ -506,7 +518,7 @@ export function LogsPage() {
               onClose={() => setCurrentServer(null)}
             />
           ) : (
-            <Empty className="bg-background border-secondary border border-dashed">
+            <Empty className="border border-dashed border-secondary bg-background">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <ServerOffIcon />

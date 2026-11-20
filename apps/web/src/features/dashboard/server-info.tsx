@@ -1,5 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useLoaderData, useNavigate } from "@tanstack/react-router";
 import { CheckIcon, InfoIcon, PenIcon, ServerIcon, XIcon } from "lucide-react";
 import React, { useState } from "react";
 
@@ -16,7 +15,6 @@ import { UpdateServerForm } from "@/features/dashboard/components/update-server-
 import { ServerLogs } from "@/features/dashboard/logs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUpdateServer } from "@/hooks/use-server-mutation";
-import { serversQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 import { ServerConfigSchema } from "@/types/server.schema";
 
@@ -48,28 +46,20 @@ function ServerInfoHeader({ id }: { id: string }) {
   );
 }
 
-export function ServerInfo({
-  id,
-  className,
-  ...props
-}: { id: string } & React.ComponentProps<"div">) {
+export function ServerInfo() {
   const [isChangingName, setIsChangingName] = useState(false);
   const [changedName, setChangedName] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const { data: server } = useQuery({
-    ...serversQueryOptions(),
-    select: (data) => data.data.find((s) => id === s.serverConfigData.id),
+  const { server } = useLoaderData({
+    from: "/_app/servers/$serverId",
   });
+  const id = server.serverConfigData.id;
 
   const update = useUpdateServer();
 
   const handleUpdateName = (newName: string) => {
-    if (!server) {
-      return;
-    }
-
     if (!server.serverConfigData.reforgerConfig) {
       return;
     }
@@ -88,7 +78,7 @@ export function ServerInfo({
   };
 
   return (
-    <div className={cn(className)} {...props}>
+    <div>
       <ServerInfoHeader id={id} />
 
       <Card className="mt-4 w-full rounded-md p-4 align-middle md:mx-auto md:min-h-min md:flex-1">
@@ -143,13 +133,13 @@ export function ServerInfo({
             </React.Fragment>
           ) : (
             <React.Fragment>
-              <span>{server?.serverConfigData.name}</span>
+              <span>{server.serverConfigData.name}</span>
 
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() => {
-                  setChangedName(server?.serverConfigData.name ?? "");
+                  setChangedName(server.serverConfigData.name ?? "");
                   setIsChangingName(true);
                 }}
               >
@@ -159,10 +149,10 @@ export function ServerInfo({
           )}
 
           <span className="items-cente ml-auto flex flex-row gap-0.5">
-            <ServerActions id={server?.serverConfigData.id ?? ""} />
+            <ServerActions id={server.serverConfigData.id ?? ""} />
             <ServerActionDelete
               size="icon"
-              id={server?.serverConfigData.id ?? ""}
+              id={server.serverConfigData.id ?? ""}
               onDelete={() => navigate({ to: "/" })}
             />
           </span>
@@ -172,20 +162,20 @@ export function ServerInfo({
           <TabsList variant="line">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="edit">Edit</TabsTrigger>
-            <TabsTrigger value="logs" disabled={server?.serverConfigData.status !== "running"}>
+            <TabsTrigger value="logs" disabled={server.serverConfigData.status !== "running"}>
               Logs
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <CardContent className="min-h-0 space-y-4 overflow-hidden p-0">
-              <ServerProperties config={server?.serverConfigData} className="h-full min-h-0" />
+              <ServerProperties config={server.serverConfigData} className="h-full min-h-0" />
             </CardContent>
           </TabsContent>
 
           <TabsContent value="edit">
             <CardContent className="space-y-4 p-0">
-              <UpdateServerForm config={server?.serverConfigData} className="h-full min-h-0" />
+              <UpdateServerForm config={server.serverConfigData} className="h-full min-h-0" />
             </CardContent>
           </TabsContent>
 

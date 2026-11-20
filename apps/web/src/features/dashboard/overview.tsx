@@ -1,11 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   ChevronsUpDownIcon,
   ContainerIcon,
   GroupIcon,
-  LayoutDashboardIcon,
-  LayoutListIcon,
   PlusIcon,
   RefreshCwIcon,
   SearchIcon,
@@ -33,16 +31,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { Toggle } from "@/components/ui/toggle";
 import ServerCard from "@/features/dashboard/components/server-card";
-import { ServerTable } from "@/features/dashboard/components/server-table";
-import { useRemoveServer } from "@/hooks/use-server-mutation";
-import { serversQueryOptions, useServers } from "@/hooks/use-servers";
+import { serversQueryOptions, useSuspenseServers } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 import type { ServerOut } from "@/types/server";
-import Pending from "@/components/layout/pending";
-import { QueryError } from "@/components/layout/query-error";
-import { Spinner } from "@/components/ui/spinner";
 
 function EmptyOverview() {
   return (
@@ -84,13 +78,11 @@ type ProcessedServersType = {
 };
 
 interface ViewState {
-  isGridLayout: boolean;
   search: string;
   sortBy: SortByOption;
   sortOrder: SortingOrder;
   groupBy: GroupByOption;
   onSearchChange: (value: string) => void;
-  setIsGridLayout: React.Dispatch<React.SetStateAction<boolean>>;
   setGroupBy: React.Dispatch<React.SetStateAction<GroupByOption>>;
   setSortOrder: React.Dispatch<React.SetStateAction<SortingOrder>>;
   setSortBy: React.Dispatch<React.SetStateAction<SortByOption>>;
@@ -100,12 +92,14 @@ interface DashboardOverviewHeaderProps {
   state: ViewState;
 }
 
-function DashboardOverviewHeader({
-  state,
-}: DashboardOverviewHeaderProps) {
-  const { data: totalCount, refetch, isFetching } = useQuery({
+function DashboardOverviewHeader({ state }: DashboardOverviewHeaderProps) {
+  const {
+    data: totalCount,
+    refetch,
+    isFetching,
+  } = useSuspenseQuery({
     ...serversQueryOptions(),
-    select: (data) => data.count
+    select: (data) => data.count,
   });
   return (
     <div className="mb-2 w-full">
@@ -190,12 +184,9 @@ function DashboardOverviewHeader({
           <Button
             size="lg"
             variant="secondary"
-            onClick={() => state.setIsGridLayout((prev) => !prev)}
+            disabled={isFetching}
+            onClick={() => void refetch()}
           >
-            {state.isGridLayout ? <LayoutDashboardIcon /> : <LayoutListIcon />}
-          </Button>
-
-          <Button size="lg" variant="secondary" disabled={isFetching} onClick={() => void refetch()}>
             {isFetching ? <Spinner className="size-4" /> : <RefreshCwIcon />}
           </Button>
 
@@ -256,17 +247,13 @@ function ServerCardsGrouped({ groups }: { groups: GroupedServers }) {
 }
 
 export default function DashboardOverview() {
-  const [isGridLayout, setIsGridLayout] = useState(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortByOption>("updated");
   const [sortOrder, setSortOrder] = useState<SortingOrder>("descending");
   const [groupBy, setGroupBy] = useState<GroupByOption>("");
 
-  const { data, isPending, isError, error, refetch } = useServers();
-  const servers = data?.data;
-
-  const deleteServer = useRemoveServer();
-
+  const { data } = useSuspenseServers();
+  const servers = data.data;
   const processedServers = useMemo((): ProcessedServersType => {
     if (!servers) {
       return {
@@ -329,8 +316,6 @@ export default function DashboardOverview() {
       {(data?.count ?? 0) > 0 && (
         <DashboardOverviewHeader
           state={{
-            isGridLayout,
-            setIsGridLayout,
             search,
             onSearchChange: setSearch,
             sortBy,
@@ -343,30 +328,12 @@ export default function DashboardOverview() {
         />
       )}
 
-      {isPending ? (
-        <Pending />
-      ) : isError ? (
-        <QueryError error={error} onRetry={() => refetch()} title="Failed to load servers" />
-      ) : data?.count === 0 ? (
+      {data?.count === 0 ? (
         <EmptyOverview />
-      ) : isGridLayout ? (
-        groupBy !== "" && processedServers.grouped ? (
-          <ServerCardsGrouped groups={processedServers.grouped} />
-        ) : (
-          <ServerCardsGrid servers={processedServers.list} />
-        )
+      ) : groupBy !== "" && processedServers.grouped ? (
+        <ServerCardsGrouped groups={processedServers.grouped} />
       ) : (
-        <ServerTable
-          servers={processedServers.list}
-          search={search}
-          onSearchChange={setSearch}
-          onEdit={(server) => {
-            console.log("edit", server.serverConfigData.id);
-          }}
-          onDelete={(server) =>
-            deleteServer.mutate({ id: server.serverConfigData.id, force: true })
-          }
-        />
+        <ServerCardsGrid servers={processedServers.list} />
       )}
     </div>
   );

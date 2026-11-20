@@ -32,12 +32,10 @@ import type { ServerOut } from "@/types/server";
 
 type ServerCardProps = React.ComponentProps<"div"> & {
   server: ServerOut;
-  refetchStatusEnabled?: boolean
+  refetchStatusEnabled?: boolean;
 };
 
-export default function ServerCard(props: ServerCardProps) {
-  const { server, refetchStatusEnabled = true, className, ...rest } = props;
-
+export default function ServerCard({ server, refetchStatusEnabled = true }: ServerCardProps) {
   const reforgerConfigGame = React.useMemo(
     () => (server?.serverConfigData.reforgerConfig.game as Record<string, unknown>) ?? undefined,
     [server.serverConfigData.reforgerConfig],
@@ -187,16 +185,14 @@ export default function ServerCard(props: ServerCardProps) {
         render: <code className="truncate">{idFormatted}</code>,
       },
     ] as Array<{ label: React.ReactNode; render: React.ReactNode }>;
-  }, [scenarioId, idFormatted, server.serverConfigData.id, server.serverConfigData.status]);
+  }, [refetchStatusEnabled, scenarioId, idFormatted, server.serverConfigData.id]);
 
   return (
     <Card
       className={cn(
         "ring-muted ring-2 hover:ring-1 hover:ring-muted-foreground/50",
         "transition-all",
-        className,
       )}
-      {...rest}
     >
       <CardHeader className="space-y-3">
         <div className="flex items-start gap-2">
