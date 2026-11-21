@@ -8,3 +8,20 @@ export interface Crumb {
 
 export type WebSocketLike = WebSocket | MockWebSocket;
 export type EventSourceLike = EventSource | MockEventSource;
+
+export type SortByOption = "updated" | "created" | "name";
+export type SortingOrder = "descending" | "ascending";
+export type GroupByOption = "" | "status";
+
+export type SettingsType = {
+    interface: {
+        sortBy: SortByOption;
+        sortOrder: SortingOrder;
+        groupBy: GroupByOption;
+    };
+
+    queries: {
+        pollingEnabled: boolean;
+        pollingInterval: number;
+    };
+};

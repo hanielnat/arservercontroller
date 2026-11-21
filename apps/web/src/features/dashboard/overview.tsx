@@ -34,8 +34,10 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Toggle } from "@/components/ui/toggle";
 import ServerCard from "@/features/dashboard/components/server-card";
+import { useSettings } from "@/hooks/providers/settings-provider";
 import { serversQueryOptions, useSuspenseServers } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
+import type { GroupByOption, SortByOption, SortingOrder } from "@/types/dashboard";
 import type { ServerOut } from "@/types/server";
 
 function EmptyOverview() {
@@ -66,10 +68,6 @@ function EmptyOverview() {
   );
 }
 
-type SortingOrder = "descending" | "ascending";
-type SortByOption = "updated" | "created" | "name";
-type GroupByOption = "" | "status";
-
 type GroupedServers = Partial<Record<string, ServerOut[]>>;
 
 type ProcessedServersType = {
@@ -83,9 +81,9 @@ interface ViewState {
   sortOrder: SortingOrder;
   groupBy: GroupByOption;
   onSearchChange: (value: string) => void;
-  setGroupBy: React.Dispatch<React.SetStateAction<GroupByOption>>;
-  setSortOrder: React.Dispatch<React.SetStateAction<SortingOrder>>;
-  setSortBy: React.Dispatch<React.SetStateAction<SortByOption>>;
+  setGroupBy: (value: GroupByOption) => void;
+  setSortOrder: (value: SortingOrder) => void;
+  setSortBy: (value: SortByOption) => void;
 }
 
 interface DashboardOverviewHeaderProps {
@@ -163,7 +161,8 @@ function DashboardOverviewHeader({ state }: DashboardOverviewHeaderProps) {
 
           <Toggle
             variant="outline"
-            onClick={() => state.setGroupBy((prev) => (prev === "status" ? "" : "status"))}
+            pressed={state.groupBy === "status"}
+            onClick={() => state.setGroupBy(state.groupBy === "status" ? "" : "status")}
           >
             <GroupIcon className="group-aria-pressed/toggle:fill-foreground" />
             {state.groupBy === "" ? "Group by none" : `Group by ${state.groupBy}`}
@@ -171,8 +170,9 @@ function DashboardOverviewHeader({ state }: DashboardOverviewHeaderProps) {
 
           <Toggle
             variant="outline"
+            pressed={state.sortOrder === "ascending"}
             onClick={() =>
-              state.setSortOrder((prev) => (prev === "ascending" ? "descending" : "ascending"))
+              state.setSortOrder(state.sortOrder === "ascending" ? "descending" : "ascending")
             }
           >
             <ChevronsUpDownIcon />
@@ -247,13 +247,36 @@ function ServerCardsGrouped({ groups }: { groups: GroupedServers }) {
 }
 
 export default function DashboardOverview() {
+  const { settings, setSettings } = useSettings();
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<SortByOption>("updated");
-  const [sortOrder, setSortOrder] = useState<SortingOrder>("descending");
-  const [groupBy, setGroupBy] = useState<GroupByOption>("");
+  const sortBy = settings.interface.sortBy;
+  const sortOrder = settings.interface.sortOrder;
+  const groupBy = settings.interface.groupBy;
+
+  const setSortBy = (sortBy: SortByOption) => {
+    setSettings((current) => ({
+      ...current,
+      interface: { ...current.interface, sortBy },
+    }));
+  };
+
+  const setSortOrder = (sortOrder: SortingOrder) => {
+    setSettings((current) => ({
+      ...current,
+      interface: { ...current.interface, sortOrder },
+    }));
+  };
+
+  const setGroupBy = (groupBy: GroupByOption) => {
+    setSettings((current) => ({
+      ...current,
+      interface: { ...current.interface, groupBy },
+    }));
+  };
 
   const { data } = useSuspenseServers();
   const servers = data.data;
+
   const processedServers = useMemo((): ProcessedServersType => {
     if (!servers) {
       return {

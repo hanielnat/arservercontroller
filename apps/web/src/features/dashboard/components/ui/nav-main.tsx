@@ -13,11 +13,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import type { NavMainItem, NavMainSubItem } from "@/features/dashboard/nav-types";
+import { useSettings } from "@/hooks/providers/settings-provider";
 import { serversQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
 
 function NavSubButton({
   item,
@@ -54,10 +55,12 @@ function NavSubButton({
 
 function NavServerList() {
   const max = 5;
+  const { settings } = useSettings();
 
   const { data: servers, isPending } = useQuery({
     ...serversQueryOptions(),
-    refetchInterval: 5000,
+    enabled: settings.queries.pollingEnabled,
+    refetchInterval: settings.queries.pollingEnabled ? settings.queries.pollingInterval : false,
     select: (data) =>
       data.data
         .filter((server) => server.serverConfigData.status === "running")
@@ -67,14 +70,12 @@ function NavServerList() {
   });
 
   if (isPending) {
-    return (
-      Array.from({ length: 5 }).map((_, i) => (
-        <span key={i} className="flex items-center gap-1 py-0.5">
-          <Skeleton className="ml-2 p-2 size-4 rounded-sm" />
-          <Skeleton className="h-6 w-full rounded-sm" />
-        </span>
-      ))
-    )
+    return Array.from({ length: 5 }).map((_, i) => (
+      <span key={i} className="flex items-center gap-1 py-0.5">
+        <Skeleton className="ml-2 size-4 rounded-sm p-2" />
+        <Skeleton className="h-6 w-full rounded-sm" />
+      </span>
+    ));
   }
 
   return servers?.map((s) => (
@@ -83,7 +84,7 @@ function NavServerList() {
         render={
           <Link to="/servers/$serverId" params={{ serverId: s.id }}>
             <ServerIcon />
-            <ServerHealthIndicator id={s.id} />
+            <ServerHealthIndicator id={s.id} enabled={settings.queries.pollingEnabled} />
             <span className="font-sm truncate">{s.name}</span>
           </Link>
         }
@@ -109,7 +110,12 @@ export function NavMain({ items }: { items: NavMainItem[] }) {
 
                 <span>{item.title}</span>
 
-                <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-open/collapsible:rotate-90" />
+                <ChevronRightIcon
+                  className="
+                    ml-auto transition-transform duration-200
+                    group-data-open/collapsible:rotate-90
+                  "
+                />
               </CollapsibleTrigger>
 
               <CollapsibleContent>
