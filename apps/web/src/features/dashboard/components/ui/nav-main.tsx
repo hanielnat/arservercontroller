@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ServerHealthIndicator } from "@/features/dashboard/components/server-health-indicator";
 import type { NavMainItem, NavMainSubItem } from "@/features/dashboard/nav-types";
 import { useSettings } from "@/hooks/providers/settings-provider";
-import { serversQueryOptions } from "@/hooks/use-servers";
+import { useServersQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 
 function NavSubButton({
@@ -54,11 +54,11 @@ function NavSubButton({
 }
 
 function NavServerList() {
-  const max = 5;
   const { settings } = useSettings();
+  const max = Math.max(1, settings.interface.maxSidebarServersShown);
 
   const { data: servers, isPending } = useQuery({
-    ...serversQueryOptions(),
+    ...useServersQueryOptions(),
     enabled: settings.queries.pollingEnabled,
     refetchInterval: settings.queries.pollingEnabled ? settings.queries.pollingInterval : false,
     select: (data) =>
@@ -70,7 +70,7 @@ function NavServerList() {
   });
 
   if (isPending) {
-    return Array.from({ length: 5 }).map((_, i) => (
+    return Array.from({ length: max }).map((_, i) => (
       <span key={i} className="flex items-center gap-1 py-0.5">
         <Skeleton className="ml-2 size-4 rounded-sm p-2" />
         <Skeleton className="h-6 w-full rounded-sm" />

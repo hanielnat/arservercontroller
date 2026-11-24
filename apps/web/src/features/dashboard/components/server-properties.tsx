@@ -107,11 +107,9 @@ function ServerPropertyListItem({ label, value, valueRender }: Omit<ServerProper
 
 export function ServerProperties({
   config,
-  refetchStatusEnabled = true,
   className,
 }: {
   config?: ServerConfig;
-  refetchStatusEnabled?: boolean;
   className?: string;
 }) {
   const properties = useMemo((): ServerProperty[] => {
@@ -121,11 +119,7 @@ export function ServerProperties({
         key: "status",
         value: config?.status,
         valueRender: (value) =>
-          value ? (
-            <ServerStatusBadge id={config?.id ?? ""} enabled={refetchStatusEnabled} />
-          ) : (
-            valueAsRenderable(value)
-          ),
+          value ? <ServerStatusBadge id={config?.id ?? ""} /> : valueAsRenderable(value),
       },
       {
         label: labelIconRender("IP Address (IPv4)", NetworkIcon),
@@ -172,7 +166,7 @@ export function ServerProperties({
         valueRender: copyableValueRender,
       },
     ];
-  }, [refetchStatusEnabled, config]);
+  }, [config]);
 
   return (
     <div className={cn("flex h-full flex-1 flex-col gap-4 p-0 sm:flex-row", className)}>
@@ -183,7 +177,7 @@ export function ServerProperties({
           <ServerPropertyListItem
             label={labelIconRender("Server Health", HeartIcon)}
             value={null}
-            valueRender={() => <ServerHealthIndicator id={config?.id} renderBadge={true} />}
+            valueRender={() => <ServerHealthIndicator id={config?.id ?? ""} renderBadge={true} />}
           />
 
           {properties.map(({ key, ...property }) => (

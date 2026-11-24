@@ -35,7 +35,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Toggle } from "@/components/ui/toggle";
 import ServerCard from "@/features/dashboard/components/server-card";
 import { useSettings } from "@/hooks/providers/settings-provider";
-import { serversQueryOptions, useSuspenseServers } from "@/hooks/use-servers";
+import { useServersQueryOptions, useSuspenseServers } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 import type { GroupByOption, SortByOption, SortingOrder } from "@/types/dashboard";
 import type { ServerOut } from "@/types/server";
@@ -96,7 +96,7 @@ function DashboardOverviewHeader({ state }: DashboardOverviewHeaderProps) {
     refetch,
     isFetching,
   } = useSuspenseQuery({
-    ...serversQueryOptions(),
+    ...useServersQueryOptions(),
     select: (data) => data.count,
   });
   return (

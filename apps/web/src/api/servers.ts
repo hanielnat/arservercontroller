@@ -21,7 +21,7 @@ import {
 const useMock = import.meta.env.DEV;
 
 export const serversApi = {
-    list: async (offset = 0, limit = 10, options?: ApiClientOptions) =>
+    list: async (offset: number, limit: number, options?: ApiClientOptions) =>
         await apiClient<ServersOut>("GET", "/servers", ServersOutSchema, {
             params: { offset, limit },
             ...options,
@@ -39,7 +39,7 @@ export const serversApi = {
             ...options,
         }),
 
-    remove: async (id: string, force = false, options?: ApiClientOptions) =>
+    remove: async (id: string, force: boolean, options?: ApiClientOptions) =>
         await apiClient("DELETE", `/servers/${id}`, {
             params: { force },
             ...options,
@@ -76,12 +76,7 @@ export const serversApi = {
             ? mockServer.logStream(id, limit, follow)
             : new EventSource(buildUrl(`/servers/${id}/logs/stream`, { limit, follow })),
 
-    containerLogStream: (
-        id: string,
-        tail: number,
-        follow: boolean,
-        showTimeStamp: boolean = false,
-    ) =>
+    containerLogStream: (id: string, tail: number, follow: boolean, showTimeStamp: boolean) =>
         useMock
             ? mockServer.containerLogStream(id, tail, follow, showTimeStamp)
             : new EventSource(

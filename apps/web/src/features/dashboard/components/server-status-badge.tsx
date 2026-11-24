@@ -1,12 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSettings } from "@/hooks/providers/settings-provider";
 import { useServerStatus } from "@/hooks/use-servers";
 import { useSeverity } from "@/hooks/use-severity";
 import { cn } from "@/lib/utils";
 
 export function ServerStatusBadge({
   id,
-  enabled = true,
   resource = "container",
   className,
   ...props
@@ -15,7 +15,11 @@ export function ServerStatusBadge({
   enabled?: boolean;
   resource?: "agent" | "container" | "reforger";
 } & React.ComponentProps<typeof Badge>) {
-  const { data, isPending, isError } = useServerStatus(id ?? "", enabled);
+  const { settings } = useSettings();
+  const { data, isPending, isError } = useServerStatus(
+    id,
+    id.length > 0 && settings.queries.pollingEnabled,
+  );
   const { statusToSeverity } = useSeverity();
 
   if (isPending && !isError) {

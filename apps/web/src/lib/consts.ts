@@ -9,6 +9,8 @@ export const DEFAULT_DASHBOARD_SETTINGS: SettingsType = {
         sortOrder: "descending",
         sortBy: "updated",
         groupBy: "",
+        maxServersShown: 5,
+        maxSidebarServersShown: 5,
     },
 
     queries: {

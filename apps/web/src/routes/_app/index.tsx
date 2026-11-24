@@ -12,8 +12,5 @@ export const Route = createFileRoute("/_app/")({
       crumb: { label: "Overview", to: "/" },
     };
   },
-  loader: ({ context }) =>
-    context.queryClient.query({
-      ...serversQueryOptions(),
-    }),
+  loader: ({ context }) => context.queryClient.query(serversQueryOptions()),
 });

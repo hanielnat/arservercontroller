@@ -5,7 +5,6 @@ import { RouteError } from "@/components/layout/route-error";
 import { ServerInfo } from "@/features/dashboard/server-info";
 import { serversQueryOptions } from "@/hooks/use-servers";
 import { queryClient } from "@/router";
-import type { ServerOut } from "@/types/server";
 
 export const Route = createFileRoute("/_app/servers/$serverId")({
   pendingMs: 200,

@@ -14,6 +14,7 @@ import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -180,6 +181,54 @@ export function SettingsPage() {
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                  }
+                />
+
+                <SettingRow
+                  id="input-max-servers-shown"
+                  label="Maximum servers shown"
+                  description="Set the number of displayed servers in dashboard overview and subsequent queries (minimum 5 servers)."
+                  control={
+                    <Input
+                      id="input-max-servers-shown"
+                      type="number"
+                      value={settings.interface.maxServersShown}
+                      onChange={(ev) => {
+                        const value = Math.max(5, ev.target.valueAsNumber);
+                        setSettings((current) => ({
+                          ...current,
+                          interface: {
+                            ...current.interface,
+                            maxServersShown: value,
+                          },
+                        }));
+                      }}
+                      className="w-[86px]"
+                    />
+                  }
+                />
+
+                <SettingRow
+                  id="input-max-sidebar-servers-shown"
+                  label="Maximum running servers shown in sidebar"
+                  description="Set the number of running servers displayed in dashboard sidebar (minimum 1 server)."
+                  control={
+                    <Input
+                      id="input-max-servers-shown"
+                      type="number"
+                      value={settings.interface.maxSidebarServersShown}
+                      onChange={(ev) => {
+                        const value = Math.max(1, ev.target.valueAsNumber);
+                        setSettings((current) => ({
+                          ...current,
+                          interface: {
+                            ...current.interface,
+                            maxSidebarServersShown: value,
+                          },
+                        }));
+                      }}
+                      className="w-[86px]"
+                    />
                   }
                 />
 

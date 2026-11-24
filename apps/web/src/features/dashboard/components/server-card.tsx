@@ -30,12 +30,7 @@ import { ServerHealthIndicator } from "@/features/dashboard/components/server-he
 import { ServerStatusBadge } from "@/features/dashboard/components/server-status-badge";
 import type { ServerOut } from "@/types/server";
 
-type ServerCardProps = React.ComponentProps<"div"> & {
-  server: ServerOut;
-  refetchStatusEnabled?: boolean;
-};
-
-export default function ServerCard({ server, refetchStatusEnabled = true }: ServerCardProps) {
+export default function ServerCard({ server }: { server: ServerOut }) {
   const reforgerConfigGame = React.useMemo(
     () => (server?.serverConfigData.reforgerConfig.game as Record<string, unknown>) ?? undefined,
     [server.serverConfigData.reforgerConfig],
@@ -148,13 +143,7 @@ export default function ServerCard({ server, refetchStatusEnabled = true }: Serv
             Status
           </React.Fragment>
         ),
-        render: (
-          <ServerStatusBadge
-            id={server.serverConfigData.id ?? ""}
-            enabled={refetchStatusEnabled}
-            className="align-middle"
-          />
-        ),
+        render: <ServerStatusBadge id={server.serverConfigData.id} className="align-middle" />,
       },
       {
         label: (
@@ -185,12 +174,12 @@ export default function ServerCard({ server, refetchStatusEnabled = true }: Serv
         render: <code className="truncate">{idFormatted}</code>,
       },
     ] as Array<{ label: React.ReactNode; render: React.ReactNode }>;
-  }, [refetchStatusEnabled, scenarioId, idFormatted, server.serverConfigData.id]);
+  }, [scenarioId, idFormatted, server.serverConfigData.id]);
 
   return (
     <Card
       className={cn(
-        "ring-muted ring-2 hover:ring-1 hover:ring-muted-foreground/50",
+        "ring-2 ring-muted hover:ring-1 hover:ring-muted-foreground/50",
         "transition-all",
       )}
     >
@@ -200,13 +189,20 @@ export default function ServerCard({ server, refetchStatusEnabled = true }: Serv
             <div className="flex items-center gap-0.5">
               <Badge
                 variant="secondary"
-                className="size-fit shrink-0 overflow-hidden rounded-sm bg-primary p-1 text-primary-foreground dark:text-primary-foreground"
+                className="
+                  size-fit shrink-0 overflow-hidden rounded-sm bg-primary p-1
+                  text-primary-foreground
+                  dark:text-primary-foreground
+                "
                 render={<ServerIcon size={16} />}
               />
 
               <Button
                 variant="link"
-                className="flex flex-row items-center gap-2 text-[15px] dark:text-primary-foreground"
+                className="
+                  flex flex-row items-center gap-2 text-[15px]
+                  dark:text-primary-foreground
+                "
               >
                 <Link
                   to="/servers/$serverId"
@@ -267,7 +263,11 @@ export default function ServerCard({ server, refetchStatusEnabled = true }: Serv
             key={index}
             className="grid grid-cols-[80px_minmax(0,1fr)] items-center gap-2 text-xs"
           >
-            <span className="flex shrink-0 flex-row items-center gap-1 overflow-hidden text-muted-foreground">
+            <span
+              className="
+                flex shrink-0 flex-row items-center gap-1 overflow-hidden text-muted-foreground
+              "
+            >
               {prop.label}
             </span>
             {prop.render}

@@ -12,9 +12,12 @@ interface SettingsProviderState {
 
 const SettingsContext = React.createContext<SettingsProviderState | undefined>(undefined);
 
-function readStoredSettings(): SettingsType {
-  const stored = localStorage.getItem(DASHBOARD_SETTINGS_KEY);
+export function getStoredSettings(): SettingsType {
+  if (typeof window === "undefined") {
+    return DEFAULT_DASHBOARD_SETTINGS;
+  }
 
+  const stored = localStorage.getItem(DASHBOARD_SETTINGS_KEY);
   if (!stored) {
     return DEFAULT_DASHBOARD_SETTINGS;
   }
@@ -38,7 +41,7 @@ function readStoredSettings(): SettingsType {
 }
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = React.useState<SettingsType>(readStoredSettings);
+  const [settings, setSettings] = React.useState<SettingsType>(getStoredSettings);
 
   React.useEffect(() => {
     localStorage.setItem(DASHBOARD_SETTINGS_KEY, JSON.stringify(settings));
@@ -47,7 +50,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     const syncFromStorage = (event: StorageEvent) => {
       if (event.key === DASHBOARD_SETTINGS_KEY) {
-        setSettings(readStoredSettings());
+        setSettings(getStoredSettings());
       }
     };
 

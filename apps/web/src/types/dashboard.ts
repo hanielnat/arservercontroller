@@ -18,6 +18,8 @@ export type SettingsType = {
         sortBy: SortByOption;
         sortOrder: SortingOrder;
         groupBy: GroupByOption;
+        maxServersShown: number;
+        maxSidebarServersShown: number;
     };
 
     queries: {

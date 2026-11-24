@@ -3,22 +3,29 @@ import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { serversApi } from "@/api/servers";
 import { serverKeys } from "@/api/servers.keys";
 import { mockServer } from "@/features/dashboard/utils/servers";
+import { getStoredSettings, useSettings } from "@/hooks/providers/settings-provider";
 
 const useMock = import.meta.env.DEV;
 
-export function serversQueryOptions(offset = 0, limit = 10) {
+export function serversQueryOptions(offset = 0, limit?: number) {
+    const max = limit ?? getStoredSettings().interface.maxServersShown;
     return queryOptions({
-        queryKey: serverKeys.list(offset, limit),
-        queryFn: () => (useMock ? mockServer.list(limit) : serversApi.list(offset, limit)),
+        queryKey: serverKeys.list(offset, max),
+        queryFn: () => (useMock ? mockServer.list(max) : serversApi.list(offset, max)),
     });
 }
 
-export function useServers(offset = 0, limit = 10) {
-    return useQuery(serversQueryOptions(offset, limit));
+export function useServersQueryOptions(offset = 0, limit?: number) {
+    const settingsMax = useSettings().settings.interface.maxServersShown;
+    return serversQueryOptions(offset, limit ?? settingsMax);
 }
 
-export function useSuspenseServers(offset = 0, limit = 10) {
-    return useSuspenseQuery(serversQueryOptions(offset, limit));
+export function useServers(offset = 0, limit?: number) {
+    return useQuery(useServersQueryOptions(offset, limit));
+}
+
+export function useSuspenseServers(offset = 0, limit?: number) {
+    return useSuspenseQuery(useServersQueryOptions(offset, limit));
 }
 
 export function serverStatusQueryOptions(id: string, enabled = true) {

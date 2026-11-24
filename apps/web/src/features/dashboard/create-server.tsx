@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   CheckIcon,
@@ -16,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { CreateServerForm } from "@/features/dashboard/components/create-server-form";
 import { ServerCreationProgress } from "@/features/dashboard/components/server-creation-progress";
 import { ServerProperties } from "@/features/dashboard/components/server-properties";
-import { useServers } from "@/hooks/use-servers";
+import { useServersQueryOptions } from "@/hooks/use-servers";
 import { cn } from "@/lib/utils";
 
 type Steps = "form" | "logs" | "result";
@@ -61,8 +62,10 @@ function CreateServerHeader() {
 }
 
 function CreatedServerDetails({ id }: { id: string }) {
-  const { data: servers, isPending } = useServers(0, 100);
-  const server = servers?.data.find((item) => item.serverConfigData.id === id);
+  const { data: server, isPending } = useQuery({
+    ...useServersQueryOptions(),
+    select: (data) => data.data.find((found) => found.serverConfigData.id === id),
+  });
 
   return (
     <>
@@ -70,7 +73,7 @@ function CreatedServerDetails({ id }: { id: string }) {
         <ListIcon />
         <div className="flex flex-col items-start">
           <span className="text-xl">Created Server Details</span>
-          <div className="text-muted-foreground text-sm">
+          <div className="text-sm text-muted-foreground">
             {server?.serverConfigData.name ??
               (isPending ? "Loading server details..." : "Server details unavailable.")}
           </div>
@@ -150,7 +153,12 @@ export function CreateServer() {
     <div className="flex min-h-0 flex-1 flex-col">
       <CreateServerHeader />
 
-      <div className="bg-secondary dark:bg-card mt-4 flex min-h-0 w-full flex-1 flex-col rounded-md p-4">
+      <div
+        className="
+          mt-4 flex min-h-0 w-full flex-1 flex-col rounded-md bg-secondary p-4
+          dark:bg-card
+        "
+      >
         <Progress
           value={(stepOrder.indexOf(step) * 100) / (stepOrder.length - 1)}
           className="mb-2 w-full"

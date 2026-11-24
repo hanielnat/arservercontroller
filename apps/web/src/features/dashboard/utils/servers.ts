@@ -103,10 +103,10 @@ let servers: ServerOut[] = loadServers();
 
 const persist = () => saveServers(servers);
 
-const list = async (count: number = 20): Promise<ServersOut> => {
-    const times = Math.min(count, 20);
+const list = async (count?: number): Promise<ServersOut> => {
+    const times = count ?? 5;
 
-    if (servers.length === 0) {
+    if (servers.length === 0 || times > servers.length) {
         for (let i = 0; i < times; ++i) {
             servers.push({
                 createdAt: new Date().valueOf(),
@@ -135,9 +135,10 @@ const list = async (count: number = 20): Promise<ServersOut> => {
         persist();
     }
 
+    const paginated = servers.slice(0, times);
     return withDelay({
-        count: servers.length,
-        data: servers,
+        count: paginated.length,
+        data: paginated,
     });
 };
 
@@ -194,7 +195,7 @@ const update = async (id: string, toUpdate: ServerConfigUpdate): Promise<ServerO
 const action = async (id: string, action: ServerAction): Promise<void> => {
     const sv = servers.find((s) => s.serverConfigData.id === id);
     if (!sv) {
-        throw new Error(`Unknown server id ${id}`)
+        throw new Error(`Unknown server id ${id}`);
     }
 
     const current = sv.serverConfigData.status;
@@ -250,7 +251,7 @@ const action = async (id: string, action: ServerAction): Promise<void> => {
     servers = servers.map((server) => (server.serverConfigData.id === id ? updated : server));
 
     persist();
-    delay(300)
+    delay(300);
 };
 
 const status = async (id: string): Promise<ServerStatusOut> => {
