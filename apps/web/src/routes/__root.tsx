@@ -1,15 +1,15 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
-import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { tableDevtoolsPlugin } from "@tanstack/react-table-devtools";
 
 import NotFound from "@/components/layout/not-found";
 import Pending from "@/components/layout/pending";
 import { RouteError } from "@/components/layout/route-error";
 import { Toaster } from "@/components/ui/toast";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { PendingServerOperations } from "@/features/dashboard/components/pending-server-operations";
+import { SettingsProvider } from "@/hooks/providers/settings-provider";
+import { ThemeProvider } from "@/hooks/providers/theme-provider";
 import { type DashboardContext } from "@/router";
 
 export const Route = createRootRouteWithContext<DashboardContext>()({
@@ -21,17 +21,17 @@ export const Route = createRootRouteWithContext<DashboardContext>()({
 
 function RootLayout() {
   return (
-    <>
-      <Outlet />
-      <PendingServerOperations />
-      <Toaster />
-      <hr />
-      <TanStackDevtools
-        config={{ hideUntilHover: true }}
-        plugins={[formDevtoolsPlugin(), tableDevtoolsPlugin()]}
-      />
-      <ReactQueryDevtools initialIsOpen={false} />
-      <TanStackRouterDevtools />
-    </>
+    <ThemeProvider defaultTheme="dark" storageKey="dark-mode">
+      <SettingsProvider>
+        <TooltipProvider>
+          <Toaster />
+          <PendingServerOperations />
+          <Outlet />
+          <hr />
+          <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+          <TanStackRouterDevtools />
+        </TooltipProvider>
+      </SettingsProvider>
+    </ThemeProvider>
   );
 }
