@@ -33,5 +33,4 @@ export * from "./utils/servers";
 export {
   mockServer as testMockServer,
   mockServerCreatedSchema as testMockServerCreatedSchema,
-} from "./tests/fixtures/server";
-export * from "./tests/servers-api.test";
+} from "./fixtures/server";

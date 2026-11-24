@@ -5,7 +5,7 @@ import { serversApi } from "@/features/servers/api/servers";
 import { ApiError } from "@/lib/client";
 
 import { createMockFetch, createMockFetchError } from "../../../../tests/mock-fetch";
-import { mockServer, mockServerCreatedSchema } from "./fixtures/server";
+import { mockServer, mockServerCreatedSchema } from "../fixtures/server";
 
 describe("serversApi", () => {
     const serverId = "11111111-1111-4123-812a-4d2c6d7a2d8d";

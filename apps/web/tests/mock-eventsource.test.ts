@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { mockServer as mockServerApi, serversApi } from "@/features/servers";
-import { mockServerCreatedSchema } from "@/features/servers/tests/fixtures/server";
+import { testMockServerCreatedSchema as mockServerCreatedSchema } from "@/features/servers";
 
 import { createMockEventSource, MockEventSource } from "./mock-eventsource";
 
