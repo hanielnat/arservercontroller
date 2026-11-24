@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import Pending from "@/components/layout/pending";
-import DashboardOverview from "@/features/dashboard/overview";
-import { serversQueryOptions } from "@/hooks/use-servers";
+import { DashboardOverview, serversQueryOptions } from "@/features/servers";
 
 export const Route = createFileRoute("/_app/")({
   component: () => <DashboardOverview />,

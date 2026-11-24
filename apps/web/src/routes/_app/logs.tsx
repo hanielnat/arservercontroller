@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { LogsPage } from "@/features/dashboard/logs";
-import { serversQueryOptions } from "@/hooks/use-servers";
+import { LogsPage, serversQueryOptions } from "@/features/servers";
 
 export const Route = createFileRoute("/_app/logs")({
   component: () => <LogsPage />,

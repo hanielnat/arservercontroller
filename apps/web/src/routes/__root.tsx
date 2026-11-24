@@ -7,7 +7,7 @@ import Pending from "@/components/layout/pending";
 import { RouteError } from "@/components/layout/route-error";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { PendingServerOperations } from "@/features/dashboard/components/pending-server-operations";
+import { PendingServerOperations } from "@/features/servers";
 import { SettingsProvider } from "@/hooks/providers/settings-provider";
 import { ThemeProvider } from "@/hooks/providers/theme-provider";
 import { type DashboardContext } from "@/router";

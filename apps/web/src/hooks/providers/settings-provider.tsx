@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { DEFAULT_DASHBOARD_SETTINGS } from "@/lib/consts";
+import { DEFAULT_DASHBOARD_SETTINGS } from "@/features/servers";
 import type { SettingsType } from "@/types/dashboard";
 
 const DASHBOARD_SETTINGS_KEY = "arservercontroller-settings";

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { mockServer as mockServerApi } from "@/features/dashboard/utils/servers";
+import { mockServer as mockServerApi } from "@/features/servers";
 
 import { MockWebSocket, createMockWebSocket } from "./mock-websocket";
 

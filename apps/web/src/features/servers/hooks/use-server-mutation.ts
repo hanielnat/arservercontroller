@@ -1,0 +1,122 @@
+import {
+    mutationOptions,
+    QueryClient,
+    useIsMutating,
+    useMutation,
+    useQueryClient,
+} from "@tanstack/react-query";
+
+import { serverKeys, serversApi, mockServer } from "@/features/servers";
+import type { ServerAction, ServerConfigCreate, ServerConfigUpdate } from "@/features/servers";
+
+const useMock = import.meta.env.DEV;
+
+export function addServerMutationOptions(qc: QueryClient) {
+    return mutationOptions({
+        mutationFn: (payload: ServerConfigCreate) =>
+            useMock ? mockServer.add(payload) : serversApi.add(payload),
+
+        mutationKey: ["server-operation", "add"],
+
+        onSuccess: () => qc.invalidateQueries({ queryKey: serverKeys.lists() }),
+    });
+}
+
+export function useAddServer() {
+    const qc = useQueryClient();
+
+    return useMutation(addServerMutationOptions(qc));
+}
+
+export function updateServerMutationOptions(qc: QueryClient) {
+    return mutationOptions({
+        mutationFn: ({ id, data }: { id: string; data: ServerConfigUpdate }) =>
+            useMock ? mockServer.update(id, data) : serversApi.update(id, data),
+
+        mutationKey: ["server-operation", "update"],
+
+        onSuccess: (_data, { id }) =>
+            Promise.all([
+                qc.invalidateQueries({ queryKey: serverKeys.lists() }),
+                qc.invalidateQueries({ queryKey: serverKeys.detail(id) }),
+                qc.invalidateQueries({ queryKey: serverKeys.status(id) }),
+            ]),
+    });
+}
+
+export function useUpdateServer() {
+    const qc = useQueryClient();
+
+    return useMutation(updateServerMutationOptions(qc));
+}
+
+export function removeServerMutationOptions(qc: QueryClient) {
+    return mutationOptions({
+        mutationFn: ({ id, force = false }: { id: string; force?: boolean }) =>
+            useMock ? mockServer.remove(id) : serversApi.remove(id, force),
+
+        mutationKey: ["server-operation", "remove"],
+
+        onSuccess: () => qc.invalidateQueries({ queryKey: serverKeys.lists() }),
+    });
+}
+
+export function useRemoveServer() {
+    const qc = useQueryClient();
+
+    return useMutation(removeServerMutationOptions(qc));
+}
+
+export function serverActionMutationOptions(qc: QueryClient) {
+    return mutationOptions({
+        mutationFn: ({ id, action }: { id: string; action: ServerAction }) => {
+            if (useMock) {
+                return mockServer.action(id, action);
+            }
+
+            switch (action) {
+                case "start":
+                    return serversApi.start(id);
+                case "stop":
+                    return serversApi.stop(id);
+                case "restart":
+                    return serversApi.restart(id);
+                case "reloadConfig":
+                    return serversApi.reloadConfig(id);
+            }
+        },
+
+        mutationKey: ["server-operation", "action"],
+
+        onSuccess: (_data, { id }) =>
+            Promise.all([
+                qc.invalidateQueries({ queryKey: serverKeys.status(id) }),
+                qc.invalidateQueries({ queryKey: serverKeys.lists() }),
+            ]),
+    });
+}
+
+export function useServerAction() {
+    const qc = useQueryClient();
+
+    return useMutation(serverActionMutationOptions(qc));
+}
+
+export function useIsServerActionPending(id: string, action?: ServerAction) {
+    return (
+        useIsMutating({
+            exact: true,
+            mutationKey: ["server-operation", "action"],
+
+            predicate: (mutation) => {
+                const variables = mutation.state.variables as
+                    | { id: string; action: ServerAction }
+                    | undefined;
+
+                return (
+                    variables?.id === id && (action === undefined || variables.action === action)
+                );
+            },
+        }) > 0
+    );
+}

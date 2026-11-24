@@ -2,8 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import Pending from "@/components/layout/pending";
 import { RouteError } from "@/components/layout/route-error";
-import { ServerInfo } from "@/features/dashboard/server-info";
-import { serversQueryOptions } from "@/hooks/use-servers";
+import { ServerInfo, serversQueryOptions } from "@/features/servers";
 import { queryClient } from "@/router";
 
 export const Route = createFileRoute("/_app/servers/$serverId")({

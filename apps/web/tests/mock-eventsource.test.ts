@@ -1,11 +1,36 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { serversApi } from "@/api/servers";
-import { mockServer as mockServerApi } from "@/features/dashboard/utils/servers";
+import { mockServer as mockServerApi, serversApi } from "@/features/servers";
+import { mockServerCreatedSchema } from "@/features/servers/tests/fixtures/server";
 
 import { createMockEventSource, MockEventSource } from "./mock-eventsource";
 
-afterEach(() => vi.useRealTimers());
+let cleanupMockServer: (() => Promise<void>) | undefined;
+
+afterEach(async () => {
+    await cleanupMockServer?.();
+    cleanupMockServer = undefined;
+    vi.useRealTimers();
+});
+
+const createRunningMockServer = async (): Promise<string> => {
+    const name = `Logs-${Math.random().toString(36).slice(2, 8)}`;
+    const addPromise = mockServerApi.add(mockServerCreatedSchema(name));
+    await vi.advanceTimersByTimeAsync(300);
+    const server = await addPromise;
+
+    cleanupMockServer = async () => {
+        const removePromise = mockServerApi.remove(server.id);
+        await vi.advanceTimersByTimeAsync(300);
+        await removePromise;
+    };
+
+    const startPromise = mockServerApi.action(server.id, "start");
+    await vi.advanceTimersByTimeAsync(2_000);
+    await startPromise;
+
+    return server.id;
+};
 
 describe("MockEventSource", () => {
     it("opens and emits messages", () => {
@@ -48,10 +73,11 @@ describe("MockEventSource", () => {
 });
 
 describe("mock server log streams", () => {
-    it("uses mocked streams for both log endpoints in development", () => {
+    it("uses mocked streams for both log endpoints in development", async () => {
         vi.useFakeTimers();
-        const agentStream = serversApi.logStream("server-id", 10, true);
-        const containerStream = serversApi.containerLogStream("server-id", 10, true, false);
+        const serverId = await createRunningMockServer();
+        const agentStream = serversApi.logStream(serverId, 10, true);
+        const containerStream = serversApi.containerLogStream(serverId, 10, true, false);
 
         expect(agentStream).toBeInstanceOf(MockEventSource);
         expect(containerStream).toBeInstanceOf(MockEventSource);
@@ -61,9 +87,10 @@ describe("mock server log streams", () => {
         vi.advanceTimersByTime(100);
     });
 
-    it("emits the limited history and closes when follow is disabled", () => {
+    it("emits the limited history and closes when follow is disabled", async () => {
         vi.useFakeTimers();
-        const source = mockServerApi.logStream("server-id", 2, false);
+        const serverId = await createRunningMockServer();
+        const source = mockServerApi.logStream(serverId, 2, false);
         const onmessage = vi.fn();
         source.onmessage = onmessage;
 
