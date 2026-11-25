@@ -60,6 +60,7 @@ class BaseConfig(BaseSettings):
     """Base application configuration class with common settings."""
 
     model_config = SettingsConfigDict(
+        extra="ignore",
         case_sensitive=False,
         env_ignore_empty=True,
         env_file=Path(get_directories().ROOT_DIR / ".env").resolve(),

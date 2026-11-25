@@ -1,6 +1,7 @@
 from logging.config import fileConfig
 
 from alembic import context
+from arservercontroller.core.config import get_config, get_directories
 from arservercontroller.db.base import Base
 from sqlalchemy import engine_from_config, pool
 
@@ -25,6 +26,15 @@ target_metadata = Base.metadata
 # ... etc.
 
 
+def get_migration_config():
+    migration_config = config.get_section(config.config_ini_section, {})
+    migration_config["sqlalchemy.url"] = get_config().DB_URL
+
+    get_directories().DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    return migration_config
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -37,7 +47,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_section(config.config_ini_section, {})["sqlalchemy.url"]
+    url = get_migration_config()["sqlalchemy.url"]
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -57,7 +67,7 @@ def run_migrations_online() -> None:
 
     """
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        get_migration_config(),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
