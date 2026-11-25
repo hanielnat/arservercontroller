@@ -1,101 +1,76 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Format",
-            "type": "shell",
-            "command": "./tasks.sh format",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "group": "build",
-            "detail": "Formata o repositório com o Black."
-        },
-        {
-            "label": "Lint",
-            "type": "shell",
-            "command": "./tasks.sh lint",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "detail": ""
-        },
-        {
-            "label": "Format & test",
-            "type": "shell",
-            "command": "./tasks.sh check",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "detail": ""
-        },
-        {
-            "label": "Install",
-            "type": "shell",
-            "command": "./tasks.sh install",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "group": "build",
-            "detail": ""
-        },
-        {
-            "label": "Build",
-            "type": "shell",
-            "command": "./tasks.sh build",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "group": "build",
-            "detail": ""
-        },
-        {
-            "label": "Clean",
-            "type": "shell",
-            "command": "./tasks.sh clean",
-            "group": "build",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "detail": "Remove o venv e arquivos cache/temporários do repositório."
-        },
-        {
-            "label": "Run dev",
-            "type": "shell",
-            "command": "./tasks.sh run-dev",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "problemMatcher": [
-                "$python"
-            ]
-        },
-        {
-            "label": "Run",
-            "type": "shell",
-            "command": "./tasks.sh run",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "detail": ""
-        },
-        {
-            "label": "Run migrations",
-            "type": "shell",
-            "command": "uv run alembic upgrade head",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/server"
-            },
-            "detail": ""
-        },
-        {
-            "label": "Test",
-            "type": "shell",
-            "command": "./tasks.sh test",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
-            "detail": ""
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup workspace",
+      "type": "shell",
+      "command": "bun run setup",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build"
+    },
+    {
+      "label": "Dev: API and Web",
+      "type": "shell",
+      "command": "bun run dev",
+      "options": { "cwd": "${workspaceFolder}" }
+    },
+    {
+      "label": "Dev: API",
+      "type": "shell",
+      "command": "bun run dev:server",
+      "options": { "cwd": "${workspaceFolder}" }
+    },
+    {
+      "label": "Dev: Web",
+      "type": "shell",
+      "command": "bun run dev:web",
+      "options": { "cwd": "${workspaceFolder}" }
+    },
+    {
+      "label": "Build workspace",
+      "type": "shell",
+      "command": "bun run build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build"
+    },
+    {
+      "label": "Test API",
+      "type": "shell",
+      "command": "uv run --locked --package arservercontroller --group test pytest apps/server/tests",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "test"
+    },
+    {
+      "label": "Test Web",
+      "type": "shell",
+      "command": "bun run --cwd apps/web test --run",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "test"
+    },
+    {
+      "label": "Lint workspace",
+      "type": "shell",
+      "command": "bun run lint",
+      "options": { "cwd": "${workspaceFolder}" }
+    },
+    {
+      "label": "Format workspace",
+      "type": "shell",
+      "command": "bun run fmt",
+      "options": { "cwd": "${workspaceFolder}" }
+    },
+    {
+      "label": "Run database migrations",
+      "type": "shell",
+      "command": "bun run db:migrate",
+      "options": { "cwd": "${workspaceFolder}" }
+    },
+    {
+      "label": "Build mock server image",
+      "type": "shell",
+      "command": "bash scripts/build-ar-mock-image.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build"
+    }
+  ]
 }

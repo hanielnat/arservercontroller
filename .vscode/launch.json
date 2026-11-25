@@ -1,43 +1,33 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Run module tests",
-            "cwd": "${workspaceFolder}/apps/server",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "tests"
-        },
-        {
-            "name": "Run module main",
-            "cwd": "${workspaceFolder}/apps/server",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "arservercontroller.main"
-        },
-        {
-            "name": "Run with uvicorn",
-            "cwd": "${workspaceFolder}/apps/server",
-            "type": "debugpy",
-            "request": "launch",
-            "envFile": "${workspaceFolder}/.env",
-            "python": "${command:python.interpreterPath}",
-            "module": "uvicorn",
-            "args": [
-                "arservercontroller.main:app",
-            ]
-        },
-        {
-            "name": "Run with fastapi",
-            "cwd": "${workspaceFolder}/apps/server",
-            "type": "debugpy",
-            "request": "launch",
-            "envFile": "${workspaceFolder}/.env",
-            "python": "${command:python.interpreterPath}",
-            "module": "fastapi",
-            "args": [
-                "dev"
-            ]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API: uvicorn",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "module": "uvicorn",
+      "cwd": "${workspaceFolder}/apps/server",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "ENVIRONMENT": "development",
+        "HOST": "0.0.0.0",
+        "PORT": "8000"
+      },
+      "args": ["arservercontroller.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    },
+    {
+      "name": "API tests: pytest",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "module": "pytest",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "ENVIRONMENT": "testing"
+      },
+      "args": ["apps/server/tests"]
+    }
+  ]
 }

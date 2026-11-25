@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "prepare": "husky install",
-    "setup": "bun install && uv sync --compile-bytecode",
+    "setup": "bun install --frozen-lockfile && uv sync --locked --all-packages --all-groups --compile-bytecode",
     "dev": "bun run -F '!./apps/agent-service' dev",
     "dev:server": "bun run -F 'server' dev",
     "dev:web": "bun run -F 'web' dev",

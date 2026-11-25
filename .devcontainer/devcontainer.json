@@ -1,60 +1,46 @@
 {
-    "image": "mcr.microsoft.com/devcontainers/python:3.13-bookworm",
-    "customizations": {
-        "vscode": {
-            "settings": {
-                "python.defaultInterpreterPath": "apps/server/.venv/bin/python"
-            },
-            "extensions": [
-                "chneau.resource-monitor",
-                "ms-azuretools.vscode-containers",
-                "Vue.volar",
-                "ms-python.python",
-                "charliermarsh.ruff",
-                "tamasfe.even-better-toml",
-                "njpwerner.autodocstring",
-                "bradlc.vscode-tailwindcss",
-                "ms-python.mypy-type-checker",
-                "dbaeumer.vscode-eslint"
-            ]
-        }
+  "image": "mcr.microsoft.com/devcontainers/python:3.14-bookworm",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
+      },
+      "extensions": [
+        "ms-azuretools.vscode-containers",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
+        "bradlc.vscode-tailwindcss",
+        "tamasfe.even-better-toml",
+        "oxc.oxc-vscode"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {
+      "azureDnsAutoDetection": true
     },
-    "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {
-            "azureDnsAutoDetection": true
-        },
-        "ghcr.io/devcontainers/features/node:1.6.3": {
-            "version": "24.10.0"
-        },
-        "ghcr.io/devcontainers-extra/features/uv:1.0.0": {},
-        "ghcr.io/devcontainers-extra/features/bun:1.0.0": {}
+    "ghcr.io/devcontainers/features/node:1.6.3": {
+      "version": "24.10.0"
     },
-    "containerEnv": {
-        "UV_LINK_MODE": "copy"
+    "ghcr.io/devcontainers-extra/features/uv:1.0.0": {},
+    "ghcr.io/devcontainers-extra/features/bun:1.0.0": {}
+  },
+  "containerEnv": {
+    "UV_LINK_MODE": "copy"
+  },
+  "portsAttributes": {
+    "5173": {
+      "label": "Frontend",
+      "onAutoForward": "openPreview"
     },
-    "portsAttributes": {
-        "3000": {
-            "label": "Frontend",
-            "onAutoForward": "openPreview"
-        },
-        "8000": {
-            "label": "Backend",
-            "onAutoForward": "openBrowser"
-        }
-    },
-    "forwardPorts": [
-        8000,
-        2555
-    ],
-    "postCreateCommand": "chmod +x ./.devcontainer/install-dependencies.sh && ./.devcontainer/install-dependencies.sh",
-    "remoteUser": "vscode",
-    "runArgs": [
-        "--privileged",
-        "-p",
-        "2555:2555/udp",
-        "-p",
-        "18989:18989/udp",
-        "-p",
-        "18787:18787/tcp"
-    ]
+    "8000": {
+      "label": "Backend",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "forwardPorts": [5173, 8000],
+  "postCreateCommand": "bash ./.devcontainer/install-dependencies.sh",
+  "remoteUser": "vscode",
+  "runArgs": ["--privileged"]
 }

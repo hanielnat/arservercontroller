@@ -1,12 +1,15 @@
 {
-    "recommendations": [
-        "Vue.volar",
-        "dbaeumer.vscode-eslint",
-        "bradlc.vscode-tailwindcss",
-        "charliermarsh.ruff",
-        "ms-azuretools.vscode-containers",
-        "ms-python.python",
-        "mutantdino.resourcemonitor",
-        "njpwerner.autodocstring"
-    ]
+  "recommendations": [
+    "ms-azuretools.vscode-containers",
+    "mutantdino.resourcemonitor",
+    "ms-python.python",
+    "ms-python.debugpy",
+    "charliermarsh.ruff",
+    "astral-sh.ty",
+    "tamasfe.even-better-toml",
+    "TypeScriptTeam.native-preview",
+    "bradlc.vscode-tailwindcss",
+    "oxc.oxc-vscode",
+    "vitest.explorer"
+  ]
 }
