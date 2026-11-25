@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-cd apps/server
-docker buildx build -t arserver:latest -f reforger.Dockerfile .
+uv export --locked --package sidecar --no-dev --no-emit-project --no-hashes --format requirements-txt --output-file apps/agent-service/requirements.lock
+docker buildx build -t arserver:latest -f apps/server/reforger.Dockerfile .

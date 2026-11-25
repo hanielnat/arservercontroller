@@ -1,0 +1,18 @@
+{
+  "name": "server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "venv": "uv run venv .venv",
+    "install": "uv sync --compile-bytecode",
+    "dev": "bun run db:migrate && uv run fastapi dev",
+    "serve": "bun run db:migrate && uv run uvicorn arservercontroller.main:app",
+    "build": "uv build .",
+    "test": "bun run db:migrate && uv run pytest",
+    "fmt": "uv run ruff format .",
+    "fmt:check": "uv run ruff check .",
+    "lint": "uv run ruff check . && uv run ty check .",
+    "db:migrate": "uv run -m alembic upgrade head"
+  }
+}

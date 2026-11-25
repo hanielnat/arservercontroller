@@ -55,6 +55,7 @@ venv.bak/
 Thumbs.db
 
 # Project-specific
+requirements.lock
 apps/server/tests/test_controller
 data/
 .env

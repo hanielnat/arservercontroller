@@ -2,31 +2,41 @@
 # frontend
 FROM oven/bun:debian AS client
 
-WORKDIR /arservercontroller/apps/web
-COPY apps/web ./
-RUN bun install --frozen-lockfile && bun run build
+WORKDIR /workspace
+COPY package.json bun.lock ./
+COPY apps/agent-service/package.json ./apps/agent-service/package.json
+COPY apps/server/package.json ./apps/server/package.json
+COPY apps/web/package.json ./apps/web/package.json
+RUN bun install --frozen-lockfile --ignore-scripts
+
+COPY apps/web ./apps/web
+RUN bun run --filter web build
 
 # -------------------------------------------------------------------------------
 # backend
 FROM python:3.14-slim AS server
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/arservercontroller/.venv
 
-WORKDIR /arservercontroller/apps/server
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=apps/server/uv.lock,target=uv.lock \
-    --mount=type=bind,source=apps/server/pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-dev --no-install-project
-
-COPY apps/server/alembic ./alembic
-COPY apps/server/README.md apps/server/alembic.ini apps/server/.python-version apps/server/pyproject.toml apps/server/uv.lock ./
-COPY apps/server/arservercontroller ./arservercontroller
-COPY --from=client /arservercontroller/apps/web/dist /arservercontroller/apps/web/dist
+WORKDIR /arservercontroller
+COPY pyproject.toml uv.lock ./
+COPY apps/server/pyproject.toml apps/server/README.md ./apps/server/
+COPY apps/agent-service/pyproject.toml apps/agent-service/README.md ./apps/agent-service/
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
+    uv sync --locked --no-dev --package arservercontroller --no-install-project
+
+COPY ./.python-version ./.python-version
+COPY apps/server/alembic.ini ./apps/server/alembic.ini
+COPY apps/server/alembic ./apps/server/alembic
+COPY apps/server/arservercontroller ./apps/server/arservercontroller
+COPY --from=client /workspace/apps/web/dist ./apps/web/dist
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev --package arservercontroller
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

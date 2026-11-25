@@ -1,0 +1,17 @@
+{
+  "name": "agent",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "venv": "uv run venv .venv",
+    "install": "uv sync --compile-bytecode",
+    "dev": "uv run fastapi dev",
+    "serve": "uv run uvicorn sidecar.main:app",
+    "build": "uv build .",
+    "test": "uv run pytest",
+    "fmt": "uv run ruff format .",
+    "fmt:check": "uv run ruff check .",
+    "lint": "uv run ruff check . && uv run ty check ."
+  }
+}

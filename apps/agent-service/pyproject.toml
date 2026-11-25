@@ -13,15 +13,6 @@ dependencies = [
     "uvicorn>=0.52.4",
 ]
 
-[dependency-groups]
-dev = [
-    { include-group = "lint" },
-]
-lint = [
-    "ty>=0.0.76",
-    "ruff>=0.16.6",
-]
-
 [project.scripts]
 sidecar = "sidecar:main"
 

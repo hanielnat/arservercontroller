@@ -1,6 +1,25 @@
 {
+  "name": "arservercontroller",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "type": "module",
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "setup": "bun install && uv sync --compile-bytecode",
+    "dev": "bun run -F '!./apps/agent-service' dev",
+    "dev:server": "bun run -F 'server' dev",
+    "dev:web": "bun run -F 'web' dev",
+    "build": "bun run -F '*' build",
+    "serve": "bun run -F 'server' serve",
+    "test": "bun run -F '*' test",
+    "fmt": "bun run -F '*' fmt",
+    "fmt:check": "bun run -F '*' fmt:check",
+    "lint": "bun run -F '*' lint",
+    "lint:fix": "bun run -F '*' lint:fix",
+    "db:migrate": "bun run -F 'server' db:migrate"
   },
   "dependencies": {},
   "devDependencies": {
