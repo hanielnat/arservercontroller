@@ -1,6 +1,10 @@
 import type { ServerCreateFormValues } from "@/features/servers";
 import type { SettingsType } from "@/types/dashboard";
 
+const useMockEnv = import.meta.env.USE_MOCK;
+
+export const USE_MOCK = useMockEnv == null ? import.meta.env.DEV : useMockEnv === "true";
+
 export const DEFAULT_SERVER_VALUES: ServerCreateFormValues = {
     name: "",
     bindPort: 2001,

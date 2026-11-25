@@ -1,10 +1,7 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
-import { serverKeys, mockServer } from "@/features/servers";
-import { serversApi } from "@/features/servers/api/servers";
+import { serverKeys, serversApi, mockServer, USE_MOCK as useMock } from "@/features/servers";
 import { getStoredSettings, useSettings } from "@/hooks/providers/settings-provider";
-
-const useMock = import.meta.env.DEV;
 
 export function serversQueryOptions(offset = 0, limit?: number) {
     const max = limit ?? getStoredSettings().interface.maxServersShown;

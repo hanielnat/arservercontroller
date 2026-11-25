@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => {
                 "@": path.resolve(import.meta.dirname, "src"),
             },
         },
+        define: {
+            "import.meta.env.USE_MOCK": JSON.stringify(process.env["USE_MOCK"] ?? null),
+        },
         server: {
             proxy: {
                 "/api/v1": `${HOST}:${PORT}`,

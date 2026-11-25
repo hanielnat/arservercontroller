@@ -6,10 +6,8 @@ import {
     useQueryClient,
 } from "@tanstack/react-query";
 
-import { serverKeys, serversApi, mockServer } from "@/features/servers";
+import { serverKeys, serversApi, mockServer, USE_MOCK as useMock } from "@/features/servers";
 import type { ServerAction, ServerConfigCreate, ServerConfigUpdate } from "@/features/servers";
-
-const useMock = import.meta.env.DEV;
 
 export function addServerMutationOptions(qc: QueryClient) {
     return mutationOptions({

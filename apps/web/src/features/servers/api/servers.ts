@@ -1,6 +1,13 @@
 import * as z from "zod";
 
-import { mockServer } from "@/features/servers";
+import {
+    mockServer,
+    USE_MOCK as useMock,
+    ServerConfigSchema,
+    ServerOutSchema,
+    ServersOutSchema,
+    ServerStatusOutSchema,
+} from "@/features/servers";
 import type {
     ServerConfig,
     ServerConfigCreate,
@@ -9,16 +16,8 @@ import type {
     ServersOut,
     ServerStatusOut,
 } from "@/features/servers";
-import {
-    ServerConfigSchema,
-    ServerOutSchema,
-    ServersOutSchema,
-    ServerStatusOutSchema,
-} from "@/features/servers";
 import { apiClient, buildUrl, type ApiClientOptions } from "@/lib/client";
 import type { WebSocketLike } from "@/types";
-
-const useMock = import.meta.env.DEV;
 
 export const serversApi = {
     list: async (offset: number, limit: number, options?: ApiClientOptions) =>
