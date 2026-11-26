@@ -4,9 +4,17 @@ from asyncio import Queue
 from collections.abc import AsyncIterable
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request, WebSocket, status
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 from pydantic import UUID4
+from starlette.websockets import WebSocketState
 
 from arservercontroller.api.dependencies import DbSessionDep
 from arservercontroller.constants import ServerStatusEnum
@@ -95,12 +103,15 @@ async def websocket_server_creation_logs(
     try:
         await creation_manager.stream_logs(server_id, websocket)
 
-    except Exception:
-        # client disconnect is normal
+    except WebSocketDisconnect:
         pass
 
     finally:
-        await websocket.close()
+        if websocket.application_state == WebSocketState.CONNECTED:
+            try:
+                await websocket.close()
+            except (WebSocketDisconnect, RuntimeError):
+                pass
 
 
 @server_router.patch("/{server_id}")
@@ -111,8 +122,15 @@ async def update_server(
 ) -> ServerOut:
     model = find_server_by_id(server_id, db)
 
-    update_data = new_server.model_dump(exclude_unset=True)
-    update_data.update({"id": server_id, "container_id": model})
+    current_config = model.serverConfigData
+    update_data = new_server.model_dump(exclude_unset=True, exclude={"container_id"})
+
+    updated_config = ServerConfig.model_validate(
+        {**current_config.model_dump(), **update_data}
+    )
+
+    model.name = updated_config.name
+    model.serverConfigData = updated_config
 
     db.commit()
     db.refresh(model)
