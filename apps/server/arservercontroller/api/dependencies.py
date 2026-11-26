@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from docker import DockerClient
+from docker.errors import DockerException
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -24,7 +25,12 @@ _docker_client: DockerClient | None = None
 def get_docker_client() -> DockerClient:
     global _docker_client
     if _docker_client is None:
-        _docker_client = docker.from_env()
+        try:
+            _docker_client = docker.from_env()
+        except DockerException as e:
+            raise OSError(
+                "Could not connect to docker daemon, can't create docker_client"
+            ) from e
 
     return _docker_client
 
