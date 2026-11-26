@@ -4,6 +4,7 @@ from typing import Any
 
 import httpx
 
+from arservercontroller.core.config import get_config
 from arservercontroller.services.logger import get_logger
 
 logger = get_logger(__name__)
@@ -12,9 +13,20 @@ logger = get_logger(__name__)
 class AgentClient:
     """HTTP client to communicate with the agent sidecar inside the container."""
 
-    def __init__(self, container_ip: str, port: int = 8080):
-        self.base_url = f"http://{container_ip}:{port}"
-        self.client = httpx.AsyncClient(timeout=30.0)
+    def __init__(self, container_ip: str, container_name: str | None = None):
+        config = get_config()
+        container_name = container_name or container_ip
+        self.base_url = config.AGENT_URL_TEMPLATE.format(
+            container_ip=container_ip,
+            container_name=container_name,
+        )
+        headers = {}
+        if config.AGENT_HOST_TEMPLATE:
+            headers["Host"] = config.AGENT_HOST_TEMPLATE.format(
+                container_ip=container_ip,
+                container_name=container_name,
+            )
+        self.client = httpx.AsyncClient(timeout=30.0, headers=headers)
 
     async def close(self) -> None:
         await self.client.aclose()
@@ -60,7 +72,14 @@ class AgentClient:
 
         response = await self.client.post(url, json=payload)
 
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as error:
+            raise httpx.HTTPStatusError(
+                f"{error}; response body: {response.text}",
+                request=error.request,
+                response=response,
+            ) from error
         return response.json()
 
     async def get_status(self) -> dict[str, Any]:

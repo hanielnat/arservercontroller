@@ -10,7 +10,7 @@ from fastapi import Depends, WebSocket
 from sqlalchemy.orm import Session, sessionmaker
 
 from arservercontroller.constants import ServerStatusEnum
-from arservercontroller.core.config import get_directories
+from arservercontroller.core.config import get_config, get_directories
 from arservercontroller.db.models.server import Server
 from arservercontroller.db.session import SessionLocal
 from arservercontroller.schemas.server_config import ServerConfig
@@ -84,6 +84,9 @@ class ServerCreationManager:
     async def _handle_creation_failed(
         self, server_id: UUID, container: Container | None
     ) -> None:
+        if not get_config().CLEAN_FAILED_CONTAINERS:
+            return
+
         try:
             with self._session_factory() as db:
                 server: Server | None = db.get(Server, server_id)
@@ -204,7 +207,7 @@ class ServerCreationManager:
             # import AgentClient and ask to start server
             from arservercontroller.services.agent_client import AgentClient
 
-            agent = AgentClient(ip_address)
+            agent = AgentClient(ip_address, config.name)
             try:
                 logger.info("Waiting for container agent to be ready...")
                 await asyncio.sleep(5.0)
@@ -311,15 +314,11 @@ class ServerCreationManager:
         """Stream logs to WebSocket until queue is closed or client disconnects."""
         queue = self.get_or_create_queue(server_id)
 
-        try:
-            while True:
-                msg = await queue.get()
-                await websocket.send_json(msg)
-                if msg.get("final"):
-                    break
-
-        except Exception:
-            pass
+        while True:
+            msg = await queue.get()
+            await websocket.send_json(msg)
+            if msg.get("final"):
+                break
 
 
 _server_creation_manager: ServerCreationManager | None = None

@@ -359,24 +359,42 @@ export function ServerCreationProgress({
     [id, cancelCreation],
   );
 
-  const socketConnect = useCallback(() => {
+  useEffect(() => {
+    let active = true;
     const ws = serversApi.creationLogsWs(id);
     wsRef.current = ws;
 
-    ws.onopen = handleOpen;
-    ws.onclose = handleClose;
-    ws.onmessage = handleMessage;
-    ws.onerror = handleError;
-  }, [id, handleOpen, handleClose, handleMessage, handleError]);
+    ws.onopen = () => {
+      if (active) {
+        handleOpen();
+      }
+    };
+    ws.onclose = () => {
+      if (active) {
+        handleClose();
+      }
+    };
+    ws.onmessage = (event) => {
+      if (active) {
+        handleMessage(event);
+      }
+    };
+    ws.onerror = (event) => {
+      if (active) {
+        handleError(event);
+      }
+    };
 
-  useEffect(() => {
-    socketConnect();
     return () => {
-      wsRef.current?.close(1000, "Component unmounted");
+      active = false;
+      if (wsRef.current === ws) {
+        wsRef.current = null;
+      }
+      ws.close(1000, "Component unmounted");
       setManagerLogs([]);
       setDockerLogs([]);
     };
-  }, [socketConnect]);
+  }, [id, handleOpen, handleClose, handleMessage, handleError]);
 
   useEffect(() => {
     const startedAt = startedAtRef.current;
@@ -404,13 +422,13 @@ export function ServerCreationProgress({
       <Card
         className={cn(
           `
-            mx-auto no-scrollbar flex size-full flex-col overflow-y-auto bg-background p-1.5
+            no-scrollbar bg-background mx-auto flex size-full flex-col overflow-y-auto p-1.5
             transition-all
           `,
           hasError
-            ? "ring-2 ring-error"
+            ? "ring-error ring-2"
             : isDone
-              ? "ring-2 ring-success/50 dark:ring-success"
+              ? "ring-success/50 dark:ring-success ring-2"
               : undefined,
         )}
       >

@@ -59,8 +59,11 @@ export const serversApi = {
     restart: async (id: string, options?: ApiClientOptions) =>
         await apiClient("POST", `/servers/${id}/restart`, options),
 
-    reloadConfig: async (id: string, options?: ApiClientOptions) =>
-        await apiClient("POST", `/servers/${id}/config`, options),
+    reloadConfig: async (id: string, config: Record<string, unknown>, options?: ApiClientOptions) =>
+        await apiClient("POST", `/servers/${id}/config`, {
+            body: config,
+            ...options,
+        }),
 
     cancelAdd: async (id: string, options?: ApiClientOptions) =>
         await apiClient<Record<string, boolean>>(

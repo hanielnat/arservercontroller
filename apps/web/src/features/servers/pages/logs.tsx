@@ -133,7 +133,7 @@ function LogItem({ entry, showTimestamps }: { entry: LogEntry; showTimestamps: b
           {showTimestamps && (
             <time
               className="
-                w-20 text-right font-mono whitespace-nowrap text-muted-foreground tabular-nums
+                text-muted-foreground w-20 text-right font-mono whitespace-nowrap tabular-nums
               "
             >
               {entry.timestamp}
@@ -247,16 +247,30 @@ export function ServerLogs({
     [limit],
   );
 
-  const handleEventError = useCallback((error: Event, origin: LogOrigin) => {
-    const msg = error instanceof ErrorEvent ? error.message : undefined;
-    console.error("EventSource error", msg);
-    toast.add({
-      type: "error",
-      title: "Unknown EventSource error",
-      description: msg,
-    });
-    setStreamConnections((prev) => ({ ...prev, [origin]: false }));
-  }, []);
+  const handleEventError = useCallback(
+    (error: Event, origin: LogOrigin) => {
+      if (error instanceof MessageEvent && typeof error.data === "string") {
+        setAllLogs((prev) =>
+          trimLogsToLimit(
+            [
+              ...prev,
+              {
+                timestamp: new Date().toLocaleTimeString(),
+                origin,
+                level: "error",
+                msg: error.data,
+              },
+            ],
+            limit,
+          ),
+        );
+        return;
+      }
+
+      setStreamConnections((prev) => ({ ...prev, [origin]: false }));
+    },
+    [limit],
+  );
 
   useEffect(() => {
     let active = true;
@@ -268,11 +282,13 @@ export function ServerLogs({
         handleEventOpen("agent");
       }
     };
-    reforgerEvents.onmessage = (ev: MessageEvent) => {
+    const handleReforgerLog = (ev: Event) => {
       if (active) {
-        handleEventMessage(ev, "agent");
+        handleEventMessage(ev as MessageEvent, "agent");
       }
     };
+    reforgerEvents.addEventListener("log", handleReforgerLog);
+    reforgerEvents.onmessage = handleReforgerLog;
     reforgerEvents.onerror = (ev: Event) => {
       if (active) {
         handleEventError(ev, "agent");
@@ -284,11 +300,13 @@ export function ServerLogs({
         handleEventOpen("container");
       }
     };
-    containerEvents.onmessage = (ev: MessageEvent) => {
+    const handleContainerLog = (ev: Event) => {
       if (active) {
-        handleEventMessage(ev, "container");
+        handleEventMessage(ev as MessageEvent, "container");
       }
     };
+    containerEvents.addEventListener("log", handleContainerLog);
+    containerEvents.onmessage = handleContainerLog;
     containerEvents.onerror = (ev: Event) => {
       if (active) {
         handleEventError(ev, "container");
@@ -308,8 +326,8 @@ export function ServerLogs({
     <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col", className)}>
       <div
         className="
-          sticky top-0 left-0 m-0 flex flex-wrap items-center gap-2 rounded-t-md border-b
-          bg-background p-2
+          bg-background sticky top-0 left-0 m-0 flex flex-wrap items-center gap-2 rounded-t-md
+          border-b p-2
           sm:p-1.5
         "
       >
@@ -434,8 +452,8 @@ export function ServerLogs({
         ref={logScrollRef}
         onScroll={handleLogScroll}
         className="
-          min-h-0 min-w-0 flex-1 overflow-y-auto rounded-md rounded-t-none bg-background p-0 ring
-          ring-muted
+          bg-background ring-muted min-h-0 min-w-0 flex-1 overflow-y-auto rounded-md rounded-t-none p-0
+          ring
         "
       >
         <div className="mt-1 px-1 py-0">
@@ -518,7 +536,7 @@ export function LogsPage() {
               onClose={() => setCurrentServer(null)}
             />
           ) : (
-            <Empty className="border border-dashed border-secondary bg-background">
+            <Empty className="border-secondary bg-background border border-dashed">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <ServerOffIcon />

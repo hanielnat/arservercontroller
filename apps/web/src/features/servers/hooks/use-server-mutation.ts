@@ -33,12 +33,14 @@ export function updateServerMutationOptions(qc: QueryClient) {
 
         mutationKey: ["server-operation", "update"],
 
-        onSuccess: (_data, { id }) =>
-            Promise.all([
+        onSuccess: async (updatedServer, { id }) => {
+            qc.setQueryData(serverKeys.detail(id), updatedServer);
+
+            await Promise.all([
                 qc.invalidateQueries({ queryKey: serverKeys.lists() }),
-                qc.invalidateQueries({ queryKey: serverKeys.detail(id) }),
                 qc.invalidateQueries({ queryKey: serverKeys.status(id) }),
-            ]),
+            ]);
+        },
     });
 }
 
@@ -65,22 +67,54 @@ export function useRemoveServer() {
     return useMutation(removeServerMutationOptions(qc));
 }
 
+export function reloadServerConfigMutationOptions(qc: QueryClient) {
+    return mutationOptions({
+        mutationFn: async ({ id, config }: { id: string; config: Record<string, unknown> }) => {
+            if (useMock) {
+                await mockServer.reloadConfig(id, config);
+                return;
+            }
+
+            await serversApi.reloadConfig(id, config);
+        },
+
+        mutationKey: ["server-operation", "action"],
+
+        onSuccess: (_data, { id }) => {
+            Promise.all([
+                qc.invalidateQueries({ queryKey: serverKeys.status(id) }),
+                qc.invalidateQueries({ queryKey: serverKeys.lists() }),
+            ]);
+        },
+    });
+}
+
+export function useReloadServerConfig() {
+    const qc = useQueryClient();
+
+    return useMutation(reloadServerConfigMutationOptions(qc));
+}
+
 export function serverActionMutationOptions(qc: QueryClient) {
     return mutationOptions({
-        mutationFn: ({ id, action }: { id: string; action: ServerAction }) => {
+        mutationFn: async ({ id, action }: { id: string; action: ServerAction }) => {
             if (useMock) {
-                return mockServer.action(id, action);
+                await mockServer.action(id, action);
+                return;
             }
 
             switch (action) {
                 case "start":
-                    return serversApi.start(id);
+                    await serversApi.start(id);
+                    break;
+
                 case "stop":
-                    return serversApi.stop(id);
+                    await serversApi.stop(id);
+                    break;
+
                 case "restart":
-                    return serversApi.restart(id);
-                case "reloadConfig":
-                    return serversApi.reloadConfig(id);
+                    await serversApi.restart(id);
+                    break;
             }
         },
 

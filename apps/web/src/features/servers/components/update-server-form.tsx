@@ -26,9 +26,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
 import {
   formValuesToUpdatePayload,
-  useServerAction,
-  useUpdateServer,
   ServerUpdateFormSchema,
+  useUpdateServer,
+  useReloadServerConfig,
 } from "@/features/servers";
 import type { ServerConfig, ServerUpdateFormValues } from "@/features/servers";
 import { cn } from "@/lib/utils";
@@ -86,7 +86,7 @@ export function UpdateServerForm({
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(true);
   const update = useUpdateServer();
-  const reloadConfig = useServerAction();
+  const reloadConfig = useReloadServerConfig();
 
   const defaultValues: ServerUpdateFormValues = {
     name: config?.name,
@@ -110,12 +110,17 @@ export function UpdateServerForm({
 
     onSubmit: ({ value }) => {
       const shouldReloadConfig = form.getFieldMeta("reforgerConfig")?.isDirty;
+      const data = formValuesToUpdatePayload(value);
+
       update.mutate(
-        { id: config?.id ?? "", data: formValuesToUpdatePayload(value) },
+        { id: config?.id ?? "", data },
         {
           onSuccess: () => {
             if (shouldReloadConfig) {
-              reloadConfig.mutate({ id: config?.id ?? "", action: "reloadConfig" });
+              reloadConfig.mutate({
+                id: config?.id ?? "",
+                config: data.reforgerConfig,
+              });
             }
           },
           onError: (error) =>
@@ -573,7 +578,7 @@ export function UpdateServerForm({
             }
           />
 
-          <CollapsibleContent className="space-y-8 rounded-md rounded-t-none border border-t-0 bg-muted/50 p-4">
+          <CollapsibleContent className="bg-muted/50 space-y-8 rounded-md rounded-t-none border border-t-0 p-4">
             <FieldGroup>
               {/* Launch Options */}
               <form.Field name="commandLine" mode="array" children={renderCommandline} />

@@ -251,7 +251,47 @@ const action = async (id: string, action: ServerAction): Promise<void> => {
     servers = servers.map((server) => (server.serverConfigData.id === id ? updated : server));
 
     persist();
-    delay(300);
+    delay();
+};
+
+const reloadConfig = async (id: string, config: Record<string, unknown>): Promise<void> => {
+    const sv = servers.find((s) => s.serverConfigData.id === id);
+    if (!sv) {
+        throw new Error(`Unknown server id ${id}`);
+    }
+
+    const current = sv.serverConfigData.status ?? "dead";
+    let nextStatus = current;
+
+    const updateServer = (
+        status: typeof sv.serverConfigData.status,
+        reforgerConfig?: Record<string, unknown>,
+    ) => {
+        const toUpdate: ServerOut = {
+            ...sv,
+            updatedAt: new Date().valueOf(),
+            serverConfigData: {
+                ...sv.serverConfigData,
+                status,
+                reforgerConfig: reforgerConfig ?? sv.serverConfigData.reforgerConfig,
+            },
+        };
+        servers = servers.map((server) => (server.serverConfigData.id === id ? toUpdate : server));
+    };
+
+    updateServer(nextStatus, config);
+
+    await delay(2 * 1000);
+    nextStatus = "restarting";
+    updateServer(nextStatus);
+    persist();
+
+    await delay(2 * 1000);
+    nextStatus = "running";
+    updateServer(nextStatus);
+    persist();
+
+    delay();
 };
 
 const status = async (id: string): Promise<ServerStatusOut> => {
@@ -427,6 +467,7 @@ export const mockServer = {
     remove,
     update,
     action,
+    reloadConfig,
     status,
     logStream,
     containerLogStream,

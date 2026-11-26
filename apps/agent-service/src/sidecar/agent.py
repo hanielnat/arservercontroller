@@ -127,7 +127,7 @@ class AgentService:
 
     def reload_config(
         self, server_launch_options: list[str], config_path: str, config: dict[str, Any]
-    ):
+    ) -> dict[str, Any]:
         try:
             # prevent creating a config file if passed as relational path, ex: "config.json"
             path = Path(config_path) if Path(config_path).is_absolute() else None
@@ -140,15 +140,17 @@ class AgentService:
                 count = file.write(json.dumps(config, indent=4, skipkeys=True))
                 log_print(f"written '{count}' characters to '{config_path}'")
 
-        except FileNotFoundError:
-            return HTTPException(404, f"Config file not found: '{config_path}'")
+        except FileNotFoundError as e:
+            raise HTTPException(404, f"Config file not found: '{config_path}'") from e
 
         except OSError as e:
-            return HTTPException(500, f"Unexpected OSError: {e}")
+            raise HTTPException(500, f"Unexpected OSError: {e}") from e
 
         log_print(f"restarting server with options: {server_launch_options}")
-        self.stop_server()
-        self.start_server(server_launch_options)
+        if self.server_proc is not None and self.server_proc.poll() is None:
+            self.stop_server()
+
+        return self.start_server(server_launch_options)
 
     async def stream_logs(
         self, limit: int = 100, follow: bool = True

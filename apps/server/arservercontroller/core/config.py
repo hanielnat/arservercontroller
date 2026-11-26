@@ -106,6 +106,9 @@ class BaseConfig(BaseSettings):
     CORS_ALLOW_CREDS: bool = False
 
     CONTAINER_IMAGE_NAME: str = DEFAULT_CONTAINER_IMAGE_NAME
+    CLEAN_FAILED_CONTAINERS: bool = True
+    AGENT_URL_TEMPLATE: str = "http://{container_ip}:8080"
+    AGENT_HOST_TEMPLATE: str = ""
 
 
 class DevelopmentConfig(BaseConfig):
@@ -117,6 +120,7 @@ class DevelopmentConfig(BaseConfig):
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
     CONTAINER_IMAGE_NAME: str = DEFAULT_TEST_CONTAINER_IMAGE_NAME
+    CLEAN_FAILED_CONTAINERS: bool = False
 
 
 class ProductionConfig(BaseConfig):

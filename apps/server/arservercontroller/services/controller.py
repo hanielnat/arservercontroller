@@ -59,15 +59,17 @@ class ServerController:
         self, model: Server
     ) -> tuple[int | None, bool]:
         container_id = model.serverConfigData.container_id
-        ip_result = self.docker_manager.get_container_network_ip(container_id)
         result: tuple[int | None, bool] = (None, False)
+        if not container_id:
+            return result
 
+        ip_result = self.docker_manager.get_container_network_ip(container_id)
         if ip_result.is_err():
             return result
 
         from arservercontroller.services.agent_client import AgentClient
 
-        agent = AgentClient(ip_result.value())
+        agent = AgentClient(ip_result.value(), model.serverConfigData.name)
         try:
             reforger_status = await agent.get_status()
             pid: int | None = reforger_status["pid"]
@@ -83,24 +85,33 @@ class ServerController:
             await agent.close()
 
     def is_server_running(self, model: Server) -> bool:
-        return (
+        result: bool = False
+        if not model.serverConfigData.container_id:
+            return result
+
+        if (
             self.docker_manager.is_container_running(
                 model.serverConfigData.container_id
             )
             and model.serverConfigData.status == ServerStatusEnum.RUNNING
-        )
+        ):
+            result = True
+
+        return result
 
     async def is_agent_running(self, model: Server) -> bool:
         container_id = model.serverConfigData.container_id
-        ip_result = self.docker_manager.get_container_network_ip(container_id)
         result: bool = False
+        if not container_id:
+            return result
 
+        ip_result = self.docker_manager.get_container_network_ip(container_id)
         if ip_result.is_err():
             return result
 
         from arservercontroller.services.agent_client import AgentClient
 
-        agent = AgentClient(ip_result.value())
+        agent = AgentClient(ip_result.value(), model.serverConfigData.name)
         try:
             result = await agent.is_ready()
             return result
@@ -195,7 +206,7 @@ class ServerController:
         # import AgentClient and ask to reload the server with new config and launch options
         from arservercontroller.services.agent_client import AgentClient
 
-        agent = AgentClient(ip_address)
+        agent = AgentClient(ip_address, model.serverConfigData.name)
         try:
             # prepare payload
             config_path = f"/home/{model.serverConfigData.name}/config.json"
@@ -233,7 +244,7 @@ class ServerController:
 
         from arservercontroller.services.agent_client import AgentClient
 
-        agent = AgentClient(ip_address)
+        agent = AgentClient(ip_address, model.serverConfigData.name)
         try:
             async for i in agent.stream_logs(limit, follow):
                 await queue.put(i)
@@ -299,7 +310,7 @@ class ServerController:
             # import AgentClient and ask to start server
             from arservercontroller.services.agent_client import AgentClient
 
-            agent = AgentClient(ip_address)
+            agent = AgentClient(ip_address, model.serverConfigData.name)
             try:
                 logger.info("Waiting for container agent to be ready...")
                 await asyncio.sleep(5.0)
@@ -365,7 +376,7 @@ class ServerController:
             # stop via agent first if container is running
             from arservercontroller.services.agent_client import AgentClient
 
-            agent = AgentClient(ip_address)
+            agent = AgentClient(ip_address, model.serverConfigData.name)
             try:
                 await agent.stop_server()
             except (
@@ -415,7 +426,7 @@ class ServerController:
 
             # stop via agent before restart
             try:
-                agent = AgentClient(ip_address)
+                agent = AgentClient(ip_address, model.serverConfigData.name)
                 await agent.stop_server()
             except Exception as e:  # log error and proceed anyways as it's still possible to restart the container
                 logger.error(f"Error stopping server via agent prior to restart: {e}")
@@ -437,7 +448,7 @@ class ServerController:
             )
 
             try:
-                agent = AgentClient(ip_address)
+                agent = AgentClient(ip_address, model.serverConfigData.name)
 
                 # wait for agent to be ready and start it again after restart
                 await asyncio.sleep(5.0)
