@@ -12,6 +12,11 @@ entrypoint = "arservercontroller.main:app"
 [project.scripts]
 arservercontroller = "arservercontroller.cli:main"
 
+[dependency-groups]
+dev = [
+    "types-docker>=7.2.0.20261122",
+]
+
 [project]
 name = "arservercontroller"
 version = "0.1.0"

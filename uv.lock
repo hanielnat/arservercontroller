@@ -172,6 +172,11 @@ dependencies = [
     { name = "uvicorn" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "types-docker" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.22.1" },
@@ -191,6 +196,9 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0.52" },
     { name = "uvicorn", specifier = ">=0.52.4" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "types-docker", specifier = ">=7.2.0.20261122" }]
 
 [[package]]
 name = "bcrypt"
@@ -1717,6 +1725,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/bf/21/37383ece7d0a4995fb8ea97729207c4292b3ff94085002f37b2387063cfb/typer-0.29.2.tar.gz", hash = "sha256:b1998dc5f2c3dedafa1517a9521fa944cc4dc1fadcea085d81a3b10ebcaeb075", size = 205728, upload-time = "2026-11-18T11:09:46.189Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/62/f3/864dcb0e165b52e9f75aa3c7e0aeeb9876f139c66eb14d87856bb173b0fa/typer-0.29.2-py3-none-any.whl", hash = "sha256:f30731f8ca758368b836b3714872e58e395cef8fcaff918c853b1969ed5274e7", size = 121041, upload-time = "2026-11-18T11:09:45.03Z" },
+]
+
+[[package]]
+name = "types-docker"
+version = "7.2.0.20261122"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e5/4c/b192c2d36ff0d6436f6e81b73d486d7829c7e521492746358fdee2ac9b44/types_docker-7.2.0.20261122.tar.gz", hash = "sha256:69a7f1910c3cffb4ddf7fb3165bad6141058b03ec2679c73b56cd961e7772db7", size = 37518, upload-time = "2026-11-22T09:01:20.065Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/96/0b/475485b9f2ce5992bf57c5c02cc32c20b48943922c4ecda2b6d1dfb1f8d9/types_docker-7.2.0.20261122-py3-none-any.whl", hash = "sha256:5f2b9c12c67570118b3083610e27db067fc88a9f484244f72ba5bd4e45d8184f", size = 51464, upload-time = "2026-11-22T09:01:19.168Z" },
 ]
 
 [[package]]
