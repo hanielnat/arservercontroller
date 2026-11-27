@@ -16,6 +16,18 @@ class ServerStatusEnum(StrEnum):
     DEAD = auto()
 
 
+RECREATE_FIELDS: frozenset[str] = frozenset(
+    {
+        "name",
+        "bind_port",
+        "a2s_port",
+        "rcon_port",
+        "environment",
+        "extra_ports",
+    }
+)
+
+
 class UserRoles(StrEnum):
     ADMIN = auto()
     MODERATOR = auto()

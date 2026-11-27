@@ -1,5 +1,6 @@
 import asyncio
 from asyncio import Queue
+from pathlib import Path
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -9,10 +10,10 @@ from fastapi import Depends
 from httpx import HTTPStatusError
 
 from arservercontroller.api.dependencies import DbSessionDep, DockerClientDep
-from arservercontroller.constants import ServerStatusEnum
+from arservercontroller.constants import RECREATE_FIELDS, ServerStatusEnum
 from arservercontroller.core.config import get_config, get_directories
 from arservercontroller.db.models.server import Server
-from arservercontroller.schemas.server_config import ServerConfig
+from arservercontroller.schemas.server_config import ServerConfig, ServerConfigUpdate
 from arservercontroller.services.creation_manager import ServerCreationManagerDep
 from arservercontroller.services.docker import DockerContainerManagerDep, OnProgressCb
 from arservercontroller.services.logger import get_logger
@@ -161,7 +162,7 @@ class ServerController:
             await self.stop(model)
 
             logger.info(f"Removing container (id='{container_id[:16]}...')")
-            await self.docker_manager.remove_container_by_id(container_id)
+            await self.docker_manager.remove_container_by_id(container_id, force, force)
             logger.info("Container removed")
 
             self._remove_server_data(model)
@@ -190,10 +191,84 @@ class ServerController:
 
         return cancelled
 
+    def needs_recreate(self, old: ServerConfig, update: dict[str, Any]) -> bool:
+        for field in RECREATE_FIELDS:
+            if field not in update:
+                continue
+
+            if getattr(old, field) != update[field]:
+                return True
+
+        return False
+
+    async def update_server(
+        self, model: Server, new_server: ServerConfigUpdate
+    ) -> ControllerResult:
+        current = model.serverConfigData
+        update_data = new_server.model_dump(
+            exclude_unset=True, exclude={"container_id"}
+        )
+        updated = current.model_copy(update=update_data)
+        current_name = model.serverConfigData.name
+        updated_name = str(update_data.get("name", current_name))
+        name_changed = current_name != updated_name
+        recreate = self.needs_recreate(current, update_data)
+        was_running = self.is_server_running(model)
+
+        if recreate:
+            container_id = current.container_id
+
+            if was_running:
+                await self.stop(model)
+
+            if container_id:
+                await self.docker_manager.remove_container_by_id(
+                    container_id, True, True
+                )
+
+            if name_changed:
+                profiles = Path(get_directories().DS_PROFILES_DIR)
+                current_profile = profiles / current_name
+                new_profile = profiles / updated_name
+
+                if current_profile.exists():
+                    current_profile.rename(new_profile)
+
+            model.name = updated.name
+            model.serverConfigData = updated.model_copy(update={"container_id": ""})
+
+            self._db.commit()
+            self._db.refresh(model)
+
+            try:
+                await self.creation_manager.start_creation(
+                    model.id, model.serverConfigData, get_config().CONTAINER_IMAGE_NAME
+                )
+            except Exception as e:
+                logger.error(f"{e}")
+                return False, f"Failed to recreate container after update: {e}"
+
+            return True, ""
+
+        model.name = updated.name
+        model.serverConfigData = updated
+
+        soft_reload_fields = {"command_line", "reforger_config"}
+        if was_running and soft_reload_fields & update_data.keys():
+            ok, err = await self.reload_config(model, updated.reforger_config)
+            if not ok:
+                return False, f"Config saved but reload failed: {err}"
+
+        self._db.commit()
+        self._db.refresh(model)
+        return True, ""
+
     async def reload_config(
         self, model: Server, config: dict[str, Any]
     ) -> ControllerResult:
         container_id = model.serverConfigData.container_id
+        if not container_id:
+            return False, "Container ID invalid"
 
         # get container IPAddress to call `/reload` endpoint
         ip_result = self.docker_manager.get_container_network_ip(container_id)

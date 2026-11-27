@@ -100,7 +100,7 @@ class ServerCreationManager:
 
                     shutil.rmtree(profile_host, ignore_errors=True)
 
-                    await self.docker.remove_container_by_id(container.id)
+                    await self.docker.remove_container_by_id(container.id, volumes=True)
 
                 db.delete(server)
                 db.commit()

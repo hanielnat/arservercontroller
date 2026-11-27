@@ -118,22 +118,14 @@ async def websocket_server_creation_logs(
 async def update_server(
     server_id: UUID4,
     new_server: ServerConfigUpdate,
+    server_controller: ServerControllerDep,
     db: DbSessionDep,
 ) -> ServerOut:
     model = find_server_by_id(server_id, db)
+    _, err = await server_controller.update_server(model, new_server)
+    if err:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, err)
 
-    current_config = model.serverConfigData
-    update_data = new_server.model_dump(exclude_unset=True, exclude={"container_id"})
-
-    updated_config = ServerConfig.model_validate(
-        {**current_config.model_dump(), **update_data}
-    )
-
-    model.name = updated_config.name
-    model.serverConfigData = updated_config
-
-    db.commit()
-    db.refresh(model)
     return ServerOut.model_validate(model)
 
 

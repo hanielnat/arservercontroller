@@ -101,6 +101,9 @@ class DockerContainerManager:
 
     def get_container_network_ip(self, id: str) -> Result[str, Exception]:
         try:
+            if not id:
+                return Err(RuntimeError("Container ID invalid"))
+
             if not self.is_container_running(id):
                 return Err(
                     RuntimeError("Container must be running to get it's IP address")
@@ -305,19 +308,25 @@ class DockerContainerManager:
                 finally:
                     task_group.cancel_scope.cancel()
 
-    async def remove_container(self, container_name: str) -> None:
-        await self._try_cleanup_container(container_name)
+    async def remove_container(
+        self, container_name: str, force: bool = True, volumes: bool = False
+    ) -> None:
+        await self._try_cleanup_container(container_name, force, volumes)
         _ = await event_bus.emit(container_removed_ev, {"name": container_name})
 
-    async def remove_container_by_id(self, container_id: str) -> None:
-        await self._try_cleanup_container(container_id)
+    async def remove_container_by_id(
+        self, container_id: str, force: bool = True, volumes: bool = False
+    ) -> None:
+        await self._try_cleanup_container(container_id, force, volumes)
         _ = await event_bus.emit(container_removed_ev, {"id": container_id})
 
-    async def _try_cleanup_container(self, container_name: str) -> None:
+    async def _try_cleanup_container(
+        self, container_name: str, force: bool, volumes: bool
+    ) -> None:
         """Optimistic cleanup, remove if exists, ignore most errors."""
         try:
             container = self.client.containers.get(container_name)
-            container.remove(force=True, v=True)
+            container.remove(force=force, v=volumes)
 
         except docker.errors.NotFound, docker.errors.APIError:
             pass
