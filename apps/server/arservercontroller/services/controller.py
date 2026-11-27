@@ -289,15 +289,11 @@ class ServerController:
 
         # try to start container
         try:
-            if self.docker_manager.is_container_running(container_id):
-                raise RuntimeError(
-                    f"Server container is already running (server_id='{model.id}', container_id='{container_id[:16]}...')"
-                )
-
-            logger.info(f"Starting container of Server '{model.id}'...")
-            started = await self.docker_manager.start_container(container_id)
-            if not started:
-                raise RuntimeError(started.error())
+            if not self.docker_manager.is_container_running(container_id):
+                logger.info(f"Starting container of Server '{model.id}'...")
+                started = await self.docker_manager.start_container(container_id)
+                if not started:
+                    raise RuntimeError(started.error())
 
             # get container IP to call the agent `/start` endpoint
             ip_result = self.docker_manager.get_container_network_ip(container_id)
