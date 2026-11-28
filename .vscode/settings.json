@@ -36,7 +36,7 @@
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "python.createEnvironment.contentButton": "show",
-  "python.testing.unittestArgs": ["-v", "-s", "./apps/server/tests", "test_*.py"],
+  "python.testing.pytestArgs": ["apps/server/tests", "apps/agent-service/tests"],
   "[python]": {
     "diffEditor.ignoreTrimWhitespace": false,
     "editor.defaultColorDecorators": "auto",

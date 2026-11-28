@@ -17,7 +17,7 @@ import type {
     ServerStatusOut,
 } from "@/features/servers";
 import { apiClient, buildUrl, type ApiClientOptions } from "@/lib/client";
-import type { WebSocketLike } from "@/types";
+import type { EventSourceLike, WebSocketLike } from "@/types";
 
 export const serversApi = {
     list: async (offset: number, limit: number, options?: ApiClientOptions) =>
@@ -73,12 +73,17 @@ export const serversApi = {
             options,
         ),
 
-    logStream: (id: string, limit: number, follow: boolean) =>
+    logStream: (id: string, limit: number, follow: boolean): EventSourceLike =>
         useMock
             ? mockServer.logStream(id, limit, follow)
             : new EventSource(buildUrl(`/servers/${id}/logs/stream`, { limit, follow })),
 
-    containerLogStream: (id: string, tail: number, follow: boolean, showTimeStamp: boolean) =>
+    containerLogStream: (
+        id: string,
+        tail: number,
+        follow: boolean,
+        showTimeStamp: boolean,
+    ): EventSourceLike =>
         useMock
             ? mockServer.containerLogStream(id, tail, follow, showTimeStamp)
             : new EventSource(

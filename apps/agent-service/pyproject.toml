@@ -3,15 +3,10 @@ name = "sidecar"
 version = "0.1.0"
 description = "Container agent sidecar for managing servers created by arservercontroller."
 readme = "README.md"
-authors = [
-    { name = "hnl", email = "hnl@email.com" }
-]
+authors = [{ name = "hnl", email = "hnl@email.com" }]
 requires-python = ">=3.14"
 
-dependencies = [
-    "fastapi>=0.142.0",
-    "uvicorn>=0.52.4",
-]
+dependencies = ["fastapi>=0.142.0", "uvicorn>=0.52.4"]
 
 [project.scripts]
 sidecar = "sidecar:main"

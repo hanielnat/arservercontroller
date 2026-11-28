@@ -1,21 +1,9 @@
-import asyncio
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import Generator
 from typing import Any
 
 import docker
 import pytest
 import pytest_asyncio
-from docker.client import DockerClient
-from docker.models.containers import Container
-from fastapi.applications import FastAPI
-from fastapi.testclient import TestClient
-from pytest_mock import MockerFixture
-from sqlalchemy import create_engine
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.ext.asyncio.engine import AsyncEngine
-from sqlalchemy.orm import Session, sessionmaker
-
 from arservercontroller.api.dependencies import get_docker_client
 from arservercontroller.db.base import Base
 from arservercontroller.db.session import get_db
@@ -32,23 +20,17 @@ from arservercontroller.services.docker import (
     DockerContainerManager,
     get_docker_manager,
 )
+from docker.client import DockerClient
+from docker.models.containers import Container
+from fastapi.applications import FastAPI
+from fastapi.testclient import TestClient
+from pytest_mock import MockerFixture
+from sqlalchemy import create_engine
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.orm import Session, sessionmaker
+
 from tests.constants import DOCKER_CLIENT, TestDirectories
 from tests.test_utils import TestUtils
-
-
-# -------------------------------------------------------------------------------
-# pytest-asyncio configuration
-@pytest.fixture(scope="session")
-def event_loop_policy():
-    """Use uvloop if available, otherwise default (recommended for FastAPI)."""
-    try:
-        import uvloop
-
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    except ImportError:
-        pass
-
-    return asyncio.get_event_loop_policy()
 
 
 # -------------------------------------------------------------------------------
@@ -81,41 +63,6 @@ def db_session(engine: Engine) -> Generator[Session, None, None]:
 
 
 # -------------------------------------------------------------------------------
-# async fixtures
-@pytest_asyncio.fixture(scope="session")
-async def async_engine():
-    """Async SQLite engine for full async tests."""
-    engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        echo=False,
-    )
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-    await engine.dispose()
-
-
-@pytest_asyncio.fixture
-async def async_db_session(
-    async_engine: AsyncEngine,
-) -> AsyncGenerator[AsyncSession, None]:
-    """Exclusive async session per test with rollback."""
-    async_session = async_sessionmaker(
-        async_engine, class_=AsyncSession, expire_on_commit=False
-    )
-
-    async with async_session() as session:
-        yield session
-        await session.rollback()
-
-
-# -------------------------------------------------------------------------------
 # dependency overrides
 @pytest.fixture
 def test_db(db_session: Session) -> Generator[Session, Any, None]:
@@ -127,18 +74,6 @@ def test_db(db_session: Session) -> Generator[Session, Any, None]:
     fastapi_app.dependency_overrides[get_db] = override_get_db
 
     yield db_session
-    fastapi_app.dependency_overrides.clear()
-
-
-@pytest_asyncio.fixture
-async def async_test_db(async_db_session: AsyncSession):
-    """Override for fully async DB, future-proof."""
-
-    async def override_get_db():
-        yield async_db_session
-
-    fastapi_app.dependency_overrides[get_db] = override_get_db
-    yield async_db_session
     fastapi_app.dependency_overrides.clear()
 
 
@@ -159,7 +94,7 @@ def docker_client() -> Generator[docker.DockerClient, Any, None]:
             try:
                 container.remove(force=True)
                 print(f"Removed test container: '{container.name}'")
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
 
         # Volumes
@@ -170,9 +105,10 @@ def docker_client() -> Generator[docker.DockerClient, Any, None]:
             try:
                 volume.remove(force=True)
                 print(f"Removed test volume: '{volume.id}'")
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
-    except Exception:
+
+    except Exception:  # noqa: BLE001, S110
         pass
 
     # Cleanup host directories
@@ -332,4 +268,4 @@ def test_app(
 
 
 # re-export test helpers so they stay available
-__all__ = ["TestUtils", "TestDirectories"]
+__all__ = ["TestDirectories", "TestUtils"]

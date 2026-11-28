@@ -1,6 +1,29 @@
 [tool.uv.workspace]
 members = ["./apps/server", "./apps/agent-service"]
 
+[tool.ty.analysis]
+return-type-inference = "always"
+
+[tool.ty.rules]
+possibly-unresolved-reference = "warn"
+
+[tool.ty.src]
+include = [
+  "./apps/server",
+  "./apps/server/tests",
+  "./apps/agent-service/src",
+  "./apps/agent-service/tests",
+]
+
+[tool.ty.environment]
+root = ["./apps/server", "./apps/agent-service/src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+testpaths = ["./apps/server/tests", "./apps/agent-service/tests"]
+
 [dependency-groups]
 dev = [{ include-group = "lint" }, { include-group = "test" }]
 lint = ["ty>=0.0.76", "ruff>=0.16.6"]

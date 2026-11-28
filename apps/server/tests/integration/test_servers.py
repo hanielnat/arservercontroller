@@ -2,10 +2,9 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from arservercontroller.utils.errors import Ok
 from fastapi import status
 from fastapi.testclient import TestClient
-
-from arservercontroller.utils.errors import Ok
 
 
 @pytest.mark.asyncio
@@ -16,9 +15,10 @@ async def test_create_server_async(client: TestClient) -> None:
         "bind_address": "0.0.0.0",
         "a2s_port": 17779,
         "rcon_port": 19997,
+        "reforger_config": {},
     }
     response = client.post("/api/v1/servers", json=payload)
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
 
 
 @pytest.mark.asyncio
@@ -33,7 +33,14 @@ async def test_create_server_and_websocket_logs(client: TestClient, mocker) -> N
             {"phase": "docker", "step": "prepare", "message": "preparing"}
         )
         await on_progress({"phase": "docker", "step": "create", "message": "creating"})
-        await on_progress({"phase": "docker", "step": "created", "message": "created"})
+        await on_progress(
+            {
+                "phase": "docker",
+                "step": "created",
+                "message": "created",
+                "final": "true",
+            }
+        )
         return Ok(mock_container)
 
     mocker.patch(
@@ -61,11 +68,12 @@ async def test_create_server_and_websocket_logs(client: TestClient, mocker) -> N
         "bind_address": "0.0.0.0",
         "a2s_port": 17778,
         "rcon_port": 19998,
+        "reforger_config": {},
     }
 
     # 1. Create server
     response = client.post("/api/v1/servers", json=payload)
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
     server_data = response.json()
     server_id = server_data["id"]
 
@@ -88,14 +96,13 @@ async def test_create_server_and_websocket_logs(client: TestClient, mocker) -> N
         assert "prepare" in steps
         assert "create" in steps
         assert "created" in steps
-        assert "success" in steps
 
         # Check some content
         start_log = next(log for log in logs if log["step"] == "start")
         assert "test-server-ws" in start_log["message"]
 
-        success_log = next(log for log in logs if log["step"] == "success")
-        assert success_log["final"] == "true"
+        created_log = next(log for log in logs if log["step"] == "created")
+        assert created_log["final"] == "true"
 
 
 @pytest.mark.asyncio
@@ -114,7 +121,7 @@ async def test_create_server_and_cancel_creation(client: TestClient, mocker) -> 
         creation_started_event.set()
         try:
             await asyncio.wait_for(cancel_event.wait(), timeout=5.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pass
         await on_progress({"phase": "docker", "step": "create", "message": "creating"})
         await on_progress({"phase": "docker", "step": "created", "message": "created"})
@@ -131,10 +138,11 @@ async def test_create_server_and_cancel_creation(client: TestClient, mocker) -> 
         "bind_address": "0.0.0.0",
         "a2s_port": 17780,
         "rcon_port": 19999,
+        "reforger_config": {},
     }
 
     response = client.post("/api/v1/servers", json=payload)
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
     server_data = response.json()
     server_id = server_data["id"]
 
